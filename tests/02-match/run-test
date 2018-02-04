@@ -1,0 +1,95 @@
+#! /usr/bin/env bash
+
+[ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
+
+
+expect_match_filepath()
+{
+   local expected="$1"; shift
+   local ignore_dir="$1"
+   local match_dir="$2"
+   local filepath="$3"
+
+   local result
+
+   if ! result="`match_filepath "$@"`"
+   then
+      fail "Pattern \"${pattern}\" did not match filepath \"${filepath}\""
+   fi
+
+   if [ "${result}" != "${expected}" ]
+   then
+      fail "Result \"${result}\" was expected to be \"${expected}\""
+   fi
+}
+
+
+expect_match_print_filepath()
+{
+   local expected="$1"; shift
+   local format="$1"
+   local ignore_dir="$2"
+   local match_dir="$3"
+   local filepath="$4"
+
+   local result
+
+   if ! result="`match_print_filepath "$@"`"
+   then
+      fail "Pattern \"${pattern}\" did not match filepath \"${filepath}\""
+   fi
+
+   if [ "${result}" != "${expected}" ]
+   then
+      fail "Result \"${result}\" was expected to be \"${expected}\""
+   fi
+}
+
+
+main()
+{
+   MULLE_MONITOR_FLAGS="$@"
+
+   _options_mini_main "$@"
+
+   #
+   # memo: remember we only deal with relative paths w/o leading /!
+   # for simplicity it's also assumed that no relative path contain a
+   # trailing '/'
+   #
+   expect_match_filepath "01_a"  "" "match" "a"
+   expect_match_filepath "02_b"  "" "match" "b"
+   expect_match_filepath "04_aa" "" "match" "aa"
+   expect_match_filepath "04_aa" "" "match" "aaa"
+
+   log_verbose "----- #1 PASSED -----"
+
+   expect_match_print_filepath "a;01_a;a"     "%c;%m;%f\\n" "" "match" "a"
+   expect_match_print_filepath "b;02_b;b"     "%c;%m;%f\\n" "" "match" "b"
+   expect_match_print_filepath "aa;04_aa;aa"  "%c;%m;%f\\n" "" "match" "aa"
+   expect_match_print_filepath "aa;04_aa;aaa" "%c;%m;%f\\n" "" "match" "aaa"
+
+   log_verbose "----- #2 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+}
+
+
+
+init()
+{
+   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`" || exit 1
+
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+
+   MULLE_MONITOR="${MULLE_MONITOR:-${PWD}/../../mulle-monitor}"
+
+   MULLE_MONITOR_LIBEXEC_DIR="`"${MULLE_MONITOR}" "libexec-dir"`" || exit 1
+
+   . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+}
+
+
+init "$@"
+main "$@"
+
