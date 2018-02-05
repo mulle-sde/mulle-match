@@ -3,8 +3,9 @@
 ... for Linux, OS X, FreeBSD, Windows
 
 **mulle-monitor** watches changes in a folder (and subfolders) using
-[fswatch]() or [inotifywait]() and then calls an appropriate callback script
-based on user supplied filter rules.
+[fswatch](https://github.com/emcrisostomo/fswatch) or
+[inotifywait](https://linux.die.net/man/1/inotifywait) and then calls an
+appropriate callback executable based on user supplied filter rules.
 
 ![](dox/mulle-monitor-overview.png)
 

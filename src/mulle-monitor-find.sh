@@ -58,6 +58,7 @@ EOF
                         %f : filename that was matched
                         %m : the full match filename
                         %t : type of match file
+                        %I : category of match file as an uppercase identifier
                         \\n : a linefeed
                      (e.g. "category=%c,type=%t\\n)"
 EOF
@@ -78,6 +79,52 @@ EOF
 EOF
    fi
    exit 1
+}
+
+
+# this is a nicety for scripts that run fin
+find_emit_by_category()
+{
+   log_entry "find_emit_by_category" "$@"
+
+   local items="$1"
+   local emitter="$2"
+
+   [ -z "${emitter}" ] && internal_fail "emitter is empty"
+
+   if [ -z "${files}" ]
+   then
+      return
+   fi
+
+   local filename
+
+   local filename
+   local varname
+   local collectname
+   local collection
+
+   while IFS=";" read varname filename
+   do
+      if [ -z "${varname}" ]
+      then
+         continue
+      fi
+
+      if [ "${varname}" != "${collectname}" ]
+      then
+         "${emitter}" "${collectname}" "${collection}"
+         collectname="${varname}"
+         collection="${filename}"
+      else
+         collection="`add_line "${collection}" "${filename}"`"
+      fi
+   done <<< "${items}"
+
+   if [ ! -z "${collection}" ]
+   then
+      "${emitter}" "${collectname}" "${collection}"
+   fi
 }
 
 

@@ -494,6 +494,11 @@ match_print_filepath()
             printf "%s" "${matchtype}"
          ;;
 
+         \%I*)
+            format="${format:2}"
+            printf "%s" "`tr 'a-z' 'A-Z' <<< "${matchcategory}" | tr '-' '_' `"
+         ;;
+
          \\n*)
             format="${format:2}"
             echo
@@ -552,7 +557,6 @@ match_environment()
       ;;
    esac
 }
-
 
 
 ###
