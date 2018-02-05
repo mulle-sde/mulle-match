@@ -39,12 +39,13 @@ digraph G {
     "bin"                -> "t_did_update"
 
     "etc"                -> "monitor"
+    "monitor"            [ label="mulle-monitor" ]
 
-    "monitor" -> "match"
+    "monitor"   -> "match.d"
 
-    "match"   -> "s_header"
-    "match"   -> "s_source"
-    "match"   -> "s_test"
+    "match.d"   -> "s_header"
+    "match.d"   -> "s_source"
+    "match.d"   -> "s_test"
 
     ".mulle-monitor"     -> "share"
     "share"              -> "monitor2"
@@ -58,9 +59,9 @@ digraph G {
     "s_header"        [ label="01_header"]
     "s_source"        [ label="00_source"]
     "s_test"          [ label="02_test"]
-    "monitor2"        [ shape="folder", label="monitor", color="black", fontcolor="black" ]
-    "match2"          [ shape="folder", label="match" ]
-    "ignore2"         [ shape="folder", label="ignore", color="black", fontcolor="black" ]
+    "monitor2"        [ shape="folder", label="mulle-monitor", color="black", fontcolor="black" ]
+    "match2"          [ shape="folder", label="match.d" ]
+    "ignore2"         [ shape="folder", label="ignore.d", color="black", fontcolor="black" ]
     "monitor2" -> "ignore2" [ color="black" ]
 
     { rank = "same"; "s_source", "s_header", "s_test" };
@@ -78,7 +79,7 @@ digraph G {
 
     { rank = "same"; "MULLE_MONITOR_ETC_DIR", "MULLE_MONITOR_DIR" };
 
-    "s_source" -> "MULLE_MONITOR_DIR"    [ style="invis" ]
+    "s_source" -> "MULLE_MONITOR_DIR"     [ style="invis" ]
     "s_source" -> "MULLE_MONITOR_ETC_DIR" [ style="invis" ]
 
 

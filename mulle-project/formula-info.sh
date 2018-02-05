@@ -3,7 +3,7 @@
 # formula operations.
 #
 PROJECT="mulle-monitor"      # your project/repository name
-DESC=" 🕵🏻‍ Extensible filesystem observation with callbacks"
+DESC="🕵🏻‍ Extensible filesystem observation with callbacks"
 LANGUAGE="bash"             # c,cpp, objc, bash ...
 
 # LANGUAGE="c"             # c,cpp, objc, bash ...

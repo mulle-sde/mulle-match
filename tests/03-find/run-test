@@ -1,0 +1,80 @@
+#! /usr/bin/env bash
+
+[ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
+
+
+expect_find_filenames()
+{
+   log_entry "expect_find_filenames" "$@"
+
+   local expected="$1"; shift
+   local format="$1"
+   local ignore_dir="$2"
+   local ignore_filter="$3"
+   local match_dir="$4"
+   local match_filter="$5"
+
+   local result
+
+   result="`find_filenames "$@"`"
+
+   if [ "${result}" != "${expected}" ]
+   then
+      fail "Result \"${result}\" was expected to be \"${expected}\""
+   fi
+}
+
+
+main()
+{
+   MULLE_MONITOR_FLAGS="$@"
+
+   _options_mini_main "$@"
+
+   #
+   # memo: remember we only deal with relative paths w/o leading /!
+   # for simplicity it's also assumed that no relative path contain a
+   # trailing '/'
+   #
+   local expected
+
+   expected="src/foo.c
+src/main.c"
+   expect_find_filenames "${expected}" "%f\\n" "ignore.d" "" "match.d" "source"
+
+   log_verbose "----- #1 PASSED -----"
+
+   expected="src/foo.h"
+   expect_find_filenames "${expected}" "%f\\n" "ignore.d" "" "match.d" "header"
+
+   log_verbose "----- #2 PASSED -----"
+
+   expected="foo/wrong.h
+src/foo.h"
+   expect_find_filenames "${expected}" "%f\\n" "" "" "match.d" "header"
+
+   log_verbose "----- #3 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+}
+
+
+
+init()
+{
+   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`" || exit 1
+
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+
+   MULLE_MONITOR="${MULLE_MONITOR:-${PWD}/../../mulle-monitor}"
+
+   MULLE_MONITOR_LIBEXEC_DIR="`"${MULLE_MONITOR}" "libexec-dir"`" || exit 1
+
+   . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+   . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-find.sh" || exit 1
+}
+
+
+init "$@"
+main "$@"
+

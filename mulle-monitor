@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.1
+MULLE_EXECUTABLE_VERSION=0.0.2
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -52,6 +52,8 @@ SHOWN_COMMANDS="\
    run            : monitor files and run scripts"
 
 HIDDEN_COMMANDS="\
+   match          : match filenames
+   find           : find files that match
    libexec-dir    : print path to mulle-monitor libexec
    uname          : mulle-monitors simplified uname(1)"
 
@@ -362,6 +364,13 @@ main()
          . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-run.sh"
 
          monitor_match_main "$@"
+      ;;
+
+      find)
+         # shellcheck source=src/mulle-monitor-run.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-find.sh"
+
+         monitor_find_main "$@"
       ;;
 
       # for the user it's a sde, but internally we call it

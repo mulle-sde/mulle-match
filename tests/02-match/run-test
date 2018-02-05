@@ -5,10 +5,14 @@
 
 expect_match_filepath()
 {
+   log_entry "expect_match_print_filepath" "$@"
+
    local expected="$1"; shift
    local ignore_dir="$1"
-   local match_dir="$2"
-   local filepath="$3"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
+   local filepath="$5"
 
    local result
 
@@ -26,11 +30,15 @@ expect_match_filepath()
 
 expect_match_print_filepath()
 {
+   log_entry "expect_match_print_filepath" "$@"
+
    local expected="$1"; shift
    local format="$1"
    local ignore_dir="$2"
-   local match_dir="$3"
-   local filepath="$4"
+   local ignore_filter="$3"
+   local match_dir="$4"
+   local match_filter="$5"
+   local filepath="$6"
 
    local result
 
@@ -57,23 +65,22 @@ main()
    # for simplicity it's also assumed that no relative path contain a
    # trailing '/'
    #
-   expect_match_filepath "01_a"  "" "match" "a"
-   expect_match_filepath "02_b"  "" "match" "b"
-   expect_match_filepath "04_aa" "" "match" "aa"
-   expect_match_filepath "04_aa" "" "match" "aaa"
+   expect_match_filepath "1-a--"  "" "" "match" "" "a"
+   expect_match_filepath "2-b--x"  "" "" "match" "" "b"
+   expect_match_filepath "4-aa--" "" "" "match" "" "aa"
+   expect_match_filepath "4-aa--" "" "" "match" "" "aaa"
 
    log_verbose "----- #1 PASSED -----"
 
-   expect_match_print_filepath "a;01_a;a"     "%c;%m;%f\\n" "" "match" "a"
-   expect_match_print_filepath "b;02_b;b"     "%c;%m;%f\\n" "" "match" "b"
-   expect_match_print_filepath "aa;04_aa;aa"  "%c;%m;%f\\n" "" "match" "aa"
-   expect_match_print_filepath "aa;04_aa;aaa" "%c;%m;%f\\n" "" "match" "aaa"
+   expect_match_print_filepath "a;1-a--;a"     "%t;%m;%f\\n"    "" "" "match" "" "a"
+   expect_match_print_filepath "b;x;2-b--x;b"  "%t;%c;%m;%f\\n" "" "" "match" "" "b"
+   expect_match_print_filepath "aa;4-aa--;aa"  "%t;%m;%f\\n"    "" "" "match" "" "aa"
+   expect_match_print_filepath "aa;4-aa--;aaa" "%t;%m;%f\\n"    "" "" "match" "" "aaa"
 
    log_verbose "----- #2 PASSED -----"
 
    log_info "----- ALL PASSED -----"
 }
-
 
 
 init()

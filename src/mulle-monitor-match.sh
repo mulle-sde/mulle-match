@@ -46,16 +46,40 @@ Usage:
    Run the mulle-monitor file classification with the given filenames.
    It will emit the contentype being matched, if there is any.
 
+   A match file has the form 00-type--category.
+
 Options:
    -d <dir>       : project directory (parent of .mulle-monitor)
-   -f <format>    : specify output values. This is like a simplified C
-                    printf format:
-                        %c : contentype
-                        %m : full matching filename
-                        %f : filename being matched
-                        %n : filename without leading folders
-                        \\n : a linefeed
+   -f <format>    : specify output values.
 EOF
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
+   then
+     cat <<EOF >&2
+                    This is like a simplified C printf format:
+                        %c : category of match file (can be empty)
+                        %e : executable name of callback
+                        %f : filename that was matched
+                        %m : the full match filename
+                        %t : type of match file
+                        \\n : a linefeed
+                     (e.g. "category=%c,type=%t\\n)"
+EOF
+   fi
+
+   cat <<EOF >&2
+   -if <filter>   : specify a filter for ignoring <type>
+   -mf <filter>   : specify a filter for matching <type>
+EOF
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
+   then
+     cat <<EOF >&2
+                    A filter is a comma separated list of type expressions.
+                    A type expression is either a type name with wildcard
+                    characters or a negated type expression. An expression is
+                    negated by being prefixed with !.
+                    Example: filter is "header*,!header_private"
+EOF
+   fi
    exit 1
 }
 
@@ -70,24 +94,24 @@ pattern_matches_relative_filename()
    log_entry "pattern_matches_relative_filename" "$@"
 
    local pattern="$1"
-   local text="$2"
+   local filename="$2"
    local flags="$3"
 
    #
    # if we are strict on text input, we can simplify pattern handling
    # a lot. Note that we only deal with relative paths anyway
    #
-   case "${text}" in
+   case "${filename}" in
       "")
-         internal_fail "Empty text is illegal"
+         internal_fail "Empty filename is illegal"
       ;;
 
       /*)
-         internal_fail "Text \"${text}\" is illegal. It must not start with '/'"
+         internal_fail "Filename \"${filename}\" is illegal. It must not start with '/'"
       ;;
 
       */)
-         internal_fail "Text \"${text}\" is illegal. It must not end with '/'"
+         internal_fail "Filename \"${filename}\" is illegal. It must not end with '/'"
       ;;
    esac
 
@@ -137,7 +161,7 @@ pattern_matches_relative_filename()
          local snip
 
          snip="`sed -e 's/^.\(.*\).$/\1/' <<< "${pattern}" `"
-         case "${text}" in
+         case "${filename}" in
             ${snip}|${pattern:1}*)
                return $YES
             ;;
@@ -148,7 +172,7 @@ pattern_matches_relative_filename()
          local snip
 
          snip="`sed -e 's/.$//' <<< "${pattern}" `"
-         case "${text}" in
+         case "${filename}" in
             ${snip}|${pattern}*|*/${pattern}*)
                return $YES
             ;;
@@ -156,7 +180,7 @@ pattern_matches_relative_filename()
       ;;
 
       /*)
-         case "${text}" in
+         case "${filename}" in
             ${pattern:1})
                return $YES
             ;;
@@ -164,7 +188,7 @@ pattern_matches_relative_filename()
       ;;
 
       *)
-         case "${text}" in
+         case "${filename}" in
             ${pattern}|*/${pattern})
                return $YES
             ;;
@@ -175,19 +199,13 @@ pattern_matches_relative_filename()
    return $NO
 }
 
-#
-# There is this weird bash bug on os x, where the patterns do
-# not appear int the entry output. I don't know why.
-# ```
-# 1517521574.715441519 patternlines_match_relative_filename 'src/main.c', '', '"/tmp/a/.mulle-monitor/etc/source/patterns/90_SOURCES"'
-# +++++ mulle-monitor-pattern.sh:143 + local 'patterns=*.c'
-# ```
+
 patternlines_match_relative_filename()
 {
    log_entry "patternlines_match_relative_filename" "$@"
 
    local patterns="$1"
-   local text="$2"
+   local filename="$2"
    local flags="$3"
    local where="$4"
 
@@ -201,15 +219,15 @@ patternlines_match_relative_filename()
    do
       IFS="${DEFAULT_IFS}"
 
-      pattern_matches_relative_filename "${pattern}" "${text}" "${flags}"
+      pattern_matches_relative_filename "${pattern}" "${filename}" "${flags}"
       case "$?" in
          0)
-            log_debug "Pattern \"${pattern}\" did match text \"${text}\""
+            log_debug "pattern \"${pattern}\" did match filename \"${filename}\""
             rval=0
          ;;
 
          2)
-            log_debug "Pattern \"${pattern}\" negates \"${text}\""
+            log_debug "pattern \"${pattern}\" negates filename \"${filename}\""
             rval=1
          ;;
       esac
@@ -219,7 +237,7 @@ patternlines_match_relative_filename()
 
    if [ $rval -eq 1 ]
    then
-      log_debug "Text \"${text}\" did not match any patterns in ${where}"
+      log_debug "filename \"${filename}\" did not match any patterns in ${where}"
    fi
 
    return $rval
@@ -251,32 +269,105 @@ patternfile_match_relative_filename()
 {
    log_entry "patternfile_match_relative_filename" "$@"
 
-   local filename="$1"
-   local text="$2"
+   local patternfilename="$1"
+   local filename="$2"
    local flags="$3"
 
-   [ -z "${filename}" ] && internal_fail "filename is empty"
-   [ -z "${text}" ]     && internal_fail "text is empty"
+   [ -z "${patternfilename}" ] && internal_fail "patternfilename is empty"
+   [ -z "${filename}" ]        && internal_fail "filename is empty"
 
    case "${flags}" in
       *WM_CASEFOLD*)
-         text="` tr 'A-Z' 'a-z' <<< "${text}" `"
+         text="` tr 'A-Z' 'a-z' <<< "${filename}" `"
       ;;
    esac
 
    local lines
 
-   lines="` patternfile_read "${filename}" `"
+   lines="` patternfile_read "${patternfilename}" `"
    if [ -z "${lines}" ]
    then
-      log_debug "\"${filename}\" does not exist or is empty"
+      log_debug "\"${patternfilename}\" does not exist or is empty"
       return 127
    fi
 
    patternlines_match_relative_filename "${lines}" \
-                                        "${text}" \
+                                        "${filename}" \
                                         "${flags}" \
-                                        "\"${filename}\""
+                                        "\"${patternfilename}\""
+}
+
+
+#
+# a filter is
+# <filter> : <texpr>  | <filter> , <texpr>
+# <texpr>  : ! <type> | <type>
+#
+# Think about using pattern_matches_relative_filename for this
+#
+filter_patternfilename()
+{
+   local filter="$1"
+   local patternfile="$2"
+
+   local texpr
+   local shouldmatch
+
+
+   IFS=","
+   for texpr in ${filter}
+   do
+      IFS="${DEFAULT_IFS}"
+
+      shouldmatch="YES"
+      case "${texpr}" in
+         !*)
+            shouldmatch="NO"
+            texpr="${texpr:1}"
+         ;;
+      esac
+
+      match="[0-9]*-${texpr}--*"
+
+      case "${patternfile}" in
+         ${match})
+            if [ "${shouldmatch}" = "NO" ]
+            then
+               return 1
+            fi
+         ;;
+
+         *)
+            if [ "${shouldmatch}" = "YES" ]
+            then
+               return 1
+            fi
+         ;;
+      esac
+   done
+   IFS="${DEFAULT_IFS}"
+
+   return 0
+}
+
+
+matchfile_get_type()
+{
+   log_entry "matchfile_get_type" "$@"
+
+   local filename="$1"
+
+   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
+}
+
+
+matchfile_get_category()
+{
+   log_entry "matchfile_get_category" "$@"
+
+   local filename="$1"
+
+   sed -n -e 's/^[0-9]*-[^-]*--\(.*\)/\1/p' <<< "${filename}"
 }
 
 
@@ -284,21 +375,30 @@ _match_filepath()
 {
    log_entry "_match_filepath" "$@"
 
-   local match_dir="$1"
-   local filepath="$2"
+   local directory="$1"
+   local filter="$2"
+   local filepath="$3"
 
-   local patternfile
+   [ -z "${directory}" ] && internal_fail "directory is empty"
+   [ -z "${filepath}" ]  && internal_fail "filepath is empty"
 
    (
-      cd "${match_dir}" || internal_fail "${match_dir} is gone"
+      exekutor cd "${directory}" || internal_fail "failed to cd to \"$1\" from \"${PWD}\""
+
+      local patternfile
 
       shopt -s nullglob
-      for patternfile in [0-9]*_*
+      for patternfile in [0-9]*-*--*
       do
          shopt -u nullglob
+         if [ ! -z "${filter}" ] && ! filter_patternfilename  "${filter}" "${patternfile}"
+         then
+            log_debug "\"${patternfile}\" did not pass filter"
+            continue
+         fi
          if patternfile_match_relative_filename "${patternfile}" "${filepath}"
          then
-            echo "${patternfile}"
+            exekutor echo "${patternfile}"
             return 0
          fi
       done
@@ -313,20 +413,35 @@ match_filepath()
    log_entry "match_filepath" "$@"
 
    local ignore_dir="$1"
-   local match_dir="$2"
-   local filepath="$3"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
+   local filepath="$5"
 
    if [ ! -z "${ignore_dir}" ]
    then
-      if _match_filepath "${ignore_dir}" "${filepath}" > /dev/null
+      if _match_filepath "${ignore_dir}" "${ignore_filter}" "${filepath}" > /dev/null
       then
+         log_debug "\"${filepath}\" ignored"
          return 1
       fi
    fi
+   log_debug "\"${filepath}\" not ignored"
 
-   _match_filepath "${match_dir}" "${filepath}"
+   if [ ! -z "${match_dir}" ]
+   then
+      if _match_filepath "${match_dir}" "${match_filter}" "${filepath}"
+      then
+         log_debug "\"${filepath}\" matched"
+         return 0
+      fi
+      log_debug "\"${filepath}\" did not match"
+      return 1
+   fi
+
+   log_debug "\"${filepath}\" always matches"
+   return 0
 }
-
 
 
 match_print_filepath()
@@ -334,7 +449,7 @@ match_print_filepath()
    log_entry "match_print_filepath" "$@"
 
    local format="$1" ; shift
-   local filename="$3" # sic
+   local filename="$5" # sic
 
    local matchname
 
@@ -343,17 +458,25 @@ match_print_filepath()
       return 1
    fi
 
+   local matchtype
+   local matchcategory
+
+   matchtype="`matchfile_get_type "${matchname}" `"
+   matchcategory="`matchfile_get_category "${matchname}" `"
+
+   [ -z "${matchtype}" ] && internal_fail "should not happen"
+
    while [ ! -z "${format}" ]
    do
       case "${format}" in
          \%c*)
             format="${format:2}"
-            printf "%s" "`sed -e 's/^[0-9]*_\(.*\)/\1/' <<< "${matchname}" `"
+            printf "%s" "${matchcategory}"
          ;;
 
-         \%m*)
+         \%e*)
             format="${format:2}"
-            printf "%s" "${matchname}"
+            printf "%s%s" "${matchtype}" "did-update"
          ;;
 
          \%f*)
@@ -361,9 +484,14 @@ match_print_filepath()
             printf "%s" "${filename}"
          ;;
 
-         \%n*)
+         \%m*)
             format="${format:2}"
-            printf "%s" "`basename -- "${filename}"`"
+            printf "%s" "${matchname}"
+         ;;
+
+         \%t*)
+            format="${format:2}"
+            printf "%s" "${matchtype}"
          ;;
 
          \\n*)
@@ -382,28 +510,47 @@ match_print_filepath()
 
 match_environment()
 {
+   log_entry "monitor_match_main" "$@"
+
    MULLE_MONITOR_DIR="${MULLE_MONITOR_DIR:-.mulle-monitor}"
    MULLE_MONITOR_ETC_DIR="${MULLE_MONITOR_ETC_DIR:-${MULLE_MONITOR_DIR}/etc}"
 
-   MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/match"
-   if [ ! -d "${MATCH_DIR}" ]
-   then
-      MATCH_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/match"
-   fi
-   if [ ! -d "${MATCH_DIR}" ]
-   then
-      fail "There is no directory \"$${MULLE_MONITOR_ETC_DIR}/mulle-monitor\" set up"
-   fi
+   case "${MATCH_DIR}" in
+      NO)
+         MATCH_DIR=""
+      ;;
 
-   IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/ignore"
-   if [ ! -d "${IGNORE_DIR}" ]
-   then
-      IGNORE_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/ignore"
-      if [ ! -d "${IGNORE_DIR}" ]
-      then
+      "")
+         MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/match.d"
+         if [ ! -d "${MATCH_DIR}" ]
+         then
+            MATCH_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/match.d"
+         fi
+         if [ ! -d "${MATCH_DIR}" ]
+         then
+            MATCH_DIR=""
+            log_warning "There is no directory \"${MULLE_MONITOR_ETC_DIR}/mulle-monitor\" set up"
+         fi
+      ;;
+   esac
+
+   case "${IGNORE_DIR}" in
+      NO)
          IGNORE_DIR=""
-      fi
-   fi
+      ;;
+
+      "")
+         IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/ignore.d"
+         if [ ! -d "${IGNORE_DIR}" ]
+         then
+            IGNORE_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/ignore.d"
+         fi
+         if [ ! -d "${IGNORE_DIR}" ]
+         then
+            IGNORE_DIR=""
+         fi
+      ;;
+   esac
 }
 
 
@@ -415,7 +562,12 @@ monitor_match_main()
 {
    log_entry "monitor_match_main" "$@"
 
-   local OPTION_FORMAT="c\\n"
+   local OPTION_FORMAT="%t\\n"
+   local OPTION_MATCH_FILTER
+   local OPTION_IGNORE_FILTER
+
+   local MATCH_DIR
+   local IGNORE_DIR
 
    #
    # handle options
@@ -431,7 +583,35 @@ monitor_match_main()
             [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
             shift
 
-            cd "$1" || exit 1
+            exekutor cd "$1" || fail "failed to cd to \"$1\" from \"${PWD}\""
+         ;;
+
+         -id|--ignore-dir)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            IGNORE_DIR="$1"
+         ;;
+
+         -md|--match-dir)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            MATCH_DIR="$1"
+         ;;
+
+         -if|--ignore-filter)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            OPTION_IGNORE_FILTER="$1"
+         ;;
+
+         -mf|--match-filter)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            OPTION_MATCH_FILTER="$1"
          ;;
 
          --format)
@@ -465,7 +645,12 @@ monitor_match_main()
 
    while [ $# -ne 0 ]
    do
-      if match_print_filepath "${OUTPUT_FORMAT}" "${IGNORE_DIR}" "${MATCH_DIR}" "$1"
+      if match_print_filepath "${OPTION_FORMAT}" \
+                              "${IGNORE_DIR}" \
+                              "${OPTION_IGNORE_FILTER}" \
+                              "${MATCH_DIR}" \
+                              "${OPTION_MATCH_FILTER}" \
+                              "$1"
       then
          if [ $rval -ne 0 ]
          then

@@ -167,11 +167,14 @@ process_event()
    log_entry "process_event" "$@"
 
    local ignore_dir="$1"
-   local match_dir="$2"
-   local filepath="$3"
-   local cmd="$4"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
+   local filepath="$5"
+   local cmd="$6"
 
    local contenttype
+   local category
    local executable
    local action
    local matchname
@@ -186,12 +189,12 @@ process_event()
    # not so cheap, need to massage filepath ?
    #
 
-   if ! matchname="`match_filepath "${match_dir}" "${filepath}" `"
+   if ! matchname="`match_filepath "${match_dir}" "${match_filter}" "${filepath}" `"
    then
       return 1
    fi
 
-   contenttype="`sed -e 's/^[0-9]*_\(.*\)/^1/' <<< "${matchname}" `"
+   contenttype="`matchfile_get_type "${matchname}" `"
    if [ ! -z "${OPTION_EXCLUSIONS}" ]
    then
       if fgrep -q -s -x "${contenttype}" <<< "${OPTION_EXCLUSIONS}"
@@ -206,9 +209,11 @@ process_event()
       fail "Callback \"${executable}\" is missing"
    fi
 
-   log_fluff "Callback: \"${executable}\" \"${filepath}\" \"${action}\" "
+   category="`matchfile_get_category "${matchname}" `"
 
-   exekutor "${executable}" "${filepath}" "${action}"
+   log_fluff "Callback: \"${executable}\" \"${filepath}\" \"${action}\" \"${category}\""
+
+   exekutor "${executable}" "${filepath}" "${action}" "${category}"
    return 0
 }
 
@@ -218,7 +223,9 @@ _watch_using_fswatch()
    log_entry "_watch_using_fswatch" "$@"
 
    local ignore_dir="$1"
-   local match_dir="$2"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
 
    #
    # Why monitoring stops, when executing a build.
@@ -252,7 +259,12 @@ _watch_using_fswatch()
       filepath="`LC_ALL=C sed 's/^\(.*\) \(.*\)$/\1/' <<< "${line}" `"
       cmd="`echo "${line}" | LC_ALL=C sed 's/^\(.*\) \(.*\)$/\2/' | tr '[a-z]' '[A-Z]'`"
 
-      if ! process_event "${ignore_dir}" "${match_dir}" "${filepath}" "${cmd}"
+      if ! process_event "${ignore_dir}" \
+                         "${ignore_filter}" \
+                         "${match_dir}" \
+                         "${match_filter}" \
+                         "${filepath}" \
+                         "${cmd}"
       then
          continue
       fi
@@ -304,7 +316,9 @@ _watch_using_inotifywait()
    log_entry "_watch_using_inotifywait" "$@"
 
    local ignore_dir="$1"
-   local match_dir="$2"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
 
    # see watch_using_fswatch comment
    local directory
@@ -332,7 +346,12 @@ _watch_using_inotifywait()
       filename="`_remove_quotes "${_line}" `"
 
       filepath="` filepath_concat "${directory}" "${filename}" `"
-      if ! process_event "${ignore_dir}" "${match_dir}" "${filepath}" "${cmd}"
+      if ! process_event "${ignore_dir}" \
+                         "${ignore_filter}" \
+                         "${match_dir}" \
+                         "${match_filter}" \
+                         "${filepath}" \
+                         "${cmd}"
       then
          continue
       fi
@@ -407,7 +426,8 @@ monitor_run_main()
 {
    log_entry "monitor_run_main" "$@"
 
-   local OPTION_EXCLUSIONS
+   local OPTION_IGNORE_FILTER
+   local OPTION_MATCH_FILTER
 
    #
    # handle options
@@ -419,15 +439,25 @@ monitor_run_main()
             monitor_run_usage
          ;;
 
-         --no-*)
-            OPTION_EXCLUSIONS="`add_line "${OPTION_MARKS}" "${1:-5}"`"
-         ;;
-
          -d|--directory)
             [ $# -eq 1 ] && monitor_run_usage "missing argument to \"$1\""
             shift
 
             cd "$1" || exit 1
+         ;;
+
+         -if|--ignore-filter)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            OPTION_IGNORE_FILTER="$1"
+         ;;
+
+         -mf|--match-filter)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            OPTION_MATCH_FILTER="$1"
          ;;
 
          -*)
@@ -482,11 +512,19 @@ monitor_run_main()
 
    case "${MULLE_UNAME}" in
       linux)
-         watch_using_inotifywait "${IGNORE_DIR}" "${MATCH_DIR}" "$@"
+         watch_using_inotifywait "${IGNORE_DIR}" \
+                                 "${IGNORE_FILTER}" \
+                                 "${MATCH_DIR}" \
+                                 "${MATCH_FILTER}" \
+                                 "$@"
       ;;
 
       *)
-         watch_using_fswatch "${IGNORE_DIR}" "${MATCH_DIR}" "$@"
+         watch_using_fswatch "${IGNORE_DIR}" \
+                             "${IGNORE_FILTER}" \
+                             "${MATCH_DIR}" \
+                             "${MATCH_FILTER}" \
+                             "$@"
       ;;
    esac
 }
