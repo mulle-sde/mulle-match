@@ -1,0 +1,80 @@
+digraph G {
+    graph [rankdir = TD];
+
+    "mulle-monitor match" [ shape="none", fontcolor="blue", fontname="monospace"]
+
+    node[ shape=folder ];
+
+    { rank = "same"; "mulle-monitor match" };
+    { rank = "same"; ".mulle-monitor"  };
+
+
+    edge[ arrowhead="none" ];
+
+    "match2"          [ shape="folder", label="match.d", color="#d1d8e0", fontcolor="#d1d8e0" ]
+    "match.d"         [ shape="folder", label="match.d" ]
+
+    node[shape=note, color="#20bf6b", fontcolor="#20bf6b"];
+
+    { rank = "same"; "match.d", "match2", "ignore2" };
+
+    { rank = "same"; "s_source", "s_header", "s_test", "s_build", "s_header2" };
+
+    "s_header"        [ label="00-source--header"]
+    "s_source"        [ label="01-source--source"]
+    "s_test"          [ label="02-test--all"]
+    "s_build"         [ label="00-build--none"]
+
+    "s_header2"       [ label="20-header-and-source--all", color="#d1d8e0", fontcolor="#d1d8e0"]
+
+    node[shape=folder, color="black", fontcolor="black"];
+
+    ".mulle-monitor"     -> "etc"
+    "etc"                -> "match.d"
+
+    "match.d"            -> "s_header"
+    "match.d"            -> "s_source"
+    "match.d"            -> "s_test"
+
+    ".mulle-monitor"     -> "share"
+
+    "share"              -> "ignore2"
+
+    node[ shape=note, color="#d1d8e0", fontcolor="#d1d8e0"];
+    edge[ arrowhead="none", color="#d1d8e0" ];
+
+    "share"              -> "match2"
+
+    "match2"          [ shape="folder", label="match.d", color="#d1d8e0", fontcolor="#d1d8e0" ]
+    "ignore2"         [ shape="folder", label="ignore.d", color="black", fontcolor="black" ]
+
+    "s_header"        [ label="00-source--header"]
+    "s_source"        [ label="01-source--source"]
+    "s_test"          [ label="02-test--all"]
+
+    { rank = "same"; "s_source", "s_header", "s_test" };
+
+    "match2"   -> "s_header2"
+
+    "ignore2"  -> "s_build" [ color="black" ]
+
+    edge[ arrowhead="", style="dotted" ];
+
+    "mulle-monitor match" -> ".mulle-monitor"  [ label="read" ]
+
+    node[ shape=record, color="#2d98da", fontcolor="#2d98da"];
+    edge[ arrowhead="", color="#2d98da", fontcolor="#2d98da", style="dotted", label=" reference" ];
+
+    { rank = "same"; "MULLE_MONITOR_ETC_DIR", "MULLE_MONITOR_MATCH_DIR", "MULLE_MONITOR_DIR", "MULLE_MONITOR_IGNORE_DIR" };
+
+    "s_source" -> "MULLE_MONITOR_DIR"        [ style="invis" ]
+    "s_source" -> "MULLE_MONITOR_ETC_DIR"    [ style="invis" ]
+    "s_source" -> "MULLE_MONITOR_MATCH_DIR"  [ style="invis" ]
+    "s_header2"  -> "MULLE_MONITOR_MATCH_DIR"  [ style="invis" ]
+
+
+    "MULLE_MONITOR_MATCH_DIR"  -> "match.d"
+    "MULLE_MONITOR_DIR"        -> ".mulle-monitor"
+    "MULLE_MONITOR_ETC_DIR"    -> "etc"
+    "MULLE_MONITOR_IGNORE_DIR" -> "ignore2"
+}

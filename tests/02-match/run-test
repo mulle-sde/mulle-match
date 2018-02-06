@@ -8,11 +8,9 @@ expect_match_filepath()
    log_entry "expect_match_print_filepath" "$@"
 
    local expected="$1"; shift
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
-   local filepath="$5"
+   local ignore_patterncaches="$1"
+   local match_patterncaches="$2"
+   local filepath="$3"
 
    local result
 
@@ -34,11 +32,9 @@ expect_match_print_filepath()
 
    local expected="$1"; shift
    local format="$1"
-   local ignore_dir="$2"
-   local ignore_filter="$3"
-   local match_dir="$4"
-   local match_filter="$5"
-   local filepath="$6"
+   local ignore_patterncaches="$2"
+   local match_patterncaches="$3"
+   local filepath="$4"
 
    local result
 
@@ -65,18 +61,31 @@ main()
    # for simplicity it's also assumed that no relative path contain a
    # trailing '/'
    #
-   expect_match_filepath "1-a--"  "" "" "match" "" "a"
-   expect_match_filepath "2-b--x"  "" "" "match" "" "b"
-   expect_match_filepath "4-aa--" "" "" "match" "" "aa"
-   expect_match_filepath "4-aa--" "" "" "match" "" "aaa"
+   local ignore
+   local match
+
+   local _cache
+
+   _cache=
+   _patterncaches_passing_filter "ignore" ""
+   ignore="${_cache}"
+
+   _cache=
+   _patterncaches_passing_filter "match" ""
+   match="${_cache}"
+
+   expect_match_filepath "1-a--"  "${ignore}" "${match}" "a"
+   expect_match_filepath "2-b--x" "${ignore}" "${match}" "b"
+   expect_match_filepath "4-aa--" "${ignore}" "${match}" "aa"
+   expect_match_filepath "4-aa--" "${ignore}" "${match}" "aaa"
 
    log_verbose "----- #1 PASSED -----"
 
-   expect_match_print_filepath "a;1-a--;a"     "%t;%m;%f\\n"    "" "" "match" "" "a"
-   expect_match_print_filepath "b;x;2-b--x;b"  "%t;%c;%m;%f\\n" "" "" "match" "" "b"
-   expect_match_print_filepath "b;X;2-b--x;b"  "%t;%I;%m;%f\\n" "" "" "match" "" "b"
-   expect_match_print_filepath "aa;4-aa--;aa"  "%t;%m;%f\\n"    "" "" "match" "" "aa"
-   expect_match_print_filepath "aa;4-aa--;aaa" "%t;%m;%f\\n"    "" "" "match" "" "aaa"
+   expect_match_print_filepath "a;1-a--;a"     "%t;%m;%f\\n"    "${ignore}" "${match}" "a"
+   expect_match_print_filepath "b;x;2-b--x;b"  "%t;%c;%m;%f\\n" "${ignore}" "${match}" "b"
+   expect_match_print_filepath "b;X;2-b--x;b"  "%t;%I;%m;%f\\n" "${ignore}" "${match}" "b"
+   expect_match_print_filepath "aa;4-aa--;aa"  "%t;%m;%f\\n"    "${ignore}" "${match}" "aa"
+   expect_match_print_filepath "aa;4-aa--;aaa" "%t;%m;%f\\n"    "${ignore}" "${match}" "aaa"
 
    log_verbose "----- #2 PASSED -----"
 

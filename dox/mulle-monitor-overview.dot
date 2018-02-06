@@ -8,13 +8,9 @@ digraph G {
         label = "Language agnostic";
 
         "mulle-sde"       -> "mulle-monitor"
-        "mulle-monitor"   -> "mulle-sde-cmake"
-        "mulle-sde-cmake" -> "mulle-craft"
-        "mulle-sde-cmake" -> "mulle-test"
+        "mulle-monitor"   -> "mulle-craft"
+        "mulle-monitor"   -> "mulle-test"
 
         "mulle-monitor"   [ color="dodgerblue"; fontcolor="dodgerblue"; penwidth="2"]
-        "mulle-sde-cmake"   [ label="mulle-sde-cmake" ];
-        "mulle-test"  [ label="{ mulle-test }"];
-        "mulle-craft" [ label="{ mulle-craft }"];
     }
 }

@@ -55,6 +55,7 @@ HIDDEN_COMMANDS="\
    match          : match filenames
    find           : find files that match
    libexec-dir    : print path to mulle-monitor libexec
+   task           : execute a task
    uname          : mulle-monitors simplified uname(1)"
 
 
@@ -277,7 +278,6 @@ main()
          continue
       fi
 
-
       case "$1" in
          -e)
             FLAG_OUTSIDE_ENV="YES"
@@ -337,15 +337,10 @@ main()
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
       case "${cmd}" in
-         run)
+         run|match|find)
             fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, pass the -e flag"
          ;;
       esac
-   fi
-
-   if [ -z "${MULLE_MONITOR_DIR}" ]
-   then
-      MULLE_MONITOR_DIR="${MULLE_VIRTUAL_ROOT}/.mulle-monitor"
    fi
 
    MULLE_EXECUTABLE_OPTIONS="$@"
@@ -360,8 +355,8 @@ main()
       ;;
 
       match)
-         # shellcheck source=src/mulle-monitor-run.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-run.sh"
+         # shellcheck source=src/mulle-monitor-match.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh"
 
          monitor_match_main "$@"
       ;;

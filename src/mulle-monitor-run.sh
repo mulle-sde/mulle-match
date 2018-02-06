@@ -51,21 +51,76 @@ EOF
 
 
 #
-# misc handling
+# watch
 #
-is_binary_missing()
+process_event()
 {
-   if which "$1" > /dev/null 2> /dev/null
+   log_entry "process_event" "$@"
+
+   local ignore_dir="$1"
+   local ignore_filter="$2"
+   local match_dir="$3"
+   local match_filter="$4"
+   local filepath="$5"
+   local cmd="$6"
+
+   local contenttype
+   local category
+   local executable
+   local action
+   local matchname
+
+   # cheap
+   if ! action="`file_action_of_command "${cmd}" `"
    then
       return 1
    fi
-   return 0
+
+   #
+   # not so cheap, need to massage filepath ?
+   #
+
+   if ! matchname="`match_filepath "${match_dir}" "${match_filter}" "${filepath}" `"
+   then
+      return 1
+   fi
+
+   contenttype="`matchfile_get_type "${matchname}" `"
+   if [ ! -z "${OPTION_EXCLUSIONS}" ]
+   then
+      if fgrep -q -s -x "${contenttype}" <<< "${OPTION_EXCLUSIONS}"
+      then
+         log_debug "Excluded \"${contenttype}\"  by option"
+      fi
+   fi
+
+   executable="${MULLE_MONITOR_DIR}/bin/${contenttype}-did-change"
+   if [ ! -x "${executable}" ]
+   then
+      fail "Callback \"${executable}\" is missing"
+   fi
+
+   category="`matchfile_get_category "${matchname}" `"
+
+   log_fluff "Callback: \"${executable}\" \"${filepath}\" \"${action}\" \"${category}\""
+
+   local task
+   local uppercase
+   local libexecname
+   local libexecfile
+   local functionname
+
+   task=`exekutor "${executable}" "${filepath}" "${action}" "${category}"`
+   if [ -z "${task}" ]
+   then
+      log_fluff "\${executable}\ returned not task"
+      return
+   fi
+
+   run_task "${task}"
 }
 
 
-#
-# watch
-#
 file_action_of_command()
 {
    log_entry "file_action_of_command" "$@"
@@ -92,6 +147,20 @@ file_action_of_command()
          return 1
       ;;
    esac
+}
+
+
+
+#
+# misc handling
+#
+is_binary_missing()
+{
+   if which "$1" > /dev/null 2> /dev/null
+   then
+      return 1
+   fi
+   return 0
 }
 
 
@@ -158,63 +227,6 @@ check_inotifywait()
    fail "To use monitor you have to install the prerequisite \"inotifywait\":
 ${C_BOLD}${C_RESET}   ${info}
 ${C_INFO}You then need to exit ${MULLE_EXECUTABLE_NAME} and reenter it."
-}
-
-
-
-process_event()
-{
-   log_entry "process_event" "$@"
-
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
-   local filepath="$5"
-   local cmd="$6"
-
-   local contenttype
-   local category
-   local executable
-   local action
-   local matchname
-
-   # cheap
-   if ! action="`file_action_of_command "${cmd}" `"
-   then
-      return 1
-   fi
-
-   #
-   # not so cheap, need to massage filepath ?
-   #
-
-   if ! matchname="`match_filepath "${match_dir}" "${match_filter}" "${filepath}" `"
-   then
-      return 1
-   fi
-
-   contenttype="`matchfile_get_type "${matchname}" `"
-   if [ ! -z "${OPTION_EXCLUSIONS}" ]
-   then
-      if fgrep -q -s -x "${contenttype}" <<< "${OPTION_EXCLUSIONS}"
-      then
-         log_debug "Excluded \"${contenttype}\"  by option"
-      fi
-   fi
-
-   executable="${MULLE_MONITOR_DIR}/bin/${contenttype}-did-change"
-   if [ ! -x "${executable}" ]
-   then
-      fail "Callback \"${executable}\" is missing"
-   fi
-
-   category="`matchfile_get_category "${matchname}" `"
-
-   log_fluff "Callback: \"${executable}\" \"${filepath}\" \"${action}\" \"${category}\""
-
-   exekutor "${executable}" "${filepath}" "${action}" "${category}"
-   return 0
 }
 
 
@@ -484,14 +496,22 @@ monitor_run_main()
       # shellcheck source=src/mulle-monitor-match.sh
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
    fi
+   if [ -z "${MULLE_MONITOR_TASK_SH}" ]
+   then
+      # shellcheck source=src/mulle-monitor-task.sh
+      . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-task.sh" || exit 1
+   fi
 
    mkdir_if_missing "${MULLE_MONITOR_DIR}/var/run"
    MONITOR_PIDFILE="${MULLE_MONITOR_DIR}/var/run/monitor-pid"
    PROJECT_DIR="`pwd -P`"
 
-   export MULLE_MONITOR_DIR
    export MULLE_MONITOR_LIBEXEC_DIR
    export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+   export MULLE_MONITOR_DIR
+   export MULLE_MONITOR_ETC_DIR
+   export MULLE_MONITOR_MATCH_DIR
+   export MULLE_MONITOR_IGNORE_DIR
 
    case "${MULLE_UNAME}" in
       linux)

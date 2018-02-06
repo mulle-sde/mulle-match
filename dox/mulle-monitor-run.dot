@@ -1,88 +1,42 @@
 digraph G {
     graph [rankdir = TD];
 
-    "mulle-monitor run" [ shape="none", fontcolor="blue", fontname="monospace"]
+    "mulle-monitor run"   [ shape="none", fontcolor="blue", fontname="monospace"]
 
-    node[shape=folder];
+    node[ shape="folder" ];
+
+    project
+
 
     { rank = "same"; "mulle-monitor run" };
-    { rank = "same"; "project", ".mulle-monitor"  };
 
-
-    edge[ arrowhead="none" ];
+    edge[ arrowhead="", style="dotted" ];
 
     node[shape=record, color="#8854d0", fontcolor="#8854d0"];
+    "s_did_update"
 
-    "h_did_update"    [ label="header-did-change"]
+    node[ color="#d1d8e0", fontcolor="#d1d8e0" ];
+
+    "mulle-monitor run" -> "project"              [ label="observe (1)" ]
+
+    edge[ arrowhead="none", color="#d1d8e0", style="" ];
+
+    "project"         -> ".mulle-monitor"
+    ".mulle-monitor"  -> "bin"
+    ".mulle-monitor"  -> "libexec"
+
+    edge[ color="#3867d6", fontcolor="#3867d6" ];
+
+    "mulle-monitor run" -> "s_did_update"   [ arrowhead="", label="run (2)", style="dotted" ]
+    "mulle-monitor run" -> "build-task.sh"  [ arrowhead="", label="run (3)", style="dotted" ]
+
+    edge[ color="#d1d8e0", fontcolor="#d1d8e0" ];
+
+    "bin"             -> "s_did_update"
+
     "s_did_update"    [ label="source-did-change"]
-    "t_did_update"    [ label="test-did-change"]
 
+    "libexec"         -> "build-task.sh"
 
-    node[shape=note, color="#20bf6b", fontcolor="#20bf6b"];
-
-    { rank = "same"; "s_source", "s_header", "s_test" };
-
-    "s_header"        [ label="01_header"]
-    "s_source"        [ label="00_source"]
-    "s_test"          [ label="02_test"]
-    "s_build"         [ label="00_build"]
-
-    "s_header2"        [ label="20_header_and_source", color="#d1d8e0", fontcolor="#d1d8e0"]
-
-    node[shape=folder, color="black", fontcolor="black"];
-
-    ".mulle-monitor"     -> "bin"
-    ".mulle-monitor"     -> "etc"
-
-    "bin"                -> "h_did_update"
-    "bin"                -> "s_did_update"
-    "bin"                -> "t_did_update"
-
-    "etc"                -> "monitor"
-    "monitor"            [ label="mulle-monitor" ]
-
-    "monitor"   -> "match.d"
-
-    "match.d"   -> "s_header"
-    "match.d"   -> "s_source"
-    "match.d"   -> "s_test"
-
-    ".mulle-monitor"     -> "share"
-    "share"              -> "monitor2"
-
-
-    node[ shape=note, color="#d1d8e0", fontcolor="#d1d8e0"];
-    edge[ arrowhead="none", color="#d1d8e0" ];
-
-
-
-    "s_header"        [ label="01_header"]
-    "s_source"        [ label="00_source"]
-    "s_test"          [ label="02_test"]
-    "monitor2"        [ shape="folder", label="mulle-monitor", color="black", fontcolor="black" ]
-    "match2"          [ shape="folder", label="match.d" ]
-    "ignore2"         [ shape="folder", label="ignore.d", color="black", fontcolor="black" ]
-    "monitor2" -> "ignore2" [ color="black" ]
-
-    { rank = "same"; "s_source", "s_header", "s_test" };
-    "monitor2" -> "match2"
-
-    "match2"   -> "s_header2"
-
-    "ignore2"  -> "s_build" [ color="black" ]
-
-    "mulle-monitor run" -> "project"         [ arrowhead="", style="dotted", label="observe" ]
-    "mulle-monitor run" -> ".mulle-monitor"  [ arrowhead="", style="dotted", label="read" ]
-
-    node[ shape=record, color="#2d98da", fontcolor="#2d98da"];
-    edge[ arrowhead="", color="#2d98da", fontcolor="#2d98da", style="dotted", label=" reference" ];
-
-    { rank = "same"; "MULLE_MONITOR_ETC_DIR", "MULLE_MONITOR_DIR" };
-
-    "s_source" -> "MULLE_MONITOR_DIR"     [ style="invis" ]
-    "s_source" -> "MULLE_MONITOR_ETC_DIR" [ style="invis" ]
-
-
-    "MULLE_MONITOR_DIR"       -> ".mulle-monitor"
-    "MULLE_MONITOR_ETC_DIR"   -> "etc"
+    "build-task.sh"  [ color="#0fb9b1", fontcolor="#0fb9b1"]
 }

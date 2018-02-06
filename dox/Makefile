@@ -1,5 +1,6 @@
 
 PIX=mulle-monitor-run.png \
+mulle-monitor-match.png \
 mulle-monitor-overview.png \
 
 %.png: %.dot

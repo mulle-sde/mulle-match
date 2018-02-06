@@ -8,15 +8,10 @@ expect_find_filenames()
    log_entry "expect_find_filenames" "$@"
 
    local expected="$1"; shift
-   local format="$1"
-   local ignore_dir="$2"
-   local ignore_filter="$3"
-   local match_dir="$4"
-   local match_filter="$5"
 
    local result
 
-   result="`find_filenames "$@"`"
+   result="`find_filenames "$@" | sort`"
 
    if [ "${result}" != "${expected}" ]
    then
@@ -37,23 +32,43 @@ main()
    # trailing '/'
    #
    local expected
+   local ignore
+   local match
+   local _cache
 
+   _patterncaches_passing_filter "ignore.d" ""
+   ignore="${_cache}"
+
+   _patterncaches_passing_filter "match.d" "source"
+   match="${_cache}"
+
+   #-----------
    expected="src/foo.c
 src/main.c"
-   expect_find_filenames "${expected}" "%f\\n" "ignore.d" "" "match.d" "source"
 
+   expect_find_filenames "${expected}" "%f\\n" "${ignore}" "${match}"
    log_verbose "----- #1 PASSED -----"
 
+   #-----------
+   _patterncaches_passing_filter "match.d" "header"
+   match="${_cache}"
+
    expected="src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "ignore.d" "" "match.d" "header"
+   expect_find_filenames "${expected}" "%f\\n" "${ignore}" "${match}"
 
    log_verbose "----- #2 PASSED -----"
 
+   #-----------
+   _patterncaches_passing_filter "match.d" "header"
+   match="${_cache}"
+
    expected="foo/wrong.h
 src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "" "" "match.d" "header"
+   expect_find_filenames "${expected}" "%f\\n" "" "${match}"
 
    log_verbose "----- #3 PASSED -----"
+
+   #-----------
 
    log_info "----- ALL PASSED -----"
 }

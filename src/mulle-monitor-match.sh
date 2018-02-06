@@ -84,57 +84,37 @@ EOF
 }
 
 
-
 #
 # This is pretty similiar to.gitignore. For most purposes it should
-# be identical. It doesn't work with
+# be identical.
 #
-pattern_matches_relative_filename()
+
+# not as useful as it seems, because foo/**/*.c doesn't match foo/*.c
+#   #
+#   # make single * not match /
+#   # make double * match everything
+#   #
+#   case "${pattern}" in
+#      *\**)
+#         pattern="`sed -e 's|\*|\[^/]*|g' \
+#                       -e 's|\[\^/\]\*\[\^/\]\*|\*|g' <<< "${pattern}"`"
+#      ;;
+#   esac
+
+
+#
+# For things that look like a directory (trailing slash) we try to do it a
+# little differently. Otherwise its's pretty much just a tail match.
+# the '!' is multiplied out for performance reasons
+#
+pattern_emit_matchcode()
 {
-   log_entry "pattern_matches_relative_filename" "$@"
+   log_entry "pattern_emit_matchcode" "$@"
 
    local pattern="$1"
-   local filename="$2"
-   local flags="$3"
-
-   #
-   # if we are strict on text input, we can simplify pattern handling
-   # a lot. Note that we only deal with relative paths anyway
-   #
-   case "${filename}" in
-      "")
-         internal_fail "Empty filename is illegal"
-      ;;
-
-      /*)
-         internal_fail "Filename \"${filename}\" is illegal. It must not start with '/'"
-      ;;
-
-      */)
-         internal_fail "Filename \"${filename}\" is illegal. It must not end with '/'"
-      ;;
-   esac
-
-   case "${pattern}" in
-      "")
-         internal_fail "Empty pattern is illegal"
-      ;;
-
-      *//*)
-         internal_fail "Pattern \"${pattern}\" is illegal. It must not contain  \"//\""
-      ;;
-   esac
 
    local YES=0
    local NO=1
-
-   # gratuitous
-
-   case "${flags}" in
-      *WM_CASEFOLD*)
-         pattern="` tr 'A-Z' 'a-z' <<< "${pattern}" `"
-      ;;
-   esac
 
    #
    # simple invert
@@ -147,56 +127,177 @@ pattern_matches_relative_filename()
       ;;
    esac
 
-   #
-   # For things that look like a directory (trailing slash) we try to do it a little
-   # differently. Otherwise its's pretty much just a tail match.
-   #
    case "${pattern}" in
-      ""|/)
-         internal_fail "invalid pattern \"${pattern}\""
+      "")
+         internal_fail "Empty pattern is illegal"
+      ;;
+
+      *//*)
+         internal_fail "Pattern \"${pattern}\" is illegal. It must not contain  \"//\""
       ;;
 
       /*/)
          # support older bashes
          local snip
 
-         snip="`sed -e 's/^.\(.*\).$/\1/' <<< "${pattern}" `"
-         case "${filename}" in
-            ${snip}|${pattern:1}*)
-               return $YES
-            ;;
-         esac
+         snip="${pattern:1}"
+         snip="${snip%?}"
+
+         cat <<EOF
+   case "\$1" in
+      ${snip}|${pattern:1}*)
+         return $YES
       ;;
-
-      */)
-         local snip
-
-         snip="`sed -e 's/.$//' <<< "${pattern}" `"
-         case "${filename}" in
-            ${snip}|${pattern}*|*/${pattern}*)
-               return $YES
-            ;;
-         esac
+   esac
+   return $NO
+EOF
       ;;
 
       /*)
-         case "${filename}" in
-            ${pattern:1})
-               return $YES
-            ;;
-         esac
+         cat <<EOF
+   case "\$1" in
+      ${pattern:1})
+         return $YES
+      ;;
+   esac
+   return $NO
+EOF
+      ;;
+
+      */)
+         cat <<EOF
+   case "\$1" in
+      ${pattern%?}|${pattern}*|*/${pattern}*)
+         return $YES
+      ;;
+   esac
+   return $NO
+EOF
       ;;
 
       *)
-         case "${filename}" in
-            ${pattern}|*/${pattern})
-               return $YES
-            ;;
-         esac
+         cat <<EOF
+   case "\$1" in
+      ${pattern}|*/${pattern})
+         return $YES
       ;;
    esac
-
    return $NO
+EOF
+      ;;
+   esac
+}
+
+
+pattern_define_function()
+{
+   local functionname="$1"
+   local pattern="$2"
+
+   local text
+   local body
+
+
+   body="`pattern_emit_matchcode "${pattern}"`" || exit 1
+
+   eval "${functionname}()
+{
+${body}
+}
+"
+}
+
+
+pattern_unique_functionname()
+{
+   log_entry "pattern_unique_functionname" "$@"
+
+   local identifier
+   local functionname
+
+   while :
+   do
+      identifier="`uuidgen | tr -d '-'`"
+      identifier="${identifier::10}"
+
+      functionname="__p__${identifier}"
+      if [ "`type -t "${functionname}"`" != "function" ]
+      then
+         echo "${functionname}"
+         return
+      fi
+   done
+}
+
+
+pattern_unique_variablename()
+{
+   log_entry "pattern_unique_variablename" "$@"
+
+   local identifier
+   local varname
+
+   while :
+   do
+      identifier="`uuidgen | tr -d '-'`"
+      identifier="${identifier::10}"
+
+      # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
+      if eval [ -z \$\{__v__${identifier}+x\} ]
+      then
+         echo "__v__${identifier}"
+         return
+      fi
+   done
+}
+
+
+compiledpatternlines_match_relative_filename()
+{
+   log_entry "compiledpatternlines_match_relative_filename" "$@"
+
+   local compiledpatterns="$1"
+   local filename="$2"
+
+   local functionname
+   local rval
+
+   rval=1
+
+   # compiledpatterns known to be identifies w/o spaces
+   for functionname in ${compiledpatterns}
+   do
+      "${functionname}" "${filename}"
+      case "$?" in
+         0)
+            rval=0
+         ;;
+
+         2)
+            rval=1
+         ;;
+      esac
+   done
+
+   return $rval
+}
+
+
+#
+# slow interface for testing
+#
+pattern_matches_relative_filename()
+{
+   log_entry "pattern_matches_relative_filename" "$@"
+
+   local pattern="$1"
+   local filename="$2"
+
+   local functionname
+
+   functionname="`pattern_unique_functionname`"
+   pattern_define_function "${functionname}" "${pattern}"
+   "${functionname}" "${filename}"  # just leak
 }
 
 
@@ -206,39 +307,31 @@ patternlines_match_relative_filename()
 
    local patterns="$1"
    local filename="$2"
-   local flags="$3"
-   local where="$4"
 
    local pattern
    local rval
 
    rval=1
+
    IFS="
 "
    for pattern in ${patterns}
    do
       IFS="${DEFAULT_IFS}"
 
-      pattern_matches_relative_filename "${pattern}" "${filename}" "${flags}"
+      pattern_matches_relative_filename "${pattern}" "${filename}"
       case "$?" in
          0)
-            log_debug "pattern \"${pattern}\" did match filename \"${filename}\""
             rval=0
          ;;
 
          2)
-            log_debug "pattern \"${pattern}\" negates filename \"${filename}\""
             rval=1
          ;;
       esac
    done
 
    IFS="${DEFAULT_IFS}"
-
-   if [ $rval -eq 1 ]
-   then
-      log_debug "filename \"${filename}\" did not match any patterns in ${where}"
-   fi
 
    return $rval
 }
@@ -249,19 +342,8 @@ patternfile_read()
    log_entry "patternfile_read" "$@"
 
    local filename="$1"
-   (
-      shopt -s globstar 2> /dev/null # bash 4.0
 
-      while read line
-      do
-         if [ -z "${line}" ]
-         then
-            continue
-         fi
-
-         echo "${line}"
-      done < <( rexekutor egrep -v -s '^#' "${filename}" )
-   )
+   sed -e '/^#/d' -e '/^$/d' "${filename}"
 }
 
 
@@ -269,32 +351,17 @@ patternfile_match_relative_filename()
 {
    log_entry "patternfile_match_relative_filename" "$@"
 
-   local patternfilename="$1"
+   local patternfile="$1"
    local filename="$2"
-   local flags="$3"
 
-   [ -z "${patternfilename}" ] && internal_fail "patternfilename is empty"
-   [ -z "${filename}" ]        && internal_fail "filename is empty"
+   [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
+   [ -z "${filename}" ]    && internal_fail "filename is empty"
 
-   case "${flags}" in
-      *WM_CASEFOLD*)
-         text="` tr 'A-Z' 'a-z' <<< "${filename}" `"
-      ;;
-   esac
-
-   local lines
-
-   lines="` patternfile_read "${patternfilename}" `"
-   if [ -z "${lines}" ]
-   then
-      log_debug "\"${patternfilename}\" does not exist or is empty"
-      return 127
-   fi
+   lines="`patternfile_read "${patternfile}"`"
 
    patternlines_match_relative_filename "${lines}" \
                                         "${filename}" \
-                                        "${flags}" \
-                                        "\"${patternfilename}\""
+                                        "${patternfile}"
 }
 
 
@@ -313,7 +380,6 @@ filter_patternfilename()
    local texpr
    local shouldmatch
 
-
    IFS=","
    for texpr in ${filter}
    do
@@ -330,7 +396,7 @@ filter_patternfilename()
       match="[0-9]*-${texpr}--*"
 
       case "${patternfile}" in
-         ${match})
+         ${match}|*/${match})
             if [ "${shouldmatch}" = "NO" ]
             then
                return 1
@@ -371,40 +437,181 @@ matchfile_get_category()
 }
 
 
-_match_filepath()
+matchfile_get_executable()
 {
-   log_entry "_match_filepath" "$@"
+   log_entry "matchfile_get_executable" "$@"
+
+   local filename="$1"
+
+   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1-did-update/p' <<< "${filename}"
+}
+
+
+_patterncaches_match_relative_filename()
+{
+   log_entry "_patterncaches_match_relative_filename" "$@"
+
+   local patterncaches="$1"
+   local filename="$2"
+
+   [ -z "${filename}" ] && internal_fail "filename is empty"
+
+   local patterncache
+   local patternfile
+   local compiledcontents
+
+   IFS="
+"
+   for patterncache in ${patterncaches}
+   do
+      IFS="${DEFAULT_IFS}"
+
+      compiledcontents="`eval echo \$\{${patterncache}\}`"
+      patternfile="`eval echo \$\{${patterncache}_f\}`"
+
+      if compiledpatternlines_match_relative_filename "${compiledcontents}" \
+                                                      "${filename}"
+      then
+         log_verbose "\"${filename}\" did match \"${patternfile}\""
+
+         basename -- "${patternfile}"
+         return 0
+      else
+         log_fluff "\"${filename}\" did not match \"${patternfile}\""
+      fi
+   done
+   IFS="${DEFAULT_IFS}"
+
+   return 1
+}
+
+
+
+patternfile_identifier()
+{
+   log_entry "patternfile_identifier" "$@"
+
+   local filename="$1"
+
+   sed -e 's|.*ignore.d/\(.*\)|i_\1|' \
+       -e 's|.*match.d/\(.*\)|m_\1|' <<< "${filename}" |
+      tr -c '[a-zA-Z0-9_\n]' '_'
+}
+
+#
+# This "compiles" the patterns into little bash functions. The functionnames
+# are then put as a list into the variable <varname>.
+#
+# Match code will then just execute the list of functions.
+#
+# !!! Don't backtick this !!!
+#
+_patterncache_create()
+{
+   log_entry "_patterncache_create" "$@"
+
+   local patternfile="$1"
+   local varname="$2"
+
+   #
+   # now it gets a little weird, since re-reading the patternfiles is too
+   # slow we cache them in memory. The only way to do this is in global
+   # variables.. Not that pretty.
+   #
+   local identifier
+   local varname
+   local compiled
+   local pattern
+   local contents
+   local functionname
+   local compiledcontents
+
+   contents="`patternfile_read "${patternfile}"`"
+   if [ -z "${contents}" ]
+   then
+      log_debug "\"${patternfile}\" does not exist or is empty"
+      return 1
+   fi
+
+   #
+   # Compile contents into functions
+   # The next level would be to combine all into one big function!
+   #
+   IFS="
+"
+   for pattern in ${contents}
+   do
+      IFS="${DEFAULT_IFS}"
+
+      functionname="`pattern_unique_functionname`"
+      pattern_define_function "${functionname}" "${pattern}"
+      compiledcontents="`add_line "${compiledcontents}" "${functionname}"`"
+   done
+   IFS="${DEFAULT_IFS}"
+
+
+   #
+   # we use the patternfile as the identifier, so we can cache it
+   #
+   eval "${varname}='${compiledcontents}'"
+   eval "${varname}_f='${patternfile}'"
+}
+
+#
+# as we are setting global variables here, it is not possible to backtick
+# this function. Which makes things very clumsy.
+#
+# The cache is passed back as "_cache".
+#
+# !!! Don't backtick this !!!
+_patterncaches_passing_filter()
+{
+   log_entry "_patterncaches_passing_filter" "$@"
 
    local directory="$1"
    local filter="$2"
-   local filepath="$3"
 
    [ -z "${directory}" ] && internal_fail "directory is empty"
-   [ -z "${filepath}" ]  && internal_fail "filepath is empty"
 
-   (
-      exekutor cd "${directory}" || internal_fail "failed to cd to \"$1\" from \"${PWD}\""
+   local patternfile
 
-      local patternfile
+   # must be declared externally
+   _cache=""
 
-      shopt -s nullglob
-      for patternfile in [0-9]*-*--*
-      do
-         shopt -u nullglob
-         if [ ! -z "${filter}" ] && ! filter_patternfilename  "${filter}" "${patternfile}"
-         then
-            log_debug "\"${patternfile}\" did not pass filter"
+   shopt -s nullglob
+   for patternfile in "${directory}"/[0-9]*
+   do
+      # be helpful...
+      case "${patternfile}" in
+         */[0-9]*-*--*)
+         ;;
+
+         *)
+            log_warning "Ignoring badly named file \"${patternfile}\".
+A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
+(... minus type minus minus ...)"
             continue
-         fi
-         if patternfile_match_relative_filename "${patternfile}" "${filepath}"
-         then
-            exekutor echo "${patternfile}"
-            return 0
-         fi
-      done
+         ;;
+      esac
 
-      return 1
-   )
+      shopt -u nullglob
+      if [ ! -z "${filter}" ] && ! filter_patternfilename "${filter}" "${patternfile}"
+      then
+         log_debug "\"${patternfile}\" did not pass filter \"${filter}\""
+         continue
+      fi
+
+      local varname
+
+      varname="__v__`patternfile_identifier "${patternfile}"`"
+      if eval [ -z \$\{${varname}+x\} ]
+      then
+         _patterncache_create "${patternfile}" "${varname}" # will add to _cache
+      fi
+      _cache="`add_line "${_cache}" "${varname}"`"
+   done
+
+   shopt -u nullglob
 }
 
 
@@ -412,35 +619,55 @@ match_filepath()
 {
    log_entry "match_filepath" "$@"
 
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
-   local filepath="$5"
+   local ignore_patterncaches="$1"
+   local match_patterncaches="$2"
+   local filename="$3"
 
-   if [ ! -z "${ignore_dir}" ]
+   #
+   # if we are strict on text input, we can simplify pattern handling
+   # a lot. Note that we only deal with relative paths anyway
+   #
+   case "${filename}" in
+      "")
+         internal_fail "Empty filename is illegal"
+      ;;
+
+      /*)
+         internal_fail "Filename \"${filename}\" is illegal. It must not start with '/'"
+      ;;
+
+      */)
+         internal_fail "Filename \"${filename}\" is illegal. It must not end with '/'"
+      ;;
+   esac
+
+   if [ ! -z "${ignore_patterncaches}" ]
    then
-      if _match_filepath "${ignore_dir}" "${ignore_filter}" "${filepath}" > /dev/null
+      if _patterncaches_match_relative_filename "${ignore_patterncaches}" \
+                                                "${filename}" > /dev/null
       then
-         log_debug "\"${filepath}\" ignored"
+         log_debug "\"${filename}\" ignored"
          return 1
       fi
    fi
-   log_debug "\"${filepath}\" not ignored"
 
-   if [ ! -z "${match_dir}" ]
+   if [ ! -z "${match_patterncaches}" ]
    then
-      if _match_filepath "${match_dir}" "${match_filter}" "${filepath}"
+      if _patterncaches_match_relative_filename "${match_patterncaches}" \
+                                                "${filename}"
       then
-         log_debug "\"${filepath}\" matched"
+         log_debug "\"${filename}\" matched"
          return 0
       fi
-      log_debug "\"${filepath}\" did not match"
+      log_debug "\"${filename}\" did not match"
       return 1
    fi
 
-   log_debug "\"${filepath}\" always matches"
-   return 0
+   #
+   # nothing matches if there is no matchdir (but return special code)
+   # so we can figure out if it was just ignored
+   #
+   return 2
 }
 
 
@@ -449,7 +676,7 @@ match_print_filepath()
    log_entry "match_print_filepath" "$@"
 
    local format="$1" ; shift
-   local filename="$5" # sic
+   local filename="$3" # sic
 
    local matchname
 
@@ -460,103 +687,125 @@ match_print_filepath()
 
    local matchtype
    local matchcategory
-
-   matchtype="`matchfile_get_type "${matchname}" `"
-   matchcategory="`matchfile_get_category "${matchname}" `"
-
-   [ -z "${matchtype}" ] && internal_fail "should not happen"
+   local matchexecutable
+   local uppercase
+   local s
 
    while [ ! -z "${format}" ]
    do
       case "${format}" in
          \%c*)
+            matchcategory="`matchfile_get_category "${matchname}" `" || exit 1
+            s="${s}${matchcategory}"
             format="${format:2}"
-            printf "%s" "${matchcategory}"
          ;;
 
          \%e*)
+            matchexecutable="`matchfile_get_executable "${matchname}" `" || exit 1
+            s="${s}${matchexecutable}"
             format="${format:2}"
-            printf "%s%s" "${matchtype}" "did-update"
          ;;
 
          \%f*)
+            s="${s}${filename}"
             format="${format:2}"
-            printf "%s" "${filename}"
          ;;
 
          \%m*)
+            s="${s}${matchname}"
             format="${format:2}"
-            printf "%s" "${matchname}"
          ;;
 
          \%t*)
+            matchtype="`matchfile_get_type "${matchname}" `" || exit 1
+            s="${s}${matchtype}"
             format="${format:2}"
-            printf "%s" "${matchtype}"
          ;;
 
          \%I*)
+            matchcategory="`matchfile_get_category "${matchname}" `" || exit 1
+            uppercase="`tr 'a-z' 'A-Z' <<< "${matchcategory}" | tr '-' '_' `"
+            s="${s}${uppercase}"
             format="${format:2}"
-            printf "%s" "`tr 'a-z' 'A-Z' <<< "${matchcategory}" | tr '-' '_' `"
          ;;
 
          \\n*)
+            s="${s}
+"
             format="${format:2}"
-            echo
          ;;
 
          *)
-            printf "%s" "${format:0:1}"  # optimal... :P
+            s="${s}${format:0:1}"  # optimal... :P
             format="${format:1}"
          ;;
       esac
    done
+
+   printf "%s" "$s"
 }
 
 
 match_environment()
 {
-   log_entry "monitor_match_main" "$@"
+   log_entry "match_environment" "$@"
 
-   MULLE_MONITOR_DIR="${MULLE_MONITOR_DIR:-.mulle-monitor}"
+   # lame but practical
+   if [ -z "${MULLE_MONITOR_DIR}" ]
+   then
+      if [ -d ".mulle-sde" ]
+      then
+         log_fluff "MULLE_MONITOR_DIR default is .mulle-sde"
+         MULLE_MONITOR_DIR=".mulle-sde"
+      else
+         log_fluff "MULLE_MONITOR_DIR default is .mulle-monitor"
+         MULLE_MONITOR_DIR=".mulle-monitor"
+      fi
+   fi
+
    MULLE_MONITOR_ETC_DIR="${MULLE_MONITOR_ETC_DIR:-${MULLE_MONITOR_DIR}/etc}"
 
-   case "${MATCH_DIR}" in
+   case "${MULLE_MONITOR_MATCH_DIR}" in
       NO)
-         MATCH_DIR=""
+         MULLE_MONITOR_MATCH_DIR=""
+         log_fluff "Not using \"MULLE_MONITOR_MATCH_DIR\""
       ;;
 
       "")
-         MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/match.d"
-         if [ ! -d "${MATCH_DIR}" ]
+         MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/match.d"
+         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
          then
-            MATCH_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/match.d"
+            MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_DIR}/share/match.d"
          fi
-         if [ ! -d "${MATCH_DIR}" ]
+         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
          then
-            MATCH_DIR=""
-            log_warning "There is no directory \"${MULLE_MONITOR_ETC_DIR}/mulle-monitor\" set up"
+            log_warning "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
+            MULLE_MONITOR_MATCH_DIR=""
          fi
       ;;
    esac
 
-   case "${IGNORE_DIR}" in
+   case "${MULLE_MONITOR_IGNORE_DIR}" in
       NO)
-         IGNORE_DIR=""
+         MULLE_MONITOR_IGNORE_DIR=""
+         log_fluff "Not using \"MULLE_MONITOR_IGNORE_DIR\""
       ;;
 
       "")
-         IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/mulle-monitor/ignore.d"
-         if [ ! -d "${IGNORE_DIR}" ]
+         MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/ignore.d"
+         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
          then
-            IGNORE_DIR="${MULLE_MONITOR_DIR}/share/mulle-monitor/ignore.d"
+            MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_DIR}/share/ignore.d"
          fi
-         if [ ! -d "${IGNORE_DIR}" ]
+         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
          then
-            IGNORE_DIR=""
+            log_fluff "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
+            MULLE_MONITOR_IGNORE_DIR=""
          fi
       ;;
    esac
 }
+
 
 
 ###
@@ -566,12 +815,9 @@ monitor_match_main()
 {
    log_entry "monitor_match_main" "$@"
 
-   local OPTION_FORMAT="%t\\n"
+   local OPTION_FORMAT="%e\\n"
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
-
-   local MATCH_DIR
-   local IGNORE_DIR
 
    #
    # handle options
@@ -594,14 +840,14 @@ monitor_match_main()
             [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
             shift
 
-            IGNORE_DIR="$1"
+            MULLE_MONITOR_IGNORE_DIR="$1"
          ;;
 
          -md|--match-dir)
             [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
             shift
 
-            MATCH_DIR="$1"
+            MULLE_MONITOR_MATCH_DIR="$1"
          ;;
 
          -if|--ignore-filter)
@@ -647,13 +893,26 @@ monitor_match_main()
 
    rval=0
 
+   local ignore_patterncaches
+   local match_patterncaches
+
+   local _cache
+
+   _cache=
+   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+                                 "${OPTION_IGNORE_FILTER}"
+   ignore_patterncaches="${_cache}"
+
+   _cache=
+   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+                                 "${OPTION_MATCH_FILTER}"
+   match_patterncaches="${_cache}"
+
    while [ $# -ne 0 ]
    do
       if match_print_filepath "${OPTION_FORMAT}" \
-                              "${IGNORE_DIR}" \
-                              "${OPTION_IGNORE_FILTER}" \
-                              "${MATCH_DIR}" \
-                              "${OPTION_MATCH_FILTER}" \
+                              "${ignore_patterncaches}" \
+                              "${match_patterncaches}" \
                               "$1"
       then
          if [ $rval -ne 0 ]

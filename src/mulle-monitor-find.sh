@@ -82,7 +82,30 @@ EOF
 }
 
 
-# this is a nicety for scripts that run fin
+
+# this is a nicety for scripts that run find
+find_emit_common_directories()
+{
+   log_entry "find_emit_common_directories" "$@"
+
+   local items="$1"
+   local emitter="$2"
+   local parameter="$3"
+
+   [ -z "${emitter}" ] && internal_fail "emitter is empty"
+
+   local collection
+
+   collection="`sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | sort -u`"
+
+   if [ ! -z "${collection}" ]
+   then
+      "${emitter}" "${parameter}" "${collection}"
+   fi
+}
+
+
+# this is a nicety for scripts that run find
 find_emit_by_category()
 {
    log_entry "find_emit_by_category" "$@"
@@ -92,51 +115,32 @@ find_emit_by_category()
 
    [ -z "${emitter}" ] && internal_fail "emitter is empty"
 
-   if [ -z "${files}" ]
-   then
-      return
-   fi
-
-   local filename
-
-   local filename
-   local varname
    local collectname
    local collection
+   local remainder
 
-   while IFS=";" read varname filename
+   remainder="${items}"
+
+   while [ ! -z "${remainder}" ]
    do
-      if [ -z "${varname}" ]
-      then
-         continue
-      fi
-
-      if [ "${varname}" != "${collectname}" ]
-      then
-         "${emitter}" "${collectname}" "${collection}"
-         collectname="${varname}"
-         collection="${filename}"
-      else
-         collection="`add_line "${collection}" "${filename}"`"
-      fi
-   done <<< "${items}"
-
-   if [ ! -z "${collection}" ]
-   then
+      collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q}' <<< "${remainder}" `"
+      collection="`egrep "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
       "${emitter}" "${collectname}" "${collection}"
-   fi
+
+      remainder="`egrep -v "^${collectname};" <<< "${remainder}" `"
+   done
+
+   :
 }
 
 
-find_filenames()
+_find_filenames()
 {
-   log_entry "find_filenames" "$@"
+   log_entry "_find_filenames" "$@"
 
    local format="$1"
-   local ignore_dir="$2"
-   local ignore_filter="$3"
-   local match_dir="$4"
-   local match_filter="$5"
+   local ignore_patterncaches="$2"
+   local match_patterncaches="$3"
 
    #
    # to reduce the search tree, first do a search in root only
@@ -147,14 +151,15 @@ find_filenames()
 
    IFS="
 "
-   for filename in `rexekutor find . -mindepth 1 -maxdepth 1 -print`
+   for filename in `find . -mindepth 1 -maxdepth 1 -print`
    do
       IFS="${DEFAULT_IFS}"
-      if match_filepath "${ignore_dir}" \
-                        "${ignore_filter}"  \
-                        "" \
-                        "" \
-                        "${filename}"
+      match_filepath "${ignore_patterncaches}" \
+                      "" \
+                      "${filename:2}" > /dev/null
+
+      # 0 would be matched, but we have no match_dir
+      if [ $? -eq 2 ]
       then
          quoted_filenames="`concat "${quoted_filenames}" "'${filename:2}'"`"
       fi
@@ -166,38 +171,48 @@ find_filenames()
       return 1
    fi
 
+   #
    # now with that out of the way, lets go
+   #
    local filenames
    local filename
-   local rval
 
-   rval=0
+   local maxjobs
+
+   maxjobs=`nproc`
 
    IFS="
 "
    for filename in `eval_exekutor find ${quoted_filenames} -type f -print`
    do
       IFS="${DEFAULT_IFS}"
-      if match_print_filepath "${format}" \
-                              "${ignore_dir}" \
-                              "${ignore_filter}" \
-                              "${match_dir}" \
-                              "${match_filter}" \
-                              "${filename}"
-      then
-         if [ $rval -ne 0 ]
-         then
-            rval=2
-         fi
-      else
-         rval=1
-      fi
+
+      while [ `jobs -pr | wc -l` -ge ${maxjobs} ]
+      do
+         sleep 0.1s
+      done
+
+      match_print_filepath "${format}" \
+                           "${ignore_patterncaches}" \
+                           "${match_patterncaches}" \
+                           "${filename}" &
 
       shift
    done
    IFS="${DEFAULT_IFS}"
 
-   return $rval
+   log_verbose "waiting..."
+   wait
+   log_verbose 'done!'
+}
+
+
+
+find_filenames()
+{
+   log_entry "_find_filenames" "$@"
+
+   _find_filenames "$@" | sort
 }
 
 
@@ -290,9 +305,20 @@ monitor_find_main()
 
    match_environment
 
+   local _cache
+
+   _cache=
+   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+                                 "${OPTION_IGNORE_FILTER}"
+   ignore_patterncaches="${_cache}"
+
+   _cache=
+   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+                                 "${OPTION_MATCH_FILTER}"
+   match_patterncaches="${_cache}"
+
+
    find_filenames "${OUTPUT_FORMAT}" \
-                  "${IGNORE_DIR}" \
-                  "${OPTION_IGNORE_FILTER}" \
-                  "${MATCH_DIR}" \
-                  "${OPTION_MATCH_FILTER}"
+                  "${ignore_patterncaches}" \
+                  "${match_patterncaches}"
 }
