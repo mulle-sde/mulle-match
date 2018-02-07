@@ -34,7 +34,7 @@ digraph G {
 
     "bin"             -> "s_did_update"
 
-    "s_did_update"    [ label="source-did-change"]
+    "s_did_update"    [ label="source-callback"]
 
     "libexec"         -> "build-task.sh"
 

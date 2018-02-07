@@ -41,11 +41,25 @@ monitor_run_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} monitor [options]
+   ${MULLE_EXECUTABLE_NAME} run [options]
+
+   Monitor changes in the working directory.
 
 Options:
-   -d <dir>       : directory to monitor
+   cat <<EOF >&2
+   -if <filter>   : specify a filter for ignoring <type>
+   -mf <filter>   : specify a filter for matching <type>
 EOF
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
+   then
+     cat <<EOF >&2
+                    A filter is a comma separated list of type expressions.
+                    A type expression is either a type name with wildcard
+                    characters or a negated type expression. An expression is
+                    negated by being prefixed with !.
+                    Example: filter is "header*,!header_private"
+EOF
+   fi
    exit 1
 }
 
@@ -94,7 +108,7 @@ process_event()
       fi
    fi
 
-   executable="${MULLE_MONITOR_DIR}/bin/${contenttype}-did-change"
+   executable="${MULLE_MONITOR_DIR}/bin/${contenttype}-callback"
    if [ ! -x "${executable}" ]
    then
       fail "Callback \"${executable}\" is missing"
@@ -117,7 +131,12 @@ process_event()
       return
    fi
 
-   run_task "${task}"
+   #
+   # "eval" it so task is splitted into arguments.
+   # Might be useful to pass more, than just the task back.
+   # "filepath" is then the last parameter
+   #
+   eval run_task ${task} "$'{filepath}'"
 }
 
 
@@ -449,13 +468,6 @@ monitor_run_main()
       case "$1" in
          -h|--help)
             monitor_run_usage
-         ;;
-
-         -d|--directory)
-            [ $# -eq 1 ] && monitor_run_usage "missing argument to \"$1\""
-            shift
-
-            cd "$1" || exit 1
          ;;
 
          -if|--ignore-filter)

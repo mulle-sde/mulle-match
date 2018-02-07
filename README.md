@@ -23,7 +23,7 @@ Executable      | Description
 Matching is done on filenames. A filename should be fully resolved and it should not be absolute. It should not contain relative components like `.` `..`. **mulle-monitor** takes care of that and it shouldn't concern you too much.
 
 A filename is matched like this:
- 
+
 #### 1. The proper `ignore.d` and `match.d` folders are determined.
 
 
@@ -46,19 +46,19 @@ a matching *pattern file* now means a successful match.
 
 ### Pattern file - naming scheme
 
-The filename of a *pattern file* must begin with a number of digits followed by a minus a *type* identifier and two more minus. After the two minus there may be an optional *category* identifier. 
+The filename of a *pattern file* must begin with a number of digits followed by a minus a *type* identifier and two more minus. After the two minus there may be an optional *category* identifier.
 
-> The digits are used for sorting. All files inside a folder should have the same 
+> The digits are used for sorting. All files inside a folder should have the same
 > number of leading digits. Then the *pattern file*.
 
 
-e.g. 00-header--private. 
+e.g. 00-header--private.
 
 digits|-|type  |--|category
 ------|-|------|--|--------
 00    |-|header|--|private
 
->It is customary to use "all" as the category identifier, if no further 
+>It is customary to use "all" as the category identifier, if no further
 > categorization is needed.
 
 
@@ -69,7 +69,7 @@ The pattern matching is done using bash `case` regular expressions with a few ex
 
 Pattern           | Description
 ------------------|------------------------
-`expr/`      	  | Matches any file or folder matched by expr and it's recursive contents
+`expr/`      	   | Matches any file or folder matched by expr and it's recursive contents
 `/expr`           | Matches expr only if it matches from the start
 !<expr>           | Negate expression. It's not possible to negate a negated expression.
 
@@ -93,6 +93,10 @@ EOF
 
 ![](dox/mulle-monitor-run.png)
 
+```
+mulle-monitor run
+```
+
 Start the monitor to observe changes in your project folder. If a
 change passes the filters, the appropriate callback is executed.
 
@@ -105,33 +109,33 @@ do
    task_plugin_sh="`"${did_change_script}" "${filename}"`"
    . "${task_plugin_sh}"
 done
-``` 
+```
 
-In a bit more detail. mulle-monitor run observes the project folder using
-fswatch or inotifywait. The incoming events are preprocessed and categorized
-into three event types: "create" "update" "delete". An event that doesn't fit 
-those types is ignored.
+In a bit more detail. `mulle-monitor run` observes the project folder using
+`fswatch` or `inotifywait`. The incoming events are preprocessed and categorized
+into three event types: "create" "update" "delete". An event that doesn't fit
+these three event types is ignored.
 
-Then the changed filename is classified using the **matching** 
-(see above). The result of this classification is the name of the "-did-change" 
-callback. In the picture the matching returned `source-did-change`, 
+Then the event's filename is classified using **matching**
+(see above). The result of this classification is the name of the "-callback"
+callback. In the picture the matching returned `source-callback`,
 so a matching rule of the form "nnn-source--xxx" must have matched.
 
-The callback will now be executed. It gets the event type and the filename and 
-the 'xxx' part of the matching rule as arguments. The callback may produce
+The callback will now be executed. It gets the event type and the filename and
+the category of the matching rule as arguments. The callback may produce
 a task identifier.
 
-If a task identifier is produced, this is used to load a plugin (in the 
-picture case `build-task.sh`). A main function of this plugin is then 
+If a task identifier is produced, this is used to load a plugin (in the
+picture case `build-task.sh`). A main function of this plugin is then
 executed.
 
-> Note: Due to  caching of pattern files, you need 
+> Note: Due to  caching of pattern files, you need
 > to restart `mulle-monitor run` to pick up edits to a *pattern file*.
 
 ### mulle-monitor match
 
 
-To test your ignore.d and match.d folders, you can use `mulle-monitor match` to 
+To test your ignore.d and match.d folders, you can use `mulle-monitor match` to
 see if files match as expected.
 
 ```
@@ -140,11 +144,11 @@ mulle-monitor match src/foo.c
 
 ### mulle-monitor find
 
-This is a facility to retrieve all matching filenames that match the filter
+This is a facility to retrieve all filenames that match the filter
 rules. You can decide which filter should be active and which not, by supplying
 another filter, to filter the filters.
 
-This example lists all the files, that pass through  "???-source--???" filters:
+This example lists all the files, that pass through filters of type "source":
 
 ```
 mulle-monitor find --match-filter "source"
@@ -153,8 +157,8 @@ mulle-monitor find --match-filter "source"
 
 ## Callback
 
-To the **type** identifier the string '-did-change' is appended to form the 
-name of the  callback executable. This executable must be located in 
+To the **type** identifier the string '-callback' is appended to form the
+name of the  callback executable. This executable must be located in
 `${MULLE_MONITOR_DIR}/bin`.
 
 The executable will be called with the following arguments and environment
@@ -177,3 +181,36 @@ Variable                          | Description
 `MULLE_MONITOR_LIBEXEC_DIR`       | libexec directory of mulle-monitor
 `MULLE_BASHFUNCTIONS_LIBEXEC_DIR` | libexec directory of mulle-bashfunctions
 
+A very simple callback would be:
+
+
+```
+#! /bin/sh
+
+# could update a Makefile here maybe
+
+
+
+# return task
+echo "hello"
+```
+
+## Task
+
+A task is a plugin located in `${MULLE_MONITOR_DIR}/libexec`. The filename is
+the name of the task with '-task.sh' appended. This task file is a shell
+script plugin, that is "sourced" into **mulle-monitor**.
+
+It must contain a function called `task_<task>_main()`, that will be called
+by the monitor.
+
+e.g. The task is "hello"
+
+File `${MULLE_MONITOR_DIR}/libexec/hello-task.sh`:
+
+```
+task_hello_main()
+{
+   echo "VfL Bochum 1848"
+}
+```

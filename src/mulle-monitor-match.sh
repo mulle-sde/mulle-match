@@ -49,7 +49,6 @@ Usage:
    A match file has the form 00-type--category.
 
 Options:
-   -d <dir>       : project directory (parent of .mulle-monitor)
    -f <format>    : specify output values.
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
@@ -746,67 +745,6 @@ match_print_filepath()
 }
 
 
-match_environment()
-{
-   log_entry "match_environment" "$@"
-
-   # lame but practical
-   if [ -z "${MULLE_MONITOR_DIR}" ]
-   then
-      if [ -d ".mulle-sde" ]
-      then
-         log_fluff "MULLE_MONITOR_DIR default is .mulle-sde"
-         MULLE_MONITOR_DIR=".mulle-sde"
-      else
-         log_fluff "MULLE_MONITOR_DIR default is .mulle-monitor"
-         MULLE_MONITOR_DIR=".mulle-monitor"
-      fi
-   fi
-
-   MULLE_MONITOR_ETC_DIR="${MULLE_MONITOR_ETC_DIR:-${MULLE_MONITOR_DIR}/etc}"
-
-   case "${MULLE_MONITOR_MATCH_DIR}" in
-      NO)
-         MULLE_MONITOR_MATCH_DIR=""
-         log_fluff "Not using \"MULLE_MONITOR_MATCH_DIR\""
-      ;;
-
-      "")
-         MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/match.d"
-         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
-         then
-            MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_DIR}/share/match.d"
-         fi
-         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
-         then
-            log_warning "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
-            MULLE_MONITOR_MATCH_DIR=""
-         fi
-      ;;
-   esac
-
-   case "${MULLE_MONITOR_IGNORE_DIR}" in
-      NO)
-         MULLE_MONITOR_IGNORE_DIR=""
-         log_fluff "Not using \"MULLE_MONITOR_IGNORE_DIR\""
-      ;;
-
-      "")
-         MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/ignore.d"
-         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
-         then
-            MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_DIR}/share/ignore.d"
-         fi
-         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
-         then
-            log_fluff "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
-            MULLE_MONITOR_IGNORE_DIR=""
-         fi
-      ;;
-   esac
-}
-
-
 
 ###
 ###  MAIN
@@ -827,27 +765,6 @@ monitor_match_main()
       case "$1" in
          -h|--help)
             monitor_match_usage
-         ;;
-
-         -d|--directory)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
-            shift
-
-            exekutor cd "$1" || fail "failed to cd to \"$1\" from \"${PWD}\""
-         ;;
-
-         -id|--ignore-dir)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
-            shift
-
-            MULLE_MONITOR_IGNORE_DIR="$1"
-         ;;
-
-         -md|--match-dir)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
-            shift
-
-            MULLE_MONITOR_MATCH_DIR="$1"
          ;;
 
          -if|--ignore-filter)

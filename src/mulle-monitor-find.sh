@@ -46,7 +46,6 @@ Usage:
    Find matching files in the project directory.
 
 Options:
-   -d <dir>       : project directory (parent of .mulle-monitor)
    -f <format>    : specify output values
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
@@ -134,6 +133,24 @@ find_emit_by_category()
 }
 
 
+get_core_count()
+{
+   local count
+
+   count="`nproc 2> /dev/null`"
+   if [ -z "$count" ]
+   then
+      count="`sysctl -n hw.ncpu 2> /dev/null`"
+   fi
+
+   if [ -z "$count" ]
+   then
+      count=2
+   fi
+   echo $count
+}
+
+
 _find_filenames()
 {
    log_entry "_find_filenames" "$@"
@@ -179,7 +196,7 @@ _find_filenames()
 
    local maxjobs
 
-   maxjobs=`nproc`
+   maxjobs=`get_core_count`
 
    IFS="
 "
@@ -189,7 +206,7 @@ _find_filenames()
 
       while [ `jobs -pr | wc -l` -ge ${maxjobs} ]
       do
-         sleep 0.1s
+         sleep 0.01s # 100Hz
       done
 
       match_print_filepath "${format}" \
@@ -241,27 +258,6 @@ monitor_find_main()
             monitor_find_usage
          ;;
 
-         -d|--directory)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
-            shift
-
-            cd "$1" || exit 1
-         ;;
-
-         -id|--ignore-dir)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
-            shift
-
-            IGNORE_DIR="$1"
-         ;;
-
-         -md|--match-dir)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
-            shift
-
-            MATCH_DIR="$1"
-         ;;
-
          -if|--ignore-filter)
             [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
             shift
@@ -303,16 +299,12 @@ monitor_find_main()
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
    fi
 
-   match_environment
-
    local _cache
 
-   _cache=
    _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
                                  "${OPTION_IGNORE_FILTER}"
    ignore_patterncaches="${_cache}"
 
-   _cache=
    _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
                                  "${OPTION_MATCH_FILTER}"
    match_patterncaches="${_cache}"

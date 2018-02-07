@@ -41,17 +41,76 @@ monitor_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task [options] <name> [filepath]
+   ${MULLE_EXECUTABLE_NAME} task [options] <command> <name> ...
 
-   Execute a task with the given name.
-   Sometimes useful for testing mulle-monitor extensions.
-
-   Builtin tasks are: craft and test.
+   Execute a task with the given name. Sometimes useful for testing
+   mulle-monitor extensions.
 
 Options:
    -h  : this help
+
+Commands:
+   locate  : locate task plugin of given name
+   require : load task and check if required main function is present
+   run     : run task of given name
 EOF
    exit 1
+}
+
+
+_locate_task()
+{
+   log_entry "_locate_callback" "$@"
+
+   local task="$1"
+
+   [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
+
+   _plugin="${MULLE_MONITOR_DIR}/libexec/${task}-task.sh"
+   if [ ! -f "${_plugin}" ]
+   then
+      log_error "\"${_plugin}\" not found"
+      return 1
+   fi
+}
+
+
+_load_task()
+{
+   log_entry "_load_task" "$@"
+
+   local task="$1"
+   local functionname="$2"
+
+   local _plugin
+
+   if ! _locate_task "${task}"
+   then
+      exit 1
+   fi
+
+   . "${_plugin}" || exit 1
+
+   if [ "`type -t "${functionname}"`" != "function" ]
+   then
+      fail "\"${_plugin}\" does not define function \"${functionname}\""
+   fi
+}
+
+
+require_task()
+{
+   log_entry "require_task" "$@"
+
+   local task="$1"
+
+   local functionname
+
+   functionname="task_${task}_main"
+   if [ "`type -t "${functionname}"`" != "function" ]
+   then
+      _load_task "${task}" "${functionname}"
+   fi
 }
 
 
@@ -59,34 +118,14 @@ run_task()
 {
    log_entry "run_task" "$@"
 
-   local task="$1"
-   local filepath="$2"
+   local task="$1"; shift
 
-   #
-   # grab task prefrably from project libexecdir. If there is no such
-   # file, use builtin
-   #
-   functionname="${task}_task_main"
-   if [ "`type -t "${functionname}"`" != "function" ]
-   then
-      libexecname="${task}-task.sh"
-      libexecfile="${MULLE_MONITOR_DIR}/libexec/${libexecname}"
+   local functionname
 
-      if [ -x "${libexecfile}" ]
-      then
-         . "${libexecfile}" || exit 1
-      else
-         libexecfile="${MULLE_MONITOR_LIBEXEC_DIR}/tasks/${libexecname}"
-         . "${libexecfile}" || fail "missing \"${libexecname}\" script"
-      fi
+   require_task "${task}" || exit 1
 
-      if [ "`type -t "${functionname}"`" != "function" ]
-      then
-         fail "\"${libexecfile}\" does not define function \"${functionname}\""
-      fi
-   fi
-
-   "${functionname}" "${filepath}"
+   functionname="task_${task}_main"
+   "${functionname}" "$@"
 }
 
 
@@ -119,7 +158,6 @@ monitor_task_main()
       shift
    done
 
-   [ "$#" -lt 1 -o "$#" -gt 2 ] && monitor_task_usage "wrong number of arguments \"$*\""
 
    if [ -z "${MULLE_MONITOR_PROCESS_SH}" ]
    then
@@ -127,5 +165,35 @@ monitor_task_main()
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-process.sh" || exit 1
    fi
 
-   run_task "$@"
+   local cmd="$1"
+   [ $# -ne 0 ] && shift
+
+   local name="$1"
+   [ $# -ne 0 ] && shift
+
+   [ -z "${name}" ] && monitor_task_usage "missing name"
+
+   case "${cmd}" in
+      run)
+         run_task "${name}" "$@"
+      ;;
+
+      require)
+         require_task "${name}"
+      ;;
+
+      locate)
+         local _plugin
+
+         if ! _locate_task "${name}"
+         then
+            return 1
+         fi
+         echo "${_plugin}"
+      ;;
+
+      *)
+         monitor_task_usage "unknown command \"${cmd}\""
+      ;;
+   esac
 }

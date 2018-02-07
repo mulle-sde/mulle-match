@@ -52,9 +52,10 @@ SHOWN_COMMANDS="\
    run            : monitor files and run scripts"
 
 HIDDEN_COMMANDS="\
-   match          : match filenames
+   callback       : execute a callback
    find           : find files that match
    libexec-dir    : print path to mulle-monitor libexec
+   match          : match filenames
    task           : execute a task
    uname          : mulle-monitors simplified uname(1)"
 
@@ -88,6 +89,12 @@ print_flags()
 _usage()
 {
    local verbose="${1:-NO}"
+   local error="${2}"
+
+   if [ ! -z "${error}" ]
+   then
+      log_error "${error}"
+   fi
 
    cat <<EOF
 Usage:
@@ -251,6 +258,67 @@ _init()
 }
 
 
+monitor_environment()
+{
+   log_entry "monitor_environment" "$@"
+
+   # lame but practical
+   if [ -z "${MULLE_MONITOR_DIR}" ]
+   then
+      if [ -d ".mulle-sde" ]
+      then
+         log_fluff "MULLE_MONITOR_DIR default is .mulle-sde"
+         MULLE_MONITOR_DIR=".mulle-sde"
+      else
+         log_fluff "MULLE_MONITOR_DIR default is .mulle-monitor"
+         MULLE_MONITOR_DIR=".mulle-monitor"
+      fi
+   fi
+
+   MULLE_MONITOR_ETC_DIR="${MULLE_MONITOR_ETC_DIR:-${MULLE_MONITOR_DIR}/etc}"
+
+   case "${MULLE_MONITOR_MATCH_DIR}" in
+      NO)
+         MULLE_MONITOR_MATCH_DIR=""
+         log_fluff "Not using \"MULLE_MONITOR_MATCH_DIR\""
+      ;;
+
+      "")
+         MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/match.d"
+         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
+         then
+            MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_DIR}/share/match.d"
+         fi
+         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
+         then
+            log_warning "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
+            MULLE_MONITOR_MATCH_DIR=""
+         fi
+      ;;
+   esac
+
+   case "${MULLE_MONITOR_IGNORE_DIR}" in
+      NO)
+         MULLE_MONITOR_IGNORE_DIR=""
+         log_fluff "Not using \"MULLE_MONITOR_IGNORE_DIR\""
+      ;;
+
+      "")
+         MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/ignore.d"
+         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
+         then
+            MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_DIR}/share/ignore.d"
+         fi
+         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
+         then
+            log_fluff "There is no directory \"${MULLE_MONITOR_IGNORE_DIR}\" set up"
+            MULLE_MONITOR_IGNORE_DIR=""
+         fi
+      ;;
+   esac
+}
+
+
 main()
 {
    local MULLE_FLAG_MAGNUM_FORCE="NO"
@@ -283,18 +351,31 @@ main()
             FLAG_OUTSIDE_ENV="YES"
          ;;
 
-         --config-dir)
-            [ $# -eq 1 ] && log_error "missing argument to \"$1\"" && monitor_init_usage
+         -cd|--config-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
             shift
 
             MULLE_MONITOR_DIR="$1"
          ;;
 
-         --etc-dir)
-            [ $# -eq 1 ] && log_error "missing argument to \"$1\"" && monitor_init_usage
+         -ed|--etc-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
             shift
 
             MULLE_MONITOR_ETC_DIR="$1"
+         ;;
+
+         -md|--match-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            shift
+
+            MULLE_MONITOR_MATCH_DIR="$1"
+         ;;
+
+         -id|--ignore-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+
+            MULLE_MONITOR_IGNORE_DIR="$1"
          ;;
 
          -h|--help)
@@ -345,9 +426,18 @@ main()
 
    MULLE_EXECUTABLE_OPTIONS="$@"
 
+   monitor_environment
+
    case "${cmd}" in
       help)
          usage "${MULLE_TRACE}"
+      ;;
+
+      callback)
+         # shellcheck source=src/mulle-monitor-callback.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-callback.sh"
+
+         monitor_callback_main "$@"
       ;;
 
       libexec-dir|library-path)
@@ -378,6 +468,13 @@ main()
          monitor_run_main "$@"
       ;;
 
+      task)
+         # shellcheck source=src/mulle-monitor-task.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-task.sh"
+
+         monitor_task_main "$@"
+      ;;
+
       uname)
          echo "${UNAME}"
       ;;
@@ -390,7 +487,7 @@ main()
       *)
          MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE_NAME}"
          log_error "Unknown command \"${cmd}\""
-         usage
+         usage "${MULLE_TRACE}"
       ;;
    esac
 }
