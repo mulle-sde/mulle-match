@@ -2,6 +2,8 @@
 
 ... for Linux, OS X, FreeBSD, Windows
 
+![](mulle-monitor.png)
+
 **mulle-monitor** watches changes in a folder (and subfolders) using
 [fswatch](https://github.com/emcrisostomo/fswatch) or
 [inotifywait](https://linux.die.net/man/1/inotifywait) and then calls an
@@ -35,21 +37,21 @@ A filename is matched like this:
 
 #### 2. The filename is matched against the pattern files in the  `ignore.d` folder
 
-The files in the folder are called *pattern files*. Each *pattern file* contains a sequence of *rules*. If the filename matches all *rules*, then *pattern file* is matched. In the case of `ignore.d`, this means that filename will be ignored and no further processing is needed.
+The files in the folder are called *pattern files*. Each *patternfile* contains a sequence of *rules*. If the filename matches all *rules*, then *patternfile* is matched. In the case of `ignore.d`, this means that filename will be ignored and no further processing is needed.
 
 
 #### 3. The filename is matched against the pattern files in the `match.d` folder
 
 This is the same as how filename is matched against `ignore.d`. The obvious difference being, that
-a matching *pattern file* now means a successful match.
+a matching *patternfile* now means a successful match.
 
 
 ### Pattern file - naming scheme
 
-The filename of a *pattern file* must begin with a number of digits followed by a minus a *type* identifier and two more minus. After the two minus there may be an optional *category* identifier.
+The filename of a *patternfile* must begin with a number of digits followed by a minus a *type* identifier and two more minus. After the two minus there may be an optional *category* identifier.
 
 > The digits are used for sorting. All files inside a folder should have the same
-> number of leading digits. Then the *pattern file*.
+> number of leading digits. Then the *patternfile*.
 
 
 e.g. 00-header--private.
@@ -64,7 +66,7 @@ digits|-|type  |--|category
 
 ### Pattern file - rules
 
-A pattern file is a sequence of rules. Each rule is on a line. Read how a [.gitignore](https://git-scm.com/docs/gitignore) file works, as that's pretty similar to the way a *pattern file* work.
+A pattern file is a sequence of rules. Each rule is on a line. Read how a [.gitignore](https://git-scm.com/docs/gitignore) file works, as that's pretty similar to the way a *patternfile* work.
 The pattern matching is done using bash `case` regular expressions with a few extensions:
 
 Pattern           | Description
@@ -130,7 +132,7 @@ picture case `build-task.sh`). A main function of this plugin is then
 executed.
 
 > Note: Due to  caching of pattern files, you need
-> to restart `mulle-monitor run` to pick up edits to a *pattern file*.
+> to restart `mulle-monitor run` to pick up edits to a *patternfile*.
 
 ### mulle-monitor match
 
@@ -152,6 +154,34 @@ This example lists all the files, that pass through filters of type "source":
 
 ```
 mulle-monitor find --match-filter "source"
+```
+
+
+### mulle-monitor callback
+
+Manage callback executables.
+
+```
+mulle-monitor callback install source "my-script"
+```
+
+### mulle-monitor patternfile
+
+Manage *patternfiles*.
+
+
+List all `ignore.d` *patternfiles*:
+
+```
+mulle-monitor patternfile -i list
+```
+
+### mulle-monitor task
+
+Manage task plugins.
+
+```
+mulle-monitor task install hello "my-plugin.sh"
 ```
 
 

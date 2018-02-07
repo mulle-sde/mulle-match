@@ -195,6 +195,7 @@ _find_filenames()
    local filename
 
    local maxjobs
+   local running
 
    maxjobs=`get_core_count`
 
@@ -204,8 +205,13 @@ _find_filenames()
    do
       IFS="${DEFAULT_IFS}"
 
-      while [ `jobs -pr | wc -l` -ge ${maxjobs} ]
+      while :
       do
+         running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
+         if [ "${#running[@]}" -le ${maxjobs} ]
+         then
+            break
+         fi
          sleep 0.01s # 100Hz
       done
 

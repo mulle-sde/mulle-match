@@ -190,20 +190,33 @@ EOF
 
 pattern_define_function()
 {
+   log_entry "pattern_define_function" "$@"
+
    local functionname="$1"
    local pattern="$2"
 
    local text
    local body
+   local debug
 
+   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" ]
+   then
+      debug="   log_entry ${functionname} \"\$@\""
+   fi
 
    body="`pattern_emit_matchcode "${pattern}"`" || exit 1
 
-   eval "${functionname}()
+  eval "${functionname}()
 {
+${debug}
 ${body}
 }
 "
+   log_debug "define: ${functionname}()
+{
+${debug}
+${body}
+}"
 }
 
 
@@ -264,6 +277,7 @@ compiledpatternlines_match_relative_filename()
    rval=1
 
    # compiledpatterns known to be identifies w/o spaces
+   set -o noglob
    for functionname in ${compiledpatterns}
    do
       "${functionname}" "${filename}"
@@ -277,6 +291,7 @@ compiledpatternlines_match_relative_filename()
          ;;
       esac
    done
+   set +o noglob
 
    return $rval
 }
@@ -314,6 +329,7 @@ patternlines_match_relative_filename()
 
    IFS="
 "
+   set -o noglob
    for pattern in ${patterns}
    do
       IFS="${DEFAULT_IFS}"
@@ -329,6 +345,7 @@ patternlines_match_relative_filename()
          ;;
       esac
    done
+   set +o noglob
 
    IFS="${DEFAULT_IFS}"
 
@@ -380,8 +397,11 @@ filter_patternfilename()
    local shouldmatch
 
    IFS=","
+   set -o noglob
    for texpr in ${filter}
    do
+      set +o noglob
+
       IFS="${DEFAULT_IFS}"
 
       shouldmatch="YES"
@@ -411,6 +431,7 @@ filter_patternfilename()
       esac
    done
    IFS="${DEFAULT_IFS}"
+   set +o noglob
 
    return 0
 }
@@ -461,9 +482,11 @@ _patterncaches_match_relative_filename()
 
    IFS="
 "
+   set -o noglob
    for patterncache in ${patterncaches}
    do
       IFS="${DEFAULT_IFS}"
+      set +o noglob
 
       compiledcontents="`eval echo \$\{${patterncache}\}`"
       patternfile="`eval echo \$\{${patterncache}_f\}`"
@@ -479,7 +502,9 @@ _patterncaches_match_relative_filename()
          log_fluff "\"${filename}\" did not match \"${patternfile}\""
       fi
    done
+
    IFS="${DEFAULT_IFS}"
+   set +o noglob
 
    return 1
 }
@@ -536,18 +561,21 @@ _patterncache_create()
    # Compile contents into functions
    # The next level would be to combine all into one big function!
    #
+   set -o noglob
    IFS="
 "
    for pattern in ${contents}
    do
       IFS="${DEFAULT_IFS}"
+      set +o noglob
 
       functionname="`pattern_unique_functionname`"
       pattern_define_function "${functionname}" "${pattern}"
       compiledcontents="`add_line "${compiledcontents}" "${functionname}"`"
    done
-   IFS="${DEFAULT_IFS}"
 
+   IFS="${DEFAULT_IFS}"
+   set +o noglob
 
    #
    # we use the patternfile as the identifier, so we can cache it
@@ -569,8 +597,6 @@ _patterncaches_passing_filter()
 
    local directory="$1"
    local filter="$2"
-
-   [ -z "${directory}" ] && internal_fail "directory is empty"
 
    local patternfile
 
@@ -802,34 +828,30 @@ monitor_match_main()
 
    local rval
 
-   match_environment
-
    [ "$#" -ne 1 ] && monitor_match_usage "missing filename"
 
    local rval
 
    rval=0
 
-   local ignore_patterncaches
-   local match_patterncaches
+   local ignore
+   local match
 
    local _cache
 
-   _cache=
    _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
                                  "${OPTION_IGNORE_FILTER}"
-   ignore_patterncaches="${_cache}"
+   ignore="${_cache}"
 
-   _cache=
    _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
                                  "${OPTION_MATCH_FILTER}"
-   match_patterncaches="${_cache}"
+   match="${_cache}"
 
    while [ $# -ne 0 ]
    do
       if match_print_filepath "${OPTION_FORMAT}" \
-                              "${ignore_patterncaches}" \
-                              "${match_patterncaches}" \
+                              "${ignore}" \
+                              "${match}" \
                               "$1"
       then
          if [ $rval -ne 0 ]

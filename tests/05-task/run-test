@@ -6,7 +6,7 @@
 run_mulle_monitor()
 {
    echo "####################################" >&2
-   echo mulle-monitor "$@"  >&2
+   echo mulle-monitor ${MULLE_MONITOR_FLAGS} "$@"  >&2
    echo "####################################" >&2
 
    mulle-monitor ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
@@ -51,31 +51,31 @@ main()
 
    #-----------
 
-   expect_mulle_monitor ".mulle-monitor/libexec/foo-task.sh" task locate foo
+   expect_mulle_monitor ".mulle-monitor/libexec/foo-task.sh" -e task locate foo
 
    log_verbose "----- #1 PASSED -----"
 
    #-----------
 
-   expect_mulle_monitor ".mulle-monitor/libexec/bar-task.sh" task locate bar
+   expect_mulle_monitor ".mulle-monitor/libexec/bar-task.sh" -e task locate bar
 
    log_verbose "----- #2 PASSED -----"
 
    #-----------
 
-   expect_failure_mulle_monitor task locate baz
+   expect_failure_mulle_monitor -e task locate baz
 
    log_verbose "----- #3 PASSED -----"
 
    #-----------
 
-   expect_mulle_monitor "" task require foo
+   expect_mulle_monitor "" -e task require foo
 
    log_verbose "----- #4 PASSED -----"
 
    #-----------
 
-   expect_failure_mulle_monitor task require bar
+   expect_failure_mulle_monitor -e task require bar
 
    log_verbose "----- #5 PASSED -----"
 

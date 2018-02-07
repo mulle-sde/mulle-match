@@ -51,23 +51,14 @@ main()
 
    #-----------
 
-   expect_mulle_monitor ".mulle-monitor/bin/foo-callback" -e callback locate foo
+   FSWATCH="${PWD}/../mock-fswatch"
+   [ -x "${FSWATCH}" ] || fail "\"${FSWATCH}\" is missing"
+   export FSWATCH
+
+   MULLE_FSWATCH_REPLAY_FILE="create-src-foo-sh-replay.txt" \
+      expect_mulle_monitor "VfL Bochum 1848" -e run
 
    log_verbose "----- #1 PASSED -----"
-
-   #-----------
-
-   expect_failure_mulle_monitor  -e callback locate bar
-
-   log_verbose "----- #2 PASSED -----"
-
-   #-----------
-
-   expect_failure_mulle_monitor -e callback locate baz
-
-   log_verbose "----- #3 PASSED -----"
-
-   #-----------
 
    log_info "----- ALL PASSED -----"
 }

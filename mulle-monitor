@@ -56,6 +56,7 @@ HIDDEN_COMMANDS="\
    find           : find files that match
    libexec-dir    : print path to mulle-monitor libexec
    match          : match filenames
+   patternfile    : examine patternfiles
    task           : execute a task
    uname          : mulle-monitors simplified uname(1)"
 
@@ -73,11 +74,28 @@ print_commands()
 }
 
 
+print_hidden_flags()
+{
+   echo "   -cd <dir>      : set MULLE_MONITOR_DIR"
+   echo "   -id <dir>      : set MULLE_MONITOR_IGNORE_DIR"
+   echo "   -md <dir>      : set MULLE_MONITOR_MATCH_DIR"
+   echo "   -ed <dir>      : set MULLE_MONITOR_ETC_DIR"
+
+}
+
+
 print_flags()
 {
+   local show_all="${1:-NO}"
+
    local delimiter
 
    delimiter="          : "
+
+   if [ "${show_all}" != "NO" ]
+   then
+      print_hidden_flags
+   fi
 
    echo "   -e   ${delimiter}bypass mulle-env check"
    echo "   -f   ${delimiter}force operation"
@@ -106,7 +124,7 @@ Usage:
 
 Flags:
 EOF
-   print_flags  | sort
+   print_flags "${verbose}" | sort
 
 
    cat <<EOF
@@ -190,8 +208,8 @@ monitor_libexec_path()
    esac
 
    executablepath="`resolve_symlinks "${executablepath}"`"
-   exedirpath="`dirname "${executablepath}"`"
-   prefix="`dirname "${exedirpath}"`"
+   exedirpath="`dirname -- "${executablepath}"`"
+   prefix="`dirname -- "${exedirpath}"`"
    libexecpath="${prefix}/libexec/mulle-monitor"
 
    if [ ! -x "${libexecpath}/mulle-monitor-run.sh" ]
@@ -418,11 +436,19 @@ main()
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
       case "${cmd}" in
-         run|match|find)
-            fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, pass the -e flag"
+         callback|find|match|run|task)
+            fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, \
+pass the -e flag"
          ;;
       esac
    fi
+
+   local physdir
+
+   physdir="`pwd -P`"
+
+   [ -d "${physdir}" ]      || fail "Working directory \"${PWD}\" does not exist"
+   exekutor cd "${physdir}" || fail "Could not cd to physical directory \"${physdir}\""
 
    MULLE_EXECUTABLE_OPTIONS="$@"
 
@@ -458,9 +484,13 @@ main()
          monitor_find_main "$@"
       ;;
 
-      # for the user it's a sde, but internally we call it
-      # a clone for historical reasons, and also monitor_monitor is
-      # stupid
+      patternfile)
+         # shellcheck source=src/mulle-monitor-patternfile.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-patternfile.sh"
+
+         monitor_patternfile_main "$@"
+      ;;
+
       run)
          # shellcheck source=src/mulle-monitor-run.sh
          . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-run.sh"

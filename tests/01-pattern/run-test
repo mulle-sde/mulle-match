@@ -84,7 +84,10 @@ main()
    log_verbose "----- #7 PASSED -----"
 
    # in the wild problem
-   expect_pattern_matches_text 'src/' 'src' ''
+   expect_pattern_matches_text 'src/' 'src'
+   expect_pattern_matches_text '*'    'src/foo.sh'
+   expect_pattern_matches_text '*'    'foo/bar/whatever.sh'
+
    log_verbose "----- #8 PASSED -----"
 
    log_info "----- ALL PASSED -----"

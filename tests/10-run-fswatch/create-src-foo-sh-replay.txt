@@ -1,0 +1,1 @@
+/Volumes/Source/srcM/mulle-monitor/tests/06-run-fswatch/src/foo.sh Created:Updated:IsFile

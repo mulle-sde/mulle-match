@@ -71,16 +71,11 @@ process_event()
 {
    log_entry "process_event" "$@"
 
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
-   local filepath="$5"
-   local cmd="$6"
+   local ignore="$1"
+   local match="$2"
+   local filepath="$3"
+   local cmd="$4"
 
-   local contenttype
-   local category
-   local executable
    local action
    local matchname
 
@@ -91,52 +86,23 @@ process_event()
    fi
 
    #
-   # not so cheap, need to massage filepath ?
+   # not as cheap
    #
-
-   if ! matchname="`match_filepath "${match_dir}" "${match_filter}" "${filepath}" `"
+   if ! matchname="`match_filepath "${ignore}" "${match}" "${filepath}" `"
    then
       return 1
    fi
 
+   local contenttype
+   local category
+
    contenttype="`matchfile_get_type "${matchname}" `"
-   if [ ! -z "${OPTION_EXCLUSIONS}" ]
-   then
-      if fgrep -q -s -x "${contenttype}" <<< "${OPTION_EXCLUSIONS}"
-      then
-         log_debug "Excluded \"${contenttype}\"  by option"
-      fi
-   fi
-
-   executable="${MULLE_MONITOR_DIR}/bin/${contenttype}-callback"
-   if [ ! -x "${executable}" ]
-   then
-      fail "Callback \"${executable}\" is missing"
-   fi
-
    category="`matchfile_get_category "${matchname}" `"
 
-   log_fluff "Callback: \"${executable}\" \"${filepath}\" \"${action}\" \"${category}\""
 
-   local task
-   local uppercase
-   local libexecname
-   local libexecfile
-   local functionname
+   log_fluff "Do ${action} callback \"${contenttype}\" with \"${category}\""
 
-   task=`exekutor "${executable}" "${filepath}" "${action}" "${category}"`
-   if [ -z "${task}" ]
-   then
-      log_fluff "\${executable}\ returned not task"
-      return
-   fi
-
-   #
-   # "eval" it so task is splitted into arguments.
-   # Might be useful to pass more, than just the task back.
-   # "filepath" is then the last parameter
-   #
-   eval run_task ${task} "$'{filepath}'"
+   run_callback "${contenttype}" "${filepath}" "${action}" "${category}"
 }
 
 
@@ -253,10 +219,8 @@ _watch_using_fswatch()
 {
    log_entry "_watch_using_fswatch" "$@"
 
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
+   local ignore="$1"
+   local match="$2"
 
    #
    # Why monitoring stops, when executing a build.
@@ -280,6 +244,11 @@ _watch_using_fswatch()
    #
    local filepath
    local cmd
+   local workingdir
+   local esacped_workingdir
+
+   workingdir="${PWD}"
+   escaped_workingdir="`escaped_sed_pattern "${workingdir}/"`"
 
    IFS="
 "
@@ -287,35 +256,45 @@ _watch_using_fswatch()
    do
       IFS="${DEFAULT_IFS}"
 
-      filepath="`LC_ALL=C sed 's/^\(.*\) \(.*\)$/\1/' <<< "${line}" `"
+      #
+      # extract filepath from line and
+      # make it a relative filepath
+      #
+      filepath="`LC_ALL=C sed -e 's/^\(.*\) \(.*\)$/\1/' \
+                              -e "s/^${escaped_workingdir}//" <<< "${line}" `"
+
+      [ -z "${filepath}" ] && internal_fail "failed to parse \"${line}\""
+
       cmd="`echo "${line}" | LC_ALL=C sed 's/^\(.*\) \(.*\)$/\2/' | tr '[a-z]' '[A-Z]'`"
 
-      if ! process_event "${ignore_dir}" \
-                         "${ignore_filter}" \
-                         "${match_dir}" \
-                         "${match_filter}" \
-                         "${filepath}" \
-                         "${cmd}"
+      if ! _task="`process_event "${ignore}" "${match}" "${filepath}" "${cmd}"`"
       then
          continue
       fi
-      return
+
+      [ -z "${_task}" ] && continue
+      [ "${OPTION_PAUSE}" = "YES" ] && return 0
+
+      eval run_task ${_task}
+
    done < <( "${FSWATCH}" -r -x --event-flag-separator : "." )  # bashism
    IFS="${DEFAULT_IFS}"
+
+   return 1
 }
 
 
 watch_using_fswatch()
 {
-   log_entry "_watch_using_fswatch" "$@"
+   log_entry "watch_using_fswatch" "$@"
 
-   local cmd
+   local _task
 
-   while :
+   while _watch_using_fswatch "$@"
    do
-      cmd="`_watch_using_fswatch "$@" `"
-      log_debug "execute:" "${cmd}"
-      eval "${cmd}"
+      [ -z "${_task}" ] && internal_fail "_task is empty"
+
+      eval run_task ${_task}
    done
 }
 
@@ -346,10 +325,8 @@ _watch_using_inotifywait()
 {
    log_entry "_watch_using_inotifywait" "$@"
 
-   local ignore_dir="$1"
-   local ignore_filter="$2"
-   local match_dir="$3"
-   local match_filter="$4"
+   local ignore="$1"
+   local match="$2"
 
    # see watch_using_fswatch comment
    local directory
@@ -377,16 +354,17 @@ _watch_using_inotifywait()
       filename="`_remove_quotes "${_line}" `"
 
       filepath="` filepath_concat "${directory}" "${filename}" `"
-      if ! process_event "${ignore_dir}" \
-                         "${ignore_filter}" \
-                         "${match_dir}" \
-                         "${match_filter}" \
-                         "${filepath}" \
-                         "${cmd}"
+
+      if ! _task="`process_event "${ignore}" "${match}" "${filepath}" "${cmd}"`"
       then
          continue
       fi
-      return
+
+      [ -z "${_task}" ] && continue
+      [ "${OPTION_PAUSE}" = "YES" ] && return 0
+
+      eval run_task ${_task}
+
    done < <( "${INOTIFYWAIT}" -q -r -m -c "$@" )  # bashism
 
    IFS="${DEFAULT_IFS}"
@@ -397,18 +375,18 @@ watch_using_inotifywait()
 {
    log_entry "watch_using_inotifywait" "$@"
 
-   local cmd
+   local _task
 
-   while :
+   while _watch_using_inotifywait "$@"
    do
-      cmd="`_watch_using_inotifywait "$@" `"
-      log_debug "execute:" "${cmd}"
-      eval "${cmd}"
+      [ -z "${_task}" ] && internal_fail "_task is empty"
+
+      eval run_task ${_task}
    done
 }
 
 
-cleanup()
+_cleanup_monitor()
 {
    log_entry "cleanup" "$@"
 
@@ -416,11 +394,25 @@ cleanup()
    then
       log_fluff "==> Cleanup"
 
-      remove_old_test_job
+      local job
+
+      for job in `jobs -pr`
+      do
+         kill $job
+      done
+
       rm "${MONITOR_PIDFILE}" 2> /dev/null
    fi
 
    log_fluff "==> Exit"
+}
+
+
+cleanup_monitor()
+{
+   log_entry "cleanup" "$@"
+
+   _cleanup_monitor "$@"
    exit 1
 }
 
@@ -445,7 +437,7 @@ prevent_superflous_monitor()
       rm "${TEST_JOB_PIDFILE}" 2> /dev/null
    fi
 
-   trap cleanup 2 3
+   trap cleanup_monitor 2 3
    announce_pid $$ "${MONITOR_PIDFILE}"
 }
 
@@ -459,6 +451,7 @@ monitor_run_main()
 
    local OPTION_IGNORE_FILTER
    local OPTION_MATCH_FILTER
+   local OPTION_PAUSE="NO"
 
    #
    # handle options
@@ -468,6 +461,10 @@ monitor_run_main()
       case "$1" in
          -h|--help)
             monitor_run_usage
+         ;;
+
+         -p|--task-pauses-observation)
+            OPTION_PAUSE="YES"
          ;;
 
          -if|--ignore-filter)
@@ -496,8 +493,6 @@ monitor_run_main()
       shift
    done
 
-   match_environment
-
    if [ -z "${MULLE_MONITOR_PROCESS_SH}" ]
    then
       # shellcheck source=src/mulle-monitor-process.sh
@@ -507,6 +502,11 @@ monitor_run_main()
    then
       # shellcheck source=src/mulle-monitor-match.sh
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+   fi
+   if [ -z "${MULLE_MONITOR_CALLBACK_SH}" ]
+   then
+      # shellcheck source=src/mulle-monitor-callback.sh
+      . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-callback.sh" || exit 1
    fi
    if [ -z "${MULLE_MONITOR_TASK_SH}" ]
    then
@@ -542,21 +542,27 @@ monitor_run_main()
 
    log_info "Press [CTRL]-[C] to quit"
 
+   local _cache
+   local ignore
+   local match
+
+   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+                                 "${OPTION_IGNORE_FILTER}"
+   ignore="${_cache}"
+
+   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+                                 "${OPTION_MATCH_FILTER}"
+   match="${_cache}"
+
    case "${MULLE_UNAME}" in
       linux)
-         watch_using_inotifywait "${IGNORE_DIR}" \
-                                 "${IGNORE_FILTER}" \
-                                 "${MATCH_DIR}" \
-                                 "${MATCH_FILTER}" \
-                                 "$@"
+         watch_using_inotifywait "${ignore}" "${match}" "$@"
       ;;
 
       *)
-         watch_using_fswatch "${IGNORE_DIR}" \
-                             "${IGNORE_FILTER}" \
-                             "${MATCH_DIR}" \
-                             "${MATCH_FILTER}" \
-                             "$@"
+         watch_using_fswatch "${ignore}" "${match}" "$@"
       ;;
    esac
+
+   _cleanup_monitor
 }

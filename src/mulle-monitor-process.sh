@@ -110,7 +110,6 @@ announce_pid()
    local pid="$1"
    local pid_file="$2"
 
-   log_verbose "Scheduled tests with pid: ${pid}"
    redirect_exekutor "${pid_file}" echo "${pid}" || exit 1
 }
 

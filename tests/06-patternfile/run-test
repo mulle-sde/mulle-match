@@ -51,23 +51,18 @@ main()
 
    #-----------
 
-   expect_mulle_monitor ".mulle-monitor/bin/foo-callback" -e callback locate foo
+   expect_mulle_monitor "00-vfl--none" -e patternfile -i list
+   expect_mulle_monitor "00-bochum--all" -e patternfile list
 
    log_verbose "----- #1 PASSED -----"
 
    #-----------
 
-   expect_failure_mulle_monitor  -e callback locate bar
+   expect_mulle_monitor "vfl" -e patternfile -i get "00-vfl--none"
+   expect_mulle_monitor "bochum" -e patternfile get "00-bochum--all"
 
    log_verbose "----- #2 PASSED -----"
 
-   #-----------
-
-   expect_failure_mulle_monitor -e callback locate baz
-
-   log_verbose "----- #3 PASSED -----"
-
-   #-----------
 
    log_info "----- ALL PASSED -----"
 }

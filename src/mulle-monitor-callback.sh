@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_MONITOR_TASK_SH="included"
+MULLE_MONITOR_CALLBACK_SH="included"
 
 
-monitor_task_usage()
+monitor_callback_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -41,106 +41,68 @@ monitor_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task [options] <command> <name> ...
+   ${MULLE_EXECUTABLE_NAME} callback [options] <command> <type> ...
 
-   Execute a task with the given name. Sometimes useful for testing
-   mulle-monitor extensions.
+   Locate or execute a callback with the given pattern type.
+
+   Sometimes useful for testing mulle-monitor extensions.
 
 Options:
-   -h  : this help
+   -h      : this help
 
 Commands:
-   locate  : locate task plugin of given name
-   require : load task and check if required main function is present
-   run     : run task of given name
+   locate  : locate the callback for the given pattern type
+   run     : run callback for the given pattern type
 EOF
    exit 1
 }
 
 
-_task_plugin_filename()
-{
-   log_entry "_task_plugin_filename" "$@"
-
-   local task="$1"
-
-   [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
-
-   _plugin="${MULLE_MONITOR_DIR}/libexec/${task}-task.sh"
-}
-
-
-_locate_task()
+_locate_callback()
 {
    log_entry "_locate_callback" "$@"
 
-   _task_plugin_filename "$@"
+   local callback="$1"
 
-   if [ ! -f "${_plugin}" ]
+   [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
+
+   _executable="${MULLE_MONITOR_DIR}/bin/${callback}-callback"
+   if [ -x "${_executable}" ]
    then
-      log_error "\"${_plugin}\" not found"
+      return 0
+   fi
+
+   if [ -f "${_executable}" ]
+   then
+      log_error "\"${_executable}\" is not executable"
       return 1
    fi
+
+   log_error "\"${_executable}\" not found"
+   return 1
 }
 
 
-_load_task()
+run_callback()
 {
-   log_entry "_load_task" "$@"
+   log_entry "run_callback" "$@"
 
-   local task="$1"
-   local functionname="$2"
+   local callback="$1"; shift
 
-   local _plugin
+   local _executable
 
-   if ! _locate_task "${task}"
+   if ! _locate_callback "${callback}"
    then
-      exit 1
+      return 1
    fi
 
-   . "${_plugin}" || exit 1
-
-   if [ "`type -t "${functionname}"`" != "function" ]
-   then
-      fail "\"${_plugin}\" does not define function \"${functionname}\""
-   fi
+   exekutor "${_executable}" "$@"
 }
 
 
-require_task()
+install_callback()
 {
-   log_entry "require_task" "$@"
-
-   local task="$1"
-
-   local functionname
-
-   functionname="task_${task}_main"
-   if [ "`type -t "${functionname}"`" != "function" ]
-   then
-      _load_task "${task}" "${functionname}"
-   fi
-}
-
-
-run_task()
-{
-   log_entry "run_task" "$@"
-
-   local task="$1"; shift
-
-   local functionname
-
-   require_task "${task}" || exit 1
-
-   functionname="task_${task}_main"
-   "${functionname}" "$@"
-}
-
-
-install_task()
-{
-   log_entry "install_task" "$@"
+   log_entry "install_callback" "$@"
 
    local task="$1"
    local filename="$2"
@@ -148,28 +110,28 @@ install_task()
    [ -z "${filename}" ] && monitor_task_usage "missing filename"
    [ -f "${filename}" ] || fail "\"${filename}\" not found"
 
-   local _plugin
+   local _executable
 
-   _task_plugin_filename "${name}"
+   _callback_executable_filename "${name}"
 
-   [ -e "${_plugin}" -a "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" ] \
-      || fail "\"${_plugin}\" already exists. Use -f to clobber"
+   [ -e "${_executable}" -a "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" ] \
+      || fail "\"${_executable}\" already exists. Use -f to clobber"
 
-   local plugindir
+   local bindir
 
-   plugindir="`dirname -- "${_plugin}"`"
-   mkdir_if_missing "${plugindir}"
-   exekutor cp "${filename}" "${_plugin}"
-   exekutor chmod -x "${_plugin}"
+   bindir="`dirname -- "${_executable}"`"
+   mkdir_if_missing "${bindir}"
+   exekutor cp "${filename}" "${_executable}"
+   exekutor chmod +x "${_executable}"
 }
 
 
 ###
 ###  MAIN
 ###
-monitor_task_main()
+monitor_callback_main()
 {
-   log_entry "monitor_task_main" "$@"
+   log_entry "monitor_callback_main" "$@"
 
    #
    # handle options
@@ -178,11 +140,11 @@ monitor_task_main()
    do
       case "$1" in
          -h|--help)
-            monitor_task_usage
+            monitor_callback_usage
          ;;
 
          -*)
-            monitor_task_usage "unknown option \"$1\""
+            monitor_callback_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -192,7 +154,6 @@ monitor_task_main()
 
       shift
    done
-
 
    if [ -z "${MULLE_MONITOR_PROCESS_SH}" ]
    then
@@ -206,43 +167,37 @@ monitor_task_main()
    local name="$1"
    [ $# -ne 0 ] && shift
 
-   [ -z "${name}" ] && monitor_task_usage "missing name"
+   [ -z "${name}" ] && monitor_callback_usage "missing name"
 
    case "${cmd}" in
       run)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
+         [ $# -ne 0 ] && monitor_callback_usage "superflous arguments \"$*\""
 
-         run_task "${name}" "$@"
-      ;;
-
-      require)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
-
-         require_task "${name}"
+         run_callback "${name}" "$@"
       ;;
 
       install)
          local filename="$1"
 
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
+         [ $# -ne 0 ] && monitor_callback_usage "superflous arguments \"$*\""
 
-         install_task "${task}" "${filename}"
+         install_callback "${task}" "${filename}"
       ;;
 
       locate)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
+         [ $# -ne 0 ] && monitor_callback_usage "superflous arguments \"$*\""
 
-         local _plugin
+         local _executable
 
-         if ! _locate_task "${name}"
+         if ! _locate_callback "${name}"
          then
             return 1
          fi
-         echo "${_plugin}"
+         echo "${_executable}"
       ;;
 
       *)
-         monitor_task_usage "unknown command \"${cmd}\""
+         monitor_callback_usage "unknown command \"${cmd}\""
       ;;
    esac
 }

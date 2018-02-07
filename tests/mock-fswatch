@@ -1,0 +1,27 @@
+#! /usr/bin/env bash
+
+[ "${TRACE}" = YES ] && set -x && : "$0" "$@"
+
+
+main()
+{
+   [ -z "${MULLE_FSWATCH_REPLAY_FILE}" ] && fail "environment MULLE_FSWATCH_REPLAY_FILE must be set"
+   [ ! -f "${MULLE_FSWATCH_REPLAY_FILE}" ] && fail "\"${MULLE_FSWATCH_REPLAY_FILE}\" is missing"
+
+   rexekutor cat "${MULLE_FSWATCH_REPLAY_FILE}"
+}
+
+
+_init()
+{
+   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`"
+
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "minimal" || exit 1
+}
+
+
+_init "$@"
+
+main "$@"
+
+
