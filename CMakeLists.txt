@@ -17,9 +17,13 @@ mulle-monitor
 )
 
 set( LIBRARY_SCRIPTS
-mulle-monitor-match.sh
-mulle-monitor-process.sh
-mulle-monitor-run.s
+src/mulle-monitor-callback.sh
+src/mulle-monitor-find.sh
+src/mulle-monitor-match.sh
+src/mulle-monitor-patternfile.sh
+src/mulle-monitor-process.sh
+src/mulle-monitor-run.sh
+src/mulle-monitor-task.sh
 )
 
 
