@@ -48,11 +48,13 @@ Usage:
    Sometimes useful for testing mulle-monitor extensions.
 
 Options:
-   -h      : this help
+   -h        : this help
 
 Commands:
-   locate  : locate the callback for the given pattern type
-   run     : run callback for the given pattern type
+   install   : install <name> <filename>
+   locate    : locate the callback for the given pattern type
+   uninstall : uninstall <name> <filename>
+   run       : run callback for the given pattern type
 EOF
    exit 1
 }
@@ -104,7 +106,7 @@ install_callback()
 {
    log_entry "install_callback" "$@"
 
-   local task="$1"
+   local callback="$1"
    local filename="$2"
 
    [ -z "${filename}" ] && monitor_task_usage "missing filename"
@@ -112,7 +114,7 @@ install_callback()
 
    local _executable
 
-   _callback_executable_filename "${name}"
+   _callback_executable_filename "${callback}"
 
    [ -e "${_executable}" -a "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" ] \
       || fail "\"${_executable}\" already exists. Use -f to clobber"
@@ -124,6 +126,27 @@ install_callback()
    exekutor cp "${filename}" "${_executable}"
    exekutor chmod +x "${_executable}"
 }
+
+
+uninstall_callback()
+{
+   log_entry "uninstall_callback" "$@"
+
+   local callback="$1"
+
+   local _executable
+
+   _callback_executable_filename "${callback}"
+
+   if [ ! -e "${_executable}" ]
+   then
+      log_warning "\"${_executable}\" does not exist."
+      return 0
+   fi
+
+   remove_file_if_present "${_executable}"
+}
+
 
 
 ###
@@ -176,12 +199,12 @@ monitor_callback_main()
          run_callback "${name}" "$@"
       ;;
 
-      install)
+      install|uninstall)
          local filename="$1"
 
          [ $# -ne 0 ] && monitor_callback_usage "superflous arguments \"$*\""
 
-         install_callback "${task}" "${filename}"
+         ${cmd}_callback "${task}" "${filename}"
       ;;
 
       locate)

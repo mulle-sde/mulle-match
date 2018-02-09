@@ -61,31 +61,102 @@ EOF
 }
 
 
+monitor_patternfile_list_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} patternfile list [options]
+
+   List patternfiles
+
+Options:
+   -h         : this help
+   -p         : print patternfile contents
+EOF
+   exit 1
+}
+
+
+_list_patternfiles()
+{
+   log_entry "_list_patternfiles" "$@"
+
+   local folder="$1"
+
+   if [ -d "${folder}" ]
+   then
+   (
+      exekutor cd "${folder}"
+      exekutor ls -1 | egrep '[0-9]*-.*--.*'
+   )
+   fi
+}
+
+
 list_patternfiles()
 {
    log_entry "list_patternfiles" "$@"
 
+   local OPTION_DUMP="NO"
+
+   while :
+   do
+      case "$1" in
+         -h|--help)
+            monitor_patternfile_list_usage
+         ;;
+
+         -p|--print-contents)
+            OPTION_DUMP="YES"
+         ;;
+
+         -*)
+            monitor_patternfile_list_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   local folder
+
+   folder="${MULLE_MONITOR_MATCH_DIR}"
    case "${FOLDER_NAME}" in
       ignore.d)
-         if [ -d "${MULLE_MONITOR_IGNORE_DIR}" ]
-         then
-         (
-            cd "${MULLE_MONITOR_IGNORE_DIR}"
-            ls -1 [0]*-*--*
-         )
-         fi
-      ;;
-
-      *)
-         if [ -d "${MULLE_MONITOR_MATCH_DIR}" ]
-         then
-         (
-            cd "${MULLE_MONITOR_MATCH_DIR}"
-            ls -1 [0]*-*--*
-         )
-         fi
+         folder=""${MULLE_MONITOR_IGNORE_DIR}""
       ;;
    esac
+
+   if [ "${OPTION_DUMP}" != "YES" ]
+   then
+      _list_patternfiles "${folder}"
+      return $?
+   fi
+
+   local patternfile
+
+   IFS="
+"
+   for patternfile in `_list_patternfiles "${folder}"`
+   do
+      IFS="${DEFAULT_IFS}"
+      log_info "-----------------------------------------"
+      log_info "${FOLDER_NAME}/${patternfile}"
+      log_info "-----------------------------------------"
+      cat "${folder}/${patternfile}"
+      echo
+
+   done
+   IFS="${DEFAULT_IFS}"
 }
 
 
@@ -156,9 +227,7 @@ monitor_patternfile_main()
 
    case "${cmd}" in
       list)
-         [ $# -ne 0 ] && monitor_patternfile_usage "superflous arguments \"$*\""
-
-         list_patternfiles
+         list_patternfiles "$@"
       ;;
 
       get)

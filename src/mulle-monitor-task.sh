@@ -50,9 +50,11 @@ Options:
    -h  : this help
 
 Commands:
-   locate  : locate task plugin of given name
-   require : load task and check if required main function is present
-   run     : run task of given name
+   install   : install <name> <filename>
+   locate    : locate task plugin of given name
+   uninstall : uninstall <name> <filename>
+   require   : load task and check if required main function is present
+   run       : run task of given name
 EOF
    exit 1
 }
@@ -150,7 +152,7 @@ install_task()
 
    local _plugin
 
-   _task_plugin_filename "${name}"
+   _task_plugin_filename "${task}"
 
    [ -e "${_plugin}" -a "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" ] \
       || fail "\"${_plugin}\" already exists. Use -f to clobber"
@@ -162,6 +164,28 @@ install_task()
    exekutor cp "${filename}" "${_plugin}"
    exekutor chmod -x "${_plugin}"
 }
+
+
+uninstall_task()
+{
+   log_entry "uninstall_task" "$@"
+
+   local task="$1"
+
+   local _plugin
+
+   _task_plugin_filename "${task}"
+
+   if [ ! -e "${_plugin}" ]
+   then
+      log_warning "\"${_plugin}\" does not exist."
+      return 0
+   fi
+
+   remove_file_if_present "${_plugin}"
+}
+
+
 
 
 ###
@@ -209,24 +233,18 @@ monitor_task_main()
    [ -z "${name}" ] && monitor_task_usage "missing name"
 
    case "${cmd}" in
-      run)
+      run|require)
          [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
 
-         run_task "${name}" "$@"
+         ${cmd}_task "${name}" "$@"
       ;;
 
-      require)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
-
-         require_task "${name}"
-      ;;
-
-      install)
+      install|uninstall)
          local filename="$1"
 
          [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
 
-         install_task "${task}" "${filename}"
+         ${cmd}_task "${task}" "${filename}"
       ;;
 
       locate)

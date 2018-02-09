@@ -151,31 +151,32 @@ get_core_count()
 }
 
 
-_find_filenames()
+_find_toplevel_files()
 {
-   log_entry "_find_filenames" "$@"
+   log_entry "_find_toplevel_files" "$@"
 
-   local format="$1"
-   local ignore_patterncaches="$2"
-   local match_patterncaches="$3"
+   local ignore="$1"
 
+   local filenames
+   local filename
    #
    # to reduce the search tree, first do a search in root only
    # and drop all ignored stuff
    #
    local quoted_filenames
    local filename
+   local _patternfile # needed for _match_filepath
 
    IFS="
 "
    for filename in `find . -mindepth 1 -maxdepth 1 -print`
    do
       IFS="${DEFAULT_IFS}"
-      match_filepath "${ignore_patterncaches}" \
+      _match_filepath "${ignore}" \
                       "" \
-                      "${filename:2}" > /dev/null
-
+                      "${filename:2}"
       # 0 would be matched, but we have no match_dir
+      # so fall through ignore means 2
       if [ $? -eq 2 ]
       then
          quoted_filenames="`concat "${quoted_filenames}" "'${filename:2}'"`"
@@ -183,25 +184,29 @@ _find_filenames()
    done
    IFS="${DEFAULT_IFS}"
 
-   if [ -z "${quoted_filenames}" ]
-   then
-      return 1
-   fi
+   echo "${quoted_filenames}"
+}
 
-   #
-   # now with that out of the way, lets go
-   #
-   local filenames
-   local filename
+
+_parallel_find_filtered_files()
+{
+   log_entry "_parallel_find_filtered_files" "$@"
+
+   local quoted_filenames="$1"
+   local format="$2"
+   local ignore="$3"
+   local match="$4"
 
    local maxjobs
    local running
 
    maxjobs=`get_core_count`
 
+   local filename
+
    IFS="
 "
-   for filename in `eval_exekutor find ${quoted_filenames} -type f -print`
+   for filename in `set -o noglob; eval_exekutor find ${quoted_filenames} -type f -print`
    do
       IFS="${DEFAULT_IFS}"
 
@@ -216,8 +221,8 @@ _find_filenames()
       done
 
       match_print_filepath "${format}" \
-                           "${ignore_patterncaches}" \
-                           "${match_patterncaches}" \
+                           "${ignore}" \
+                           "${match}" \
                            "${filename}" &
 
       shift
@@ -227,6 +232,32 @@ _find_filenames()
    log_verbose "waiting..."
    wait
    log_verbose 'done!'
+}
+
+
+_find_filenames()
+{
+   log_entry "_find_filenames" "$@"
+
+   local format="$1"
+   local ignore="$2"
+   local match="$3"
+
+   #
+   # now with that out of the way, lets go
+   #
+   local quoted_filenames
+
+   quoted_filenames="`_find_toplevel_files "${ignore}"`"
+   if [ -z "${quoted_filenames}" ]
+   then
+      return 1
+   fi
+
+   _parallel_find_filtered_files "${quoted_filenames}" \
+                                 "${format}" \
+                                 "${ignore}" \
+                                 "${match}"
 }
 
 
@@ -316,7 +347,7 @@ monitor_find_main()
    match_patterncaches="${_cache}"
 
 
-   find_filenames "${OUTPUT_FORMAT}" \
+   find_filenames "${OPTION_FORMAT}" \
                   "${ignore_patterncaches}" \
                   "${match_patterncaches}"
 }
