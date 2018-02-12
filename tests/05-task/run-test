@@ -9,7 +9,7 @@ run_mulle_monitor()
    echo mulle-monitor ${MULLE_MONITOR_FLAGS} "$@"  >&2
    echo "####################################" >&2
 
-   mulle-monitor ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
+   "${MULLE_MONITOR}" ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
 }
 
 

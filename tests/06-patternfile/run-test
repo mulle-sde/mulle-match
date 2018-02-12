@@ -9,7 +9,7 @@ run_mulle_monitor()
    echo mulle-monitor ${MULLE_MONITOR_FLAGS} "$@"  >&2
    echo "####################################" >&2
 
-   mulle-monitor ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
+   "${MULLE_MONITOR}" ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
 }
 
 
@@ -52,14 +52,14 @@ main()
    #-----------
 
    expect_mulle_monitor "00-vfl--none" -e patternfile -i list
-   expect_mulle_monitor "00-bochum--all" -e patternfile list
+   expect_mulle_monitor "00-bochum--all" -e patternfile -m list
 
    log_verbose "----- #1 PASSED -----"
 
    #-----------
 
-   expect_mulle_monitor "vfl" -e patternfile -i get "00-vfl--none"
-   expect_mulle_monitor "bochum" -e patternfile get "00-bochum--all"
+   expect_mulle_monitor "vfl" -e patternfile -i dump "00-vfl--none"
+   expect_mulle_monitor "bochum" -e patternfile dump "00-bochum--all"
 
    log_verbose "----- #2 PASSED -----"
 

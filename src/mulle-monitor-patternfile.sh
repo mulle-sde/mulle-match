@@ -43,25 +43,92 @@ monitor_patternfile_usage()
 Usage:
    ${MULLE_EXECUTABLE_NAME} patternfile [options] <command>
 
-   Operations on patternfiles. Currently it can only read existing
-   patternfiles.
-
-   Place ignore patternfiles into \"${MULLE_MONITOR_ETC_DIR}/share/ignore.d\".
-   Place match patternfiles into \"${MULLE_MONITOR_ETC_DIR}/share/match.d\".
+   Operations on patternfiles. Use the -i flag to choose ignore
+   patternfiles instead of the default match patternfiles.
 
 Options:
    -h         : this help
-   -i         : use ignore.d instead of match.d
+   -i         : use ignore patternfiles
 
 Commands:
-   list       : list patternfiles
-   get <file> : show contents of patternfile
+   dump       : show contents of patternfile
+   list       : list patternfiles currently in use
+   install    : install a patternfile
+   uninstall  : remove a patternfile
 EOF
    exit 1
 }
 
 
-monitor_patternfile_list_usage()
+dump_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} patternfile dump <patternfile>
+
+   Read contents of a patternfile and dump it to stdout. You get the names of
+   the available patternfiles using:
+
+      \`${MULLE_EXECUTABLE_NAME}patternfile list\`
+EOF
+   exit 1
+}
+
+
+install_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} patternfile install [options] <callback> <file>
+
+   Install a patternfile to match files to a callback.
+
+   Example. Create a patternfile to match C header and source files for a
+   callback \"c_files\":
+
+      ( echo '*.h' ; echo ".c" ) | \
+         ${MULLE_EXECUTABLE_NAME} patternfile set c_files -
+
+Options:
+   -c <name>    : give this patternfile category. The defaults are
+                  "all"/"none" for match.d/ignore.d respectively. This will be
+                  passed to the callback as a parameter.
+   -h           : this help
+   -p <digits>  : position, the default is 50. Patternfiles with lower numbers
+                  are matched first. (shell sort order)
+EOF
+   exit 1
+}
+
+
+uninstall_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} patternfile uninstall <file>
+
+   Remove a patternfile.
+EOF
+   exit 1
+}
+
+
+list_patternfile_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -72,11 +139,11 @@ monitor_patternfile_list_usage()
 Usage:
    ${MULLE_EXECUTABLE_NAME} patternfile list [options]
 
-   List patternfiles
+   List patternfiles.
 
 Options:
-   -h         : this help
-   -p         : print patternfile contents
+   -h   : this help
+   -d   : dump patternfile contents
 EOF
    exit 1
 }
@@ -86,37 +153,37 @@ _list_patternfiles()
 {
    log_entry "_list_patternfiles" "$@"
 
-   local folder="$1"
+   local directory="$1"
 
-   if [ -d "${folder}" ]
+   if [ -d "${directory}" ]
    then
    (
-      exekutor cd "${folder}"
+      exekutor cd "${directory}"
       exekutor ls -1 | egrep '[0-9]*-.*--.*'
    )
    fi
 }
 
 
-list_patternfiles()
+list_patternfile_main()
 {
-   log_entry "list_patternfiles" "$@"
+   log_entry "list_patternfile_main" "$@"
 
    local OPTION_DUMP="NO"
 
-   while :
+   while [ "$#" -ne 0 ]
    do
       case "$1" in
          -h|--help)
-            monitor_patternfile_list_usage
+            list_patternfile_usage
          ;;
 
-         -p|--print-contents)
+         -d|--dump-contents)
             OPTION_DUMP="YES"
          ;;
 
          -*)
-            monitor_patternfile_list_usage "unknown option \"$1\""
+            list_patternfile_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -127,18 +194,18 @@ list_patternfiles()
       shift
    done
 
-   local folder
+   local directory
 
-   folder="${MULLE_MONITOR_MATCH_DIR}"
-   case "${FOLDER_NAME}" in
+   directory="${MULLE_MONITOR_MATCH_DIR}"
+   case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         folder=""${MULLE_MONITOR_IGNORE_DIR}""
+         directory="${MULLE_MONITOR_IGNORE_DIR}"
       ;;
    esac
 
    if [ "${OPTION_DUMP}" != "YES" ]
    then
-      _list_patternfiles "${folder}"
+      _list_patternfiles "${directory}"
       return $?
    fi
 
@@ -146,13 +213,13 @@ list_patternfiles()
 
    IFS="
 "
-   for patternfile in `_list_patternfiles "${folder}"`
+   for patternfile in `_list_patternfiles "${directory}"`
    do
       IFS="${DEFAULT_IFS}"
       log_info "-----------------------------------------"
-      log_info "${FOLDER_NAME}/${patternfile}"
+      log_info "${OPTION_FOLDER_NAME}/${patternfile}"
       log_info "-----------------------------------------"
-      cat "${folder}/${patternfile}"
+      cat "${directory}/${patternfile}"
       echo
 
    done
@@ -160,13 +227,34 @@ list_patternfiles()
 }
 
 
-get_patternfile()
+dump_patternfile_main()
 {
-   log_entry "get_patternfile" "$@"
+   log_entry "dump_patternfile_main" "$@"
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h|--help)
+            dump_patternfile_usage
+         ;;
+
+         -*)
+            dump_patternfile_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -ne 1 ] && dump_patternfile_usage
 
    local filename="$1"
 
-   case "${FOLDER_NAME}" in
+   case "${OPTION_FOLDER_NAME}" in
       ignore.d)
          cat "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
       ;;
@@ -178,15 +266,151 @@ get_patternfile()
 }
 
 
-#
-# TODO: check that we are not accidentally overwriting share
-#       if there is a share but no etc setup a new etc and
-#       copy share stuff over.
-#
-set_patternfile()
+uninstall_patternfile_main()
 {
-   fail "Not yet implemented"
+   log_entry "uninstall_patternfile_main" "$@"
+
+   [ "$#" -ne 1 ] && uninstall_patternfile_usage
+
+   local filename="$1"
+
+   case "${OPTION_FOLDER_NAME}" in
+      ignore.d)
+         remove_file_if_present "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
+      ;;
+
+      *)
+         remove_file_if_present "${MULLE_MONITOR_MATCH_DIR}/${filename}"
+      ;;
+   esac
 }
+
+
+_validate_digits()
+{
+   log_entry "_validate_digits" "$@"
+
+   [ ! -z "$1" -a -z "`tr -d '0-9' <<< "$1"`" ]
+}
+
+
+_validate_typename()
+{
+   log_entry "_validate_typename" "$@"
+
+   [ ! -z "$1" -a -z "`tr -d '0-9A-Za-z_' <<< "$1"`" ]
+}
+
+
+_validate_category()
+{
+   log_entry "_validate_category" "$@"
+
+   [ -z "`tr -d '0-9A-Za-z_' <<< "$1"`" ]
+}
+
+
+setup_etc_if_needed()
+{
+   log_entry "setup_etc_if_needed" "$@"
+
+   local folder="$1"
+
+   if [ -d "${MULLE_MONITOR_ETC_DIR}/${folder}" ]
+   then
+      log_fluff "etc folder already setup"
+      return
+   fi
+
+   if [ -f "${MULLE_MONITOR_DIR}/share/${folder}" ]
+   then
+      mkdir_if_missing "${MULLE_MONITOR_ETC_DIR}"
+      exekutor cp -Ra "${MULLE_MONITOR_DIR}/share/${folder}" "${MULLE_MONITOR_ETC_DIR}"
+   else
+      mkdir_if_missing "${MULLE_MONITOR_ETC_DIR}/${folder}"
+   fi
+}
+
+
+install_patternfile_main()
+{
+   log_entry "install_patternfile_main" "$@"
+
+   local OPTION_POSITION="50"
+
+   while :
+   do
+      case "$1" in
+         -h|--help)
+            install_patternfile_usage
+         ;;
+
+         -i)
+            OPTION_FOLDER_NAME="ignore.d"
+            if [ "${OPTION_CATEGORY}" = "all" ]
+            then
+               OPTION_CATEGORY="none"
+            fi
+         ;;
+
+         -c)
+            [ $# -eq 1 ] && set_patternfile_usage "missing argument to $1"
+            shift
+
+            OPTION_CATEGORY="$1"
+         ;;
+
+         -p)
+            [ $# -eq 1 ] && set_patternfile_usage "missing argument to $1"
+            shift
+            OPTION_POSITION="$1"
+         ;;
+
+         -*)
+            set_patternfile_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+   [ "$#" -ne 2 ] && install_patternfile_usage
+
+   local typename="$1"
+   local filename="$2"
+
+   [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
+
+   _validate_digits "${OPTION_POSITION}"   || fail "position should only contain digits"
+   _validate_typename "${typename}"        || fail "type should only contain a-z and digits"
+   _validate_category "${OPTION_CATEGORY}" || fail "category should only contain a-z and digits"
+
+   local patternfile
+   local contents
+   local dstfile
+
+   patternfile="${OPTION_POSITION}-${typename}--${OPTION_CATEGORY}"
+   dstfile="${MULLE_MONITOR_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
+
+   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
+      && fail "\"${dstfile}\" already exists. Use -f to clobber"
+
+   if [ "${filename}" = "-" ]
+   then
+      contents="`cat`"
+   else
+      contents="`cat "${filename}"`"
+   fi
+
+   setup_etc_if_needed "${OPTION_FOLDER_NAME}"
+
+   redirect_exekutor "${dstfile}" echo "${contents}"
+}
+
+
 
 ###
 ###  MAIN
@@ -195,10 +419,22 @@ monitor_patternfile_main()
 {
    log_entry "monitor_patternfile_main" "$@"
 
-   local FOLDER_NAME="match.d"
-   #
-   # handle options
-   #
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
+
+   local OPTION_FOLDER_NAME="match.d"
+   local ONLY_IGNORE="YES"
+   local ONLY_MATCH="YES"
+   local OPTION_CATEGORY="all"
+
    while :
    do
       case "$1" in
@@ -207,7 +443,23 @@ monitor_patternfile_main()
          ;;
 
          -i)
-            FOLDER_NAME="ignore.d"
+            ONLY_IGNORE="YES"
+            ONLY_MATCH="NO"
+            OPTION_FOLDER_NAME="ignore.d"
+            if [ "${OPTION_CATEGORY}" = "all" ]
+            then
+               OPTION_CATEGORY="none"
+            fi
+         ;;
+
+         -m)
+            ONLY_IGNORE="NO"
+            ONLY_MATCH="YES"
+            OPTION_FOLDER_NAME="match.d"
+            if [ "${OPTION_CATEGORY}" = "none" ]
+            then
+               OPTION_CATEGORY="all"
+            fi
          ;;
 
          -*)
@@ -223,20 +475,31 @@ monitor_patternfile_main()
    done
 
    local cmd="$1"
+
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      list)
-         list_patternfiles "$@"
+      dump|install|uninstall)
+         ${cmd}_patternfile_main "$@"
       ;;
 
-      get)
-         filename="$1"
-         [ $# -ne 0 ] && shift
-         [ -z "${filename}" ] && monitor_patternfile_usage "missing filename argument"
-         [ $# -ne 0 ] && monitor_patternfile_usage "superflous arguments \"$*\""
+      list)
+         if [ "${ONLY_MATCH}" = "NO" ]
+         then
+            log_info "Ignore patternfiles (-i)"
+            OPTION_FOLDER_NAME="ignore.d"
+            list_patternfile_main "$@"
+         fi
+         if [ "${ONLY_IGNORE}" = "NO" ]
+         then
+            log_info "Match patternfiles"
+            OPTION_FOLDER_NAME="match.d"
+            list_patternfile_main "$@"
+         fi
+      ;;
 
-         get_patternfile "${filename}"
+      "")
+         monitor_patternfile_usage
       ;;
 
       *)

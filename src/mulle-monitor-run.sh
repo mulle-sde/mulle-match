@@ -102,7 +102,7 @@ process_event()
 
    log_fluff "Do ${action} callback \"${contenttype}\" with \"${category}\""
 
-   run_callback "${contenttype}" "${filepath}" "${action}" "${category}"
+   run_callback_main "${contenttype}" "${filepath}" "${action}" "${category}"
 }
 
 
@@ -245,9 +245,9 @@ _watch_using_fswatch()
    local filepath
    local cmd
    local workingdir
-   local esacped_workingdir
+   local escaped_workingdir
 
-   workingdir="${PWD}"
+   workingdir="`pwd -P`"
    escaped_workingdir="`escaped_sed_pattern "${workingdir}/"`"
 
    IFS="
@@ -275,7 +275,7 @@ _watch_using_fswatch()
       [ -z "${_task}" ] && continue
       [ "${OPTION_PAUSE}" = "YES" ] && return 0
 
-      eval run_task ${_task}
+      eval run_task_main ${_task}
 
    done < <( "${FSWATCH}" -r -x --event-flag-separator : "." )  # bashism
    IFS="${DEFAULT_IFS}"
@@ -493,6 +493,17 @@ monitor_run_main()
       shift
    done
 
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
+
    if [ -z "${MULLE_MONITOR_PROCESS_SH}" ]
    then
       # shellcheck source=src/mulle-monitor-process.sh
@@ -516,7 +527,10 @@ monitor_run_main()
 
    mkdir_if_missing "${MULLE_MONITOR_DIR}/var/run"
    MONITOR_PIDFILE="${MULLE_MONITOR_DIR}/var/run/monitor-pid"
+
+   # use physical path
    PROJECT_DIR="`pwd -P`"
+   exekutor cd "${PROJECT_DIR}" || fail "could not cd to \"${PROJECT_DIR}\""
 
    export MULLE_MONITOR_LIBEXEC_DIR
    export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
@@ -546,11 +560,11 @@ monitor_run_main()
    local ignore
    local match
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
                                  "${OPTION_IGNORE_FILTER}"
    ignore="${_cache}"
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
                                  "${OPTION_MATCH_FILTER}"
    match="${_cache}"
 

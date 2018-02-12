@@ -167,22 +167,22 @@ _find_toplevel_files()
    local filename
    local _patternfile # needed for _match_filepath
 
-   IFS="
-"
-   for filename in `find . -mindepth 1 -maxdepth 1 -print`
+   for filename in .* *
    do
-      IFS="${DEFAULT_IFS}"
-      _match_filepath "${ignore}" \
-                      "" \
-                      "${filename:2}"
+      if [ "${filename}" = "." -o "${filename}" = ".." ]
+      then
+         continue
+      fi
+
+      _match_filepath "${ignore}" "" "${filename}"
+
       # 0 would be matched, but we have no match_dir
       # so fall through ignore means 2
       if [ $? -eq 2 ]
       then
-         quoted_filenames="`concat "${quoted_filenames}" "'${filename:2}'"`"
+         quoted_filenames="`concat "${quoted_filenames}" "'${filename}'"`"
       fi
    done
-   IFS="${DEFAULT_IFS}"
 
    echo "${quoted_filenames}"
 }
@@ -220,10 +220,7 @@ _parallel_find_filtered_files()
          sleep 0.01s # 100Hz
       done
 
-      match_print_filepath "${format}" \
-                           "${ignore}" \
-                           "${match}" \
-                           "${filename}" &
+      match_print_filepath "${format}" "${ignore}" "${match}" "${filename}" &
 
       shift
    done
@@ -338,12 +335,14 @@ monitor_find_main()
 
    local _cache
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
-                                 "${OPTION_IGNORE_FILTER}"
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+                                        "${OPTION_IGNORE_FILTER}" \
+                                         "${MULLE_MONITOR_DIR}/var/cache"
    ignore_patterncaches="${_cache}"
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
-                                 "${OPTION_MATCH_FILTER}"
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+                                        "${OPTION_MATCH_FILTER}" \
+                                         "${MULLE_MONITOR_DIR}/var/cache"
    match_patterncaches="${_cache}"
 
 

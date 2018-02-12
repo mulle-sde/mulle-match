@@ -9,7 +9,7 @@ run_mulle_monitor()
    echo mulle-monitor ${MULLE_MONITOR_FLAGS} "$@"  >&2
    echo "####################################" >&2
 
-   mulle-monitor ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
+   "${MULLE_MONITOR}" ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
 }
 
 
@@ -54,6 +54,8 @@ main()
    FSWATCH="${PWD}/../mock-fswatch"
    [ -x "${FSWATCH}" ] || fail "\"${FSWATCH}\" is missing"
    export FSWATCH
+
+   echo "`pwd -P`/src/foo.sh Created:Updated:IsFile" > "create-src-foo-sh-replay.txt"
 
    MULLE_FSWATCH_REPLAY_FILE="create-src-foo-sh-replay.txt" \
       expect_mulle_monitor "VfL Bochum 1848" -e run

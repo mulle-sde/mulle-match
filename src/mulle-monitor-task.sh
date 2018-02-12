@@ -41,22 +41,144 @@ monitor_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task [options] <command> <name> ...
+   ${MULLE_EXECUTABLE_NAME} task [options] <command>
 
-   Execute a task with the given name. Sometimes useful for testing
-   mulle-monitor extensions.
+   Manage tasks. A task is a plugin that is loaded by the monitor and executed
+   on behalf of a callback. A callback may print a taskname to stdout. This is
+   then used by the monitor to run the task.
+
+   The reason for separating tasks and callbacks
+   are:
+      callbacks can be written in any language
+      callbacks are one shot and keep no state
+      tasks must be written in bash
+      tasks can keep state in the running monitor, this is useful for job
+      control.
 
 Options:
-   -h  : this help
+   -h        : this help
 
 Commands:
-   install   : install <name> <filename>
-   locate    : locate task plugin of given name
-   uninstall : uninstall <name> <filename>
-   require   : load task and check if required main function is present
-   run       : run task of given name
+   install   : install
+   list      : list installed tasks
+   uninstall : uninstall
+   require   : load task and check that the required main function is present
+   run       : run task
 EOF
    exit 1
+}
+
+
+install_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task install <task> <script>
+
+   Install a sourceable bash script as a mulle-sde task. You may specify '-' as
+   to read it from stdin.
+EOF
+   exit 1
+}
+
+
+uninstall_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task uninstall <task>
+
+   Remove a task.
+EOF
+   exit 1
+}
+
+
+list_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task list
+
+   List installed tasks.
+EOF
+   exit 1
+}
+
+
+require_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} require run <task>
+
+   Load a task and check that the requirements are meant. This means that
+   the task must provide an entry function called <task>_task_main.
+EOF
+   exit 1
+}
+
+
+run_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task run <task> ...
+
+   Run a task. Depending on the task, you may be able to pass additional
+   arguments to the task.
+EOF
+   exit 1
+}
+
+
+_cheap_help_options()
+{
+   local usage="$1"
+
+   while :
+   do
+      case "$1" in
+         -h|--help)
+            "${usage}"
+         ;;
+
+         -*)
+             "${usage}" "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
 }
 
 
@@ -74,7 +196,7 @@ _task_plugin_filename()
 
 _locate_task()
 {
-   log_entry "_locate_callback" "$@"
+   log_entry "_locate_task" "$@"
 
    _task_plugin_filename "$@"
 
@@ -109,9 +231,30 @@ _load_task()
 }
 
 
-require_task()
+list_task_main()
 {
-   log_entry "require_task" "$@"
+   log_entry "list_task_main" "$@"
+
+   [ "$#" -ne 0 ] && list_task_usage
+
+   log_info "Tasks"
+   if [ -d "${MULLE_MONITOR_DIR}/libexec" ]
+   then
+   (
+      cd "${MULLE_MONITOR_DIR}/libexec"
+      ls -1 *-task.sh 2> /dev/null | sed -e 's/-task\.sh//'
+   )
+   fi
+}
+
+
+require_task_main()
+{
+   log_entry "require_task_main" "$@"
+
+   _cheap_help_options "require_task_usage"
+
+   [ "$#" -lt 1 ] && require_task_usage
 
    local task="$1"
 
@@ -125,50 +268,93 @@ require_task()
 }
 
 
-run_task()
+# "Hidden" command for testing
+locate_task_main()
 {
-   log_entry "run_task" "$@"
+   log_entry "locate_task_main" "$@"
+
+   _cheap_help_options "run_task_usage"
+
+   [ "$#" -lt 1 ] && run_task_usage
+
+   local task="$1"; shift
+
+   local _plugin
+
+   _locate_task "${task}" || exit 1
+
+   exekutor echo "${_plugin}"
+}
+
+
+run_task_main()
+{
+   log_entry "run_task_main" "$@"
+
+   _cheap_help_options "run_task_usage"
+
+   [ "$#" -lt 1 ] && run_task_usage
 
    local task="$1"; shift
 
    local functionname
 
-   require_task "${task}" || exit 1
+   require_task_main "${task}" || exit 1
 
    functionname="task_${task}_main"
-   "${functionname}" "$@"
+   exekutor "${functionname}" "$@"
 }
 
 
-install_task()
+install_task_main()
 {
-   log_entry "install_task" "$@"
+   log_entry "install_task_main" "$@"
+
+   _cheap_help_options "install_task_usage"
+
+   [ "$#" -ne 2 ] && install_task_usage
 
    local task="$1"
    local filename="$2"
 
-   [ -z "${filename}" ] && monitor_task_usage "missing filename"
-   [ -f "${filename}" ] || fail "\"${filename}\" not found"
+   [ -z "${filename}" ] && install_task_usage "missing filename"
+   [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
 
    local _plugin
 
    _task_plugin_filename "${task}"
 
-   [ -e "${_plugin}" -a "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" ] \
-      || fail "\"${_plugin}\" already exists. Use -f to clobber"
+   [ -e "${_plugin}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
+      && fail "\"${_plugin}\" already exists. Use -f to clobber"
 
    local plugindir
 
    plugindir="`dirname -- "${_plugin}"`"
-   mkdir_if_missing "${plugindir}"
-   exekutor cp "${filename}" "${_plugin}"
+
+   patternfile="${OPTION_POSITION}-${typename}--${OPTION_CATEGORY}"
+   if [ "${filename}" = "-" ]
+   then
+      local text
+
+      text="`cat`"
+      mkdir_if_missing "${plugindir}" # do as late as possible
+      redirect_exekutor "${_plugin}" echo "${text}"
+   else
+      mkdir_if_missing "${plugindir}"
+      exekutor cp "${filename}" "${_plugin}"
+   fi
    exekutor chmod -x "${_plugin}"
 }
 
 
-uninstall_task()
+uninstall_task_main()
 {
-   log_entry "uninstall_task" "$@"
+   log_entry "uninstall_task_main" "$@"
+
+
+   _cheap_help_options "uninstall_task_usage"
+
+   [ "$#" -ne 1 ] && uninstall_task_usage
 
    local task="$1"
 
@@ -187,7 +373,6 @@ uninstall_task()
 
 
 
-
 ###
 ###  MAIN
 ###
@@ -195,28 +380,16 @@ monitor_task_main()
 {
    log_entry "monitor_task_main" "$@"
 
-   #
-   # handle options
-   #
-   while :
-   do
-      case "$1" in
-         -h|--help)
-            monitor_task_usage
-         ;;
-
-         -*)
-            monitor_task_usage "unknown option \"$1\""
-         ;;
-
-         *)
-            break
-         ;;
-      esac
-
-      shift
-   done
-
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
 
    if [ -z "${MULLE_MONITOR_PROCESS_SH}" ]
    then
@@ -224,39 +397,19 @@ monitor_task_main()
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-process.sh" || exit 1
    fi
 
+   _cheap_help_options "monitor_task_usage"
+
+
    local cmd="$1"
    [ $# -ne 0 ] && shift
 
-   local name="$1"
-   [ $# -ne 0 ] && shift
-
-   [ -z "${name}" ] && monitor_task_usage "missing name"
-
    case "${cmd}" in
-      run|require)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
-
-         ${cmd}_task "${name}" "$@"
+      list|locate|require|run|install|uninstall)
+         ${cmd}_task_main "$@"
       ;;
 
-      install|uninstall)
-         local filename="$1"
-
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
-
-         ${cmd}_task "${task}" "${filename}"
-      ;;
-
-      locate)
-         [ $# -ne 0 ] && monitor_task_usage "superflous arguments \"$*\""
-
-         local _plugin
-
-         if ! _locate_task "${name}"
-         then
-            return 1
-         fi
-         echo "${_plugin}"
+      "")
+         monitor_task_usage
       ;;
 
       *)

@@ -36,10 +36,10 @@ main()
    local match
    local _cache
 
-   _patterncaches_passing_filter "ignore.d" ""
+   _patternfilefunctions_passing_filter "ignore.d" ""
    ignore="${_cache}"
 
-   _patterncaches_passing_filter "match.d" "source"
+   _patternfilefunctions_passing_filter "match.d" "source"
    match="${_cache}"
 
    #-----------
@@ -50,7 +50,7 @@ src/main.c"
    log_verbose "----- #1 PASSED -----"
 
    #-----------
-   _patterncaches_passing_filter "match.d" "header"
+   _patternfilefunctions_passing_filter "match.d" "header"
    match="${_cache}"
 
    expected="src/foo.h"
@@ -59,7 +59,7 @@ src/main.c"
    log_verbose "----- #2 PASSED -----"
 
    #-----------
-   _patterncaches_passing_filter "match.d" "header"
+   _patternfilefunctions_passing_filter "match.d" "header"
    match="${_cache}"
 
    expected="foo/wrong.h

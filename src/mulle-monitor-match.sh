@@ -108,7 +108,6 @@ _match_assert_pattern()
 }
 
 
-
 pattern_emit_matchcode()
 {
    log_entry "pattern_emit_matchcode" "$@"
@@ -190,36 +189,34 @@ EOF
 }
 
 
-
-pattern_define_function()
+_pattern_function_header()
 {
-   log_entry "pattern_define_function" "$@"
+   log_entry "_pattern_function_header" "$@"
+
+   local functionname="$1"
+
+   echo "${functionname}()
+{
+${debug}
+"
+   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" ]
+   then
+      echo "   log_entry ${functionname} \"\$@\""
+   fi
+}
+
+
+
+pattern_emit_function()
+{
+   log_entry "pattern_emit_function" "$@"
 
    local functionname="$1"
    local pattern="$2"
 
-   local text
-   local body
-   local debug
-
-   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" ]
-   then
-      debug="   log_entry ${functionname} \"\$@\""
-   fi
-
-   body="`pattern_emit_matchcode "${pattern}"`" || exit 1
-
-  eval "${functionname}()
-{
-${debug}
-${body}
-}
-"
-   log_debug "define: ${functionname}()
-{
-${debug}
-${body}
-}"
+   _pattern_function_header "${functionname}"
+   pattern_emit_matchcode "${pattern}" || exit 1
+   echo "}"
 }
 
 
@@ -267,39 +264,6 @@ pattern_unique_variablename()
 }
 
 
-compiledpatternlines_match_relative_filename()
-{
-   log_entry "compiledpatternlines_match_relative_filename" "$@"
-
-   local compiledpatterns="$1"
-   local filename="$2"
-
-   local functionname
-   local rval
-
-   rval=1
-
-   # compiledpatterns known to be identifies w/o spaces
-   set -o noglob
-   for functionname in ${compiledpatterns}
-   do
-      "${functionname}" "${filename}"
-      case "$?" in
-         0)
-            rval=0
-         ;;
-
-         2)
-            rval=1
-         ;;
-      esac
-   done
-   set +o noglob
-
-   return $rval
-}
-
-
 #
 # slow interface for testing
 #
@@ -311,11 +275,14 @@ pattern_matches_relative_filename()
    local filename="$2"
 
    local functionname
+   local declaration
 
    _match_assert_filename "${filename}"
 
    functionname="`pattern_unique_functionname`"
-   pattern_define_function "${functionname}" "${pattern}"
+   declaration="`pattern_emit_function "${functionname}" "${pattern}"`"
+   log_debug "define: ${declaration}"
+   eval "${declaration}"
    "${functionname}" "${filename}"  # just leak
 }
 
@@ -380,9 +347,7 @@ patternfile_match_relative_filename()
 
    lines="`patternfile_read "${patternfile}"`"
 
-   patternlines_match_relative_filename "${lines}" \
-                                        "${filename}" \
-                                        "${patternfile}"
+   patternlines_match_relative_filename "${lines}" "${filename}" "${patternfile}"
 }
 
 
@@ -462,25 +427,31 @@ patternfile_identifier()
 #
 # !!! Don't backtick this !!!
 #
-_patterncache_create()
+_patternfilefunction_create()
 {
-   log_entry "_patterncache_create" "$@"
+   log_entry "_patternfilefunction_create" "$@"
 
    local patternfile="$1"
    local varname="$2"
+   local cachedirectory="$3"
 
    #
    # now it gets a little weird, since re-reading the patternfiles is too
    # slow we cache them in memory. The only way to do this is in global
    # variables.. Not that pretty.
    #
-   local identifier
-   local varname
-   local compiled
-   local pattern
    local contents
-   local functionname
-   local compiledcontents
+   local cachefile
+
+   if [ ! -z "${cachedirectory}" ]
+   then
+      cachefile="${cachedirectory}/${varname}"
+      if [ "${cachefile}" -nt "${patternfile}" ]
+      then
+         . "${cachefile}" || internal_fail "corrupted file \"${cachefile}\""
+         return 0
+      fi
+   fi
 
    contents="`patternfile_read "${patternfile}"`"
    if [ -z "${contents}" ]
@@ -491,44 +462,92 @@ _patterncache_create()
 
    #
    # Compile contents into functions
-   # The next level would be to combine all into one big function!
+   # Afterwards compile everything into one big function
    #
-   set -o noglob
-   IFS="
+   local bigbody
+   local functiontext
+   local alltext
+   local functionname
+   local pattern
+
+   # of the big function this is the start
+   bigbody="
+      local rval=1
+"
+
+   set -o noglob ; IFS="
 "
    for pattern in ${contents}
    do
-      IFS="${DEFAULT_IFS}"
-      set +o noglob
+      IFS="${DEFAULT_IFS}"; set +o noglob
 
+      # build little functions for each pattern
       functionname="`pattern_unique_functionname`"
-      pattern_define_function "${functionname}" "${pattern}"
-      compiledcontents="`add_line "${compiledcontents}" "${functionname}"`"
+      functiontext="`pattern_emit_function "${functionname}" "${pattern}"`"
+
+      # collect as all text
+      alltext="${alltext}
+${functiontext}"
+
+      # construct call of this function in big body
+      # need to deal with returnvalue of function here
+      # might use ifs if this is faster
+      bigbody="${bigbody}
+   ${functionname} \$1
+   case \"\$?\" in
+      0)
+         rval=0
+      ;;
+
+      2)
+         rval=1
+      ;;
+   esac
+"
    done
+   IFS="${DEFAULT_IFS}"; set +o noglob
 
-   IFS="${DEFAULT_IFS}"
-   set +o noglob
+   # finish up the patterfile function
+   bigbody="${bigbody}
+   return \${rval}
+"
+
+   functiontext="`_pattern_function_header "${varname}"`
+${bigbody}
+}"
+   alltext="${alltext}
+${functiontext}"
 
    #
-   # we use the patternfile as the identifier, so we can cache it
+   # we use the patternfile as the identifier, so we can cache it in memory
    #
-   eval "${varname}='${compiledcontents}'"
+   eval "${alltext}" || internal_fail "failed to produce functions"
    eval "${varname}_f='${patternfile}'"
+
+   # cache it if so desired
+   if [ ! -z "${cachefile}" ]
+   then
+      mkdir_if_missing "${cachedirectory}"
+      redirect_exekutor "${cachefile}" echo "${alltext}"
+   fi
 }
 
 #
-# as we are setting global variables here, it is not possible to backtick
-# this function. Which makes things very clumsy.
+# As we are setting global variables here, it is not possible to backtick
+# this function. Which makes things clumsy.
 #
 # The cache is passed back as "_cache".
 #
+# TODO: cache functions in filesystem
+#
 # !!! Don't backtick this !!!
-_patterncaches_passing_filter()
+_patternfilefunctions_passing_filter()
 {
-   log_entry "_patterncaches_passing_filter" "$@"
+   log_entry "_patternfilefunctions_passing_filter" "$@"
 
    local directory="$1"
    local filter="$2"
+   local cachedirectory="$3"
 
    local patternfile
 
@@ -563,7 +582,9 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
       varname="__v__`patternfile_identifier "${patternfile}"`"
       if eval [ -z \$\{${varname}+x\} ]
       then
-         _patterncache_create "${patternfile}" "${varname}" # will add to _cache
+         _patternfilefunction_create "${patternfile}" \
+                                     "${varname}" \
+                                     "${cachedirectory}" # will add to _cache
       fi
       _cache="`add_line "${_cache}" "${varname}"`"
    done
@@ -606,42 +627,32 @@ matchfile_get_executable()
 # returns value in _patternfile
 # don't backtick
 #
-_patterncaches_match_relative_filename()
+_patternfilefunctions_match_relative_filename()
 {
-   log_entry "_patterncaches_match_relative_filename" "$@"
+   log_entry "_patternfilefunctions_match_relative_filename" "$@"
 
-   local patterncaches="$1"
+   local patternfilefunctions="$1"
    local filename="$2"
 
    [ -z "${filename}" ] && internal_fail "filename is empty"
 
-   local patterncache
-   local compiledcontents
+   local functionname
 
-   IFS="
+   set -o noglob; IFS="
 "
-   set -o noglob
-   for patterncache in ${patterncaches}
+   for functionname in ${patternfilefunctions}
    do
-      IFS="${DEFAULT_IFS}"
-      set +o noglob
+      IFS="${DEFAULT_IFS}" ; set +o noglob
 
-      compiledcontents="`eval echo \$\{${patterncache}\}`"
-      _patternfile="`eval echo \$\{${patterncache}_f\}`"
-
-      if compiledpatternlines_match_relative_filename "${compiledcontents}" \
-                                                      "${filename}"
+      if "${functionname}" "${filename}"
       then
+         _patternfile="`eval echo \$\{${functionname}_f\}`"
          log_verbose "\"${filename}\" did match \"${_patternfile}\""
-
          return 0
-      else
-         log_fluff "\"${filename}\" did not match \"${_patternfile}\""
       fi
    done
+   IFS="${DEFAULT_IFS}" ; set +o noglob
 
-   IFS="${DEFAULT_IFS}"
-   set +o noglob
    _patternfile=""
 
    return 1
@@ -684,8 +695,8 @@ _match_filepath()
 
    if [ ! -z "${ignore}" ]
    then
-      if _patterncaches_match_relative_filename "${ignore}" \
-                                                "${filename}"
+      if _patternfilefunctions_match_relative_filename "${ignore}" \
+                                                       "${filename}"
       then
          log_debug "\"${filename}\" ignored"
          return 1
@@ -694,8 +705,8 @@ _match_filepath()
 
    if [ ! -z "${match}" ]
    then
-      if _patterncaches_match_relative_filename "${match}" \
-                                                "${filename}"
+      if _patternfilefunctions_match_relative_filename "${match}" \
+                                                       "${filename}"
       then
          log_debug "\"${filename}\" matched"
          return 0
@@ -724,7 +735,7 @@ match_filepath()
    rval="$?"
    if [ $? -ne 1 ]
    then
-      echo "`basename -- "${_patternfile}"`"
+      echo "`fast_basename "${_patternfile}"`"
       return 0
    fi
 
@@ -743,7 +754,7 @@ _match_print_patternfilename()
 
    local matchname
 
-   matchname="`basename -- "${patternfile}"`"
+   matchname="`fast_basename "${patternfile}"`"
 
    local matchtype
    local matchcategory
@@ -915,12 +926,14 @@ monitor_match_main()
 
    local _cache
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
-                                 "${OPTION_IGNORE_FILTER}"
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+                                         "${OPTION_IGNORE_FILTER}" \
+                                         "${MULLE_MONITOR_DIR}/var/cache"
    ignore="${_cache}"
 
-   _patterncaches_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
-                                 "${OPTION_MATCH_FILTER}"
+   _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+                                        "${OPTION_MATCH_FILTER}" \
+                                        "${MULLE_MONITOR_DIR}/var/cache"
    match="${_cache}"
 
    while [ $# -ne 0 ]

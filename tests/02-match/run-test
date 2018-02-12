@@ -67,11 +67,11 @@ main()
    local _cache
 
    _cache=
-   _patterncaches_passing_filter "ignore" ""
+   _patternfilefunctions_passing_filter "ignore" ""
    ignore="${_cache}"
 
    _cache=
-   _patterncaches_passing_filter "match" ""
+   _patternfilefunctions_passing_filter "match" ""
    match="${_cache}"
 
    expect_match_filepath "1-a--"  "${ignore}" "${match}" "a"
