@@ -219,8 +219,8 @@ _watch_using_fswatch()
 {
    log_entry "_watch_using_fswatch" "$@"
 
-   local ignore="$1"
-   local match="$2"
+   local ignore="$1" ; shift
+   local match="$1" ; shift
 
    #
    # Why monitoring stops, when executing a build.
@@ -277,9 +277,9 @@ _watch_using_fswatch()
 
       eval run_task_main ${_task}
 
-   done < <( "${FSWATCH}" -r -x --event-flag-separator : "." )  # bashism
-   IFS="${DEFAULT_IFS}"
+   done < <( "${FSWATCH}" -r -x --event-flag-separator : "$@" )  # bashism
 
+   IFS="${DEFAULT_IFS}"
    return 1
 }
 
@@ -294,7 +294,7 @@ watch_using_fswatch()
    do
       [ -z "${_task}" ] && internal_fail "_task is empty"
 
-      eval run_task ${_task}
+      eval run_task_main ${_task}
    done
 }
 
@@ -325,8 +325,8 @@ _watch_using_inotifywait()
 {
    log_entry "_watch_using_inotifywait" "$@"
 
-   local ignore="$1"
-   local match="$2"
+   local ignore="$1"; shift
+   local match="$1"; shift
 
    # see watch_using_fswatch comment
    local directory
@@ -363,11 +363,12 @@ _watch_using_inotifywait()
       [ -z "${_task}" ] && continue
       [ "${OPTION_PAUSE}" = "YES" ] && return 0
 
-      eval run_task ${_task}
+      eval run_task_main ${_task}
 
    done < <( "${INOTIFYWAIT}" -q -r -m -c "$@" )  # bashism
 
    IFS="${DEFAULT_IFS}"
+   return 1
 }
 
 
@@ -381,7 +382,7 @@ watch_using_inotifywait()
    do
       [ -z "${_task}" ] && internal_fail "_task is empty"
 
-      eval run_task ${_task}
+      eval run_task_main ${_task}
    done
 }
 
@@ -568,13 +569,17 @@ monitor_run_main()
                                  "${OPTION_MATCH_FILTER}"
    match="${_cache}"
 
+   #
+   # "." is the directory we monitor, I think in theory we could
+   # watch multiple in parallel
+   #
    case "${MULLE_UNAME}" in
       linux)
-         watch_using_inotifywait "${ignore}" "${match}" "$@"
+         watch_using_inotifywait "${ignore}" "${match}" "."
       ;;
 
       *)
-         watch_using_fswatch "${ignore}" "${match}" "$@"
+         watch_using_fswatch "${ignore}" "${match}" "."
       ;;
    esac
 

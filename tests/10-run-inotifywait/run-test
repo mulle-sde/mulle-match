@@ -51,24 +51,21 @@ main()
 
    case "${MULLE_UNAME}" in
      linux)
-        log_info "skip fswatch test on \"${MULLE_UNAME}\""
-	return 0
      ;;
 
      "")
-	internal_fail "hein?"
+        log_info "skip fswatch test on \"${MULLE_UNAME}\""
+        return 0
      ;;
    esac
 
    #-----------
 
-   FSWATCH="${PWD}/../mock-fswatch"
-   [ -x "${FSWATCH}" ] || fail "\"${FSWATCH}\" is missing"
-   export FSWATCH
+   INOTIFYWAIT="${PWD}/../mock-inotifywait"
+   [ -x "${INOTIFYWAIT}" ] || fail "\"${INOTIFYWAIT}\" is missing"
+   export INOTIFYWAIT
 
-   echo "`pwd -P`/src/foo.sh Created:Updated:IsFile" > "create-src-foo-sh-replay.txt"
-
-   MULLE_FSWATCH_REPLAY_FILE="create-src-foo-sh-replay.txt" \
+   MULLE_INOTIFYWAIT_REPLAY_FILE="create-src-foo-sh-replay.txt" \
       expect_mulle_monitor "VfL Bochum 1848" -e run
 
    log_verbose "----- #1 PASSED -----"
