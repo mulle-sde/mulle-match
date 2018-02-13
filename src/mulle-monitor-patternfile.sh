@@ -43,8 +43,20 @@ monitor_patternfile_usage()
 Usage:
    ${MULLE_EXECUTABLE_NAME} patternfile [options] <command>
 
-   Operations on patternfiles. Use the -i flag to choose ignore
-   patternfiles instead of the default match patternfiles.
+   Operations on patternfiles. A patternfile is a list of patterns. Each
+   pattern is on its own line. A pattern behaves similiat to a line in
+   .gitignore. But '**' is not any different than '*' and '*' matches all
+   characters.
+
+   Use the -i flag to choose "ignore" patternfiles instead of the default
+   "match" patternfiles.
+
+   This example matches all JPG and PNG files, except those starting with an
+   underscore:
+
+   *.png
+   *.jpg
+   !_*
 
 Options:
    -h         : this help
@@ -354,20 +366,20 @@ install_patternfile_main()
          ;;
 
          -c)
-            [ $# -eq 1 ] && set_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
             shift
 
             OPTION_CATEGORY="$1"
          ;;
 
          -p)
-            [ $# -eq 1 ] && set_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
             shift
             OPTION_POSITION="$1"
          ;;
 
          -*)
-            set_patternfile_usage "unknown option \"$1\""
+            install_patternfile_usage "unknown option \"$1\""
          ;;
 
          *)

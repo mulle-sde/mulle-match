@@ -11,21 +11,18 @@ digraph G {
 
     edge[ arrowhead="none" ];
 
-    "match2"          [ shape="folder", label="match.d", color="#d1d8e0", fontcolor="#d1d8e0" ]
     "match.d"         [ shape="folder", label="match.d" ]
 
     node[shape=note, color="#20bf6b", fontcolor="#20bf6b"];
 
-    { rank = "same"; "match.d", "match2", "ignore2" };
+    { rank = "same"; "match.d", "ignore2" };
 
-    { rank = "same"; "s_source", "s_header", "s_test", "s_build", "s_header2" };
+    { rank = "same"; "s_source", "s_header", "s_test", "s_build"  };
 
     "s_header"        [ label="00-source--header"]
     "s_source"        [ label="01-source--source"]
     "s_test"          [ label="02-test--all"]
     "s_build"         [ label="00-build--none"]
-
-    "s_header2"       [ label="20-header-and-source--all", color="#d1d8e0", fontcolor="#d1d8e0"]
 
     node[shape=folder, color="black", fontcolor="black"];
 
@@ -36,16 +33,10 @@ digraph G {
     "match.d"            -> "s_source"
     "match.d"            -> "s_test"
 
-    ".mulle-monitor"     -> "share"
-
-    "share"              -> "ignore2"
+    "etc"                -> "ignore2"
 
     node[ shape=note, color="#d1d8e0", fontcolor="#d1d8e0"];
     edge[ arrowhead="none", color="#d1d8e0" ];
-
-    "share"              -> "match2"
-
-    "match2"          [ shape="folder", label="match.d", color="#d1d8e0", fontcolor="#d1d8e0" ]
     "ignore2"         [ shape="folder", label="ignore.d", color="black", fontcolor="black" ]
 
     "s_header"        [ label="00-source--header"]
@@ -53,8 +44,6 @@ digraph G {
     "s_test"          [ label="02-test--all"]
 
     { rank = "same"; "s_source", "s_header", "s_test" };
-
-    "match2"   -> "s_header2"
 
     "ignore2"  -> "s_build" [ color="black" ]
 
@@ -70,7 +59,6 @@ digraph G {
     "s_source" -> "MULLE_MONITOR_DIR"        [ style="invis" ]
     "s_source" -> "MULLE_MONITOR_ETC_DIR"    [ style="invis" ]
     "s_source" -> "MULLE_MONITOR_MATCH_DIR"  [ style="invis" ]
-    "s_header2"  -> "MULLE_MONITOR_MATCH_DIR"  [ style="invis" ]
 
 
     "MULLE_MONITOR_MATCH_DIR"  -> "match.d"

@@ -1,42 +1,26 @@
 digraph G {
     graph [rankdir = TD];
 
+    { rank="same"; "mulle-monitor run" }
+    { rank="same"; "event", "task name", "callback name" }
+    { rank="same"; "fswatch project", "callback", "task" }
+    { rank="same"; "patternfile" }
+
     "mulle-monitor run"   [ shape="none", fontcolor="blue", fontname="monospace"]
+    "fswatch project"     [ shape="none", fontcolor="blue", fontname="monospace"]
 
-    node[ shape="folder" ];
+    "mulle-monitor run" -> "fswatch project" [ label="run" ]
+    "fswatch project"   -> event             [ label="produce" ]
+    event -> "patternfile"                 [ label="match" ]
+    "callback name" -> "callback"        [ label="" ]
+    "task name"  -> "task"               [ label="" ]
+    patternfile -> "callback name"       [ label="determine", style="dotted"]
+    callback -> "task name"              [ label="request", style="dotted" ]
 
-    project
-
-
-    { rank = "same"; "mulle-monitor run" };
-
-    edge[ arrowhead="", style="dotted" ];
-
-    node[shape=record, color="#8854d0", fontcolor="#8854d0"];
-    "s_did_update"
-
-    node[ color="#d1d8e0", fontcolor="#d1d8e0" ];
-
-    "mulle-monitor run" -> "project"              [ label="observe (1)" ]
-
-    edge[ arrowhead="none", color="#d1d8e0", style="" ];
-
-    "project"         -> ".mulle-monitor"
-    ".mulle-monitor"  -> "bin"
-    ".mulle-monitor"  -> "libexec"
-
-    edge[ color="#3867d6", fontcolor="#3867d6" ];
-
-    "mulle-monitor run" -> "s_did_update"   [ arrowhead="", label="run (2)", style="dotted" ]
-    "mulle-monitor run" -> "build-task.sh"  [ arrowhead="", label="run (3)", style="dotted" ]
-
-    edge[ color="#d1d8e0", fontcolor="#d1d8e0" ];
-
-    "bin"             -> "s_did_update"
-
-    "s_did_update"    [ label="source-callback"]
-
-    "libexec"         -> "build-task.sh"
-
-    "build-task.sh"  [ color="#0fb9b1", fontcolor="#0fb9b1"]
+    event [ shape="diamond"]
+    "callback name" [ shape="diamond"]
+    "task name" [ shape="diamond"]
+    patternfile [ shape="note", color="#20bf6b", fontcolor="#20bf6b" ]
+    callback [ shape="record", color="#8854d0", fontcolor="#8854d0" ]
+    task [ shape="record", color="#8854d0", fontcolor="#8854d0"]
 }
