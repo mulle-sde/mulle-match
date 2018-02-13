@@ -25,7 +25,7 @@ built-in.
 OS          | Command
 ------------|------------------------------------
 macos       | `brew install mulle-kybernetik/software/mulle-monitor`
-other       | ./install.sh.<p>Prerequisites: [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions)
+other       | Install prerequisite [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions) first. Then `./install.sh`
 
 
 
