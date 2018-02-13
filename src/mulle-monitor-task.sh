@@ -202,7 +202,7 @@ _locate_task()
 
    if [ ! -f "${_plugin}" ]
    then
-      log_error "\"${_plugin}\" not found"
+      log_error "There is no installed task \"$1\"."
       return 1
    fi
 }
@@ -237,7 +237,7 @@ list_task_main()
 
    [ "$#" -ne 0 ] && list_task_usage
 
-   log_info "Tasks"
+   log_info "Tasks:"
    if [ -d "${MULLE_MONITOR_DIR}/libexec" ]
    then
    (

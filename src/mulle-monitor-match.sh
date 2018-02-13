@@ -595,7 +595,7 @@ matchfile_get_executable()
 
    local filename="$1"
 
-   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1-did-update/p' <<< "${filename}"
+   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
 }
 
 

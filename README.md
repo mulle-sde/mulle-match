@@ -23,16 +23,18 @@ Executable      | Description
 
 Matching is done against filenames only.
 
-Matching is done by matching the filename against all *patternfiles* in a
-special *match folder*. If a *patternfile* matches the search has succeeded
-and the folder matches. Otherwise the search continues with the next
-*patternfile*.
+Matching is done by matching the filename against all *patternfiles* in two
+special *match folders* `ignore.d` and `match.d`. 
+
+If a *patternfile* of the `ignore.d` folder matches, the matching has failed. 
+On the other hand, if a *patternfile* of `match.d` marches, the 
+matching has succeeded. *patternfiles* are matched in sort order.
 
 ![](dox/mulle-monitor-match.png)
 
-> * *patternfiles* are green
-> * *match-folder*s are `ignore.d` and `match.d`
-> * blue uppercase boxes are environment variables
+> * the *patternfiles* are green
+> * the *match-folder*s are `ignore.d` and `match.d`
+> * the blue uppercase boxes represent environment variables
 
 
 Each *patternfile* is made up of one or more *patterns*. 
@@ -40,9 +42,12 @@ Each *patternfile* is made up of one or more *patterns*.
 Example:
 
 ```
+# match .c .h and .cpp files
 *.c
 *.h
 *.cpp
+
+# ignore backup files though
 !*~.*
 ```
 
@@ -95,19 +100,21 @@ The callback may produce a task name, by echoing it to stdout. If a task name is
 > The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
 > explains this also in much more detail.
 
+
 ### mulle-monitor match
 
 To test your *patternfiles* you can use `mulle-monitor match`. It will output the *callback* name if a file matches.
 
 ```
-mulle-monitor -e match --format "%f\\n" src/foo.c
+mulle-monitor -e match pix/foo.png
 ```
 
 You can also test individual *patterns* using the `--pattern` option:
 
 ```
-mulle-monitor -e match --pattern '*.c' src/foo.c
+mulle-monitor -e match --pattern '*.png' pix/foo.png
 ```
+
 
 ### mulle-monitor find
 

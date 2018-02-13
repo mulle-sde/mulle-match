@@ -443,8 +443,8 @@ monitor_patternfile_main()
    fi
 
    local OPTION_FOLDER_NAME="match.d"
-   local ONLY_IGNORE="YES"
-   local ONLY_MATCH="YES"
+   local ONLY_IGNORE="NO"
+   local ONLY_MATCH="NO"
    local OPTION_CATEGORY="all"
 
    while :
@@ -498,13 +498,18 @@ monitor_patternfile_main()
       list)
          if [ "${ONLY_MATCH}" = "NO" ]
          then
-            log_info "Ignore patternfiles (-i)"
+            log_info "Ignore patternfiles (-i):"
             OPTION_FOLDER_NAME="ignore.d"
             list_patternfile_main "$@"
          fi
          if [ "${ONLY_IGNORE}" = "NO" ]
          then
-            log_info "Match patternfiles"
+            if [ "${ONLY_MATCH}" = "NO" ]
+            then
+               echo
+            fi
+
+            log_info "Match patternfiles:"
             OPTION_FOLDER_NAME="match.d"
             list_patternfile_main "$@"
          fi

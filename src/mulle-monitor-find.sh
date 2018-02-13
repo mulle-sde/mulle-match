@@ -285,7 +285,7 @@ monitor_find_main()
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
 
-   local OPTION_FORMAT="%f;%c\\n"
+   local OPTION_FORMAT="%f\\n"
 
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER

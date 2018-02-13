@@ -322,7 +322,7 @@ list_callback_main()
 
    [ "$#" -ne 0 ] && list_callback_usage
 
-   log_info "Callbacks"
+   log_info "Callbacks:"
    if [ -d "${MULLE_MONITOR_DIR}/bin" ]
    then
    (
