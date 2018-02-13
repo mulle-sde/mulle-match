@@ -274,6 +274,17 @@ monitor_find_main()
 {
    log_entry "monitor_find_main" "$@"
 
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
+
    local OPTION_FORMAT="%f;%c\\n"
 
    local OPTION_MATCH_FILTER
@@ -337,7 +348,7 @@ monitor_find_main()
 
    _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
                                         "${OPTION_IGNORE_FILTER}" \
-                                         "${MULLE_MONITOR_DIR}/var/cache"
+                                        "${MULLE_MONITOR_DIR}/var/cache"
    ignore_patterncaches="${_cache}"
 
    _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \

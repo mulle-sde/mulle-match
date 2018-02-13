@@ -41,10 +41,10 @@ monitor_match_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} match [options] <filename>+
+   ${MULLE_EXECUTABLE_NAME} match [options] <filename>
 
-   Run the mulle-monitor file classification with the given filenames.
-   It will emit the contentype being matched, if there is any.
+   Run the mulle-monitor file classification with the given filename.
+   It will emit the callback being matched, if there is any.
 
    A match file has the form 00-type--category.
 
@@ -196,9 +196,7 @@ _pattern_function_header()
    local functionname="$1"
 
    echo "${functionname}()
-{
-${debug}
-"
+{"
    if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" ]
    then
       echo "   log_entry ${functionname} \"\$@\""
@@ -236,28 +234,6 @@ pattern_unique_functionname()
       if [ "`type -t "${functionname}"`" != "function" ]
       then
          echo "${functionname}"
-         return
-      fi
-   done
-}
-
-
-pattern_unique_variablename()
-{
-   log_entry "pattern_unique_variablename" "$@"
-
-   local identifier
-   local varname
-
-   while :
-   do
-      identifier="`uuidgen | tr -d '-'`"
-      identifier="${identifier::10}"
-
-      # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
-      if eval [ -z \$\{__v__${identifier}+x\} ]
-      then
-         echo "__v__${identifier}"
          return
       fi
    done
@@ -472,7 +448,7 @@ _patternfilefunction_create()
 
    # of the big function this is the start
    bigbody="
-      local rval=1
+   local rval=1
 "
 
    set -o noglob ; IFS="
@@ -509,8 +485,7 @@ ${functiontext}"
 
    # finish up the patterfile function
    bigbody="${bigbody}
-   return \${rval}
-"
+   return \${rval}"
 
    functiontext="`_pattern_function_header "${varname}"`
 ${bigbody}
@@ -522,8 +497,6 @@ ${functiontext}"
    # we use the patternfile as the identifier, so we can cache it in memory
    #
    eval "${alltext}" || internal_fail "failed to produce functions"
-   eval "${varname}_f='${patternfile}'"
-
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
    then
@@ -557,6 +530,8 @@ _patternfilefunctions_passing_filter()
    shopt -s nullglob
    for patternfile in "${directory}"/[0-9]*
    do
+      shopt -u nullglob
+
       # be helpful...
       case "${patternfile}" in
          */[0-9]*-*--*)
@@ -570,7 +545,6 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
          ;;
       esac
 
-      shopt -u nullglob
       if [ ! -z "${filter}" ] && ! filter_patternfilename "${filter}" "${patternfile}"
       then
          log_debug "\"${patternfile}\" did not pass filter \"${filter}\""
@@ -579,13 +553,15 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 
       local varname
 
-      varname="__v__`patternfile_identifier "${patternfile}"`"
+      varname="__p__`patternfile_identifier "${patternfile}"`"
+      log_debug "Function \"${varname}\" for \"${patternfile}\""
       if eval [ -z \$\{${varname}+x\} ]
       then
          _patternfilefunction_create "${patternfile}" \
                                      "${varname}" \
                                      "${cachedirectory}" # will add to _cache
       fi
+      eval "${varname}_f='${patternfile}'"
       _cache="`add_line "${_cache}" "${varname}"`"
    done
 
@@ -654,7 +630,6 @@ _patternfilefunctions_match_relative_filename()
    IFS="${DEFAULT_IFS}" ; set +o noglob
 
    _patternfile=""
-
    return 1
 }
 
@@ -731,9 +706,7 @@ match_filepath()
 
    local rval
 
-   _match_filepath "$@"
-   rval="$?"
-   if [ $? -ne 1 ]
+   if _match_filepath "$@"
    then
       echo "`fast_basename "${_patternfile}"`"
       return 0
@@ -751,6 +724,17 @@ _match_print_patternfilename()
    local patternfile="$2"
 
    [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
+
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
 
    local matchname
 
@@ -829,8 +813,7 @@ match_print_filepath()
    local rval
 
    # avoid a backtick subshell here
-   _match_filepath "$@"
-   if [ $? -eq 1 ]
+   if ! _match_filepath "$@"
    then
       return 1
    fi
@@ -851,6 +834,17 @@ monitor_match_main()
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
    local OPTION_PATTERN
+
+   if [ -z "${MULLE_PATH_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
+   fi
+   if [ -z "${MULLE_FILE_SH}" ]
+   then
+      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
+   fi
 
    #
    # handle options
