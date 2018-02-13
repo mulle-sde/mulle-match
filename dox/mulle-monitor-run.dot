@@ -3,14 +3,14 @@ digraph G {
 
     { rank="same"; "mulle-monitor run" }
     { rank="same"; "event", "task name", "callback name" }
-    { rank="same"; "fswatch project", "callback", "task" }
+    { rank="same"; "fswatch", "callback", "task" }
     { rank="same"; "patternfile" }
 
     "mulle-monitor run"   [ shape="none", fontcolor="blue", fontname="monospace"]
-    "fswatch project"     [ shape="none", fontcolor="blue", fontname="monospace"]
+    "fswatch"     [ shape="none", fontcolor="blue", fontname="monospace"]
 
-    "mulle-monitor run" -> "fswatch project" [ label="run" ]
-    "fswatch project"   -> event             [ label="produce" ]
+    "mulle-monitor run" -> "fswatch" [ label="run" ]
+    "fswatch"   -> event             [ label="produce" ]
     event -> "patternfile"                 [ label="match" ]
     "callback name" -> "callback"        [ label="" ]
     "task name"  -> "task"               [ label="" ]
