@@ -18,6 +18,15 @@ built-in.
 ![](dox/mulle-monitor-overview.png)
 
 
+
+## Install
+
+OS          | Command
+------------|------------------------------------
+macos       | `brew install mulle-kybernetik/software/mulle-monitor`
+other       | ./install.sh
+
+
 Executable      | Description
 ----------------|--------------------------------
 `mulle-monitor` | Observe changes in filesystem and react to them
@@ -119,7 +128,7 @@ mulle-monitor -e find --match-filter "hello"
 ### mulle-monitor callback
 
 
-Add a python *callback* for "hello":
+Add a *callback* for "hello":
 
 ```
 cat <<EOF > my-callback.py
