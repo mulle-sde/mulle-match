@@ -68,7 +68,7 @@ filename.
 > The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
 > explains this in much more detail.
 
-Add a *patternfile* to select the *callback* "hello":
+Add a *patternfile* to select the *callback* "hello" for PNG files:
 
 ```
 echo "*.png" > pattern.txt
@@ -100,8 +100,8 @@ mulle-monitor -e patternfile list
 
 ### mulle-monitor match
 
-To test your *patternfiles* you can use `mulle-monitor match`. It will output 
-the *callback* name if a file matches.
+To test your installed *patternfile* you can use `mulle-monitor match`. It 
+will output the *callback* name if a file matches.
 
 ```
 mulle-monitor -e match pix/foo.png
