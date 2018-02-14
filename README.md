@@ -59,7 +59,7 @@ A *patternfile* resides in either the `ignore.d` folder or the `match.d`
 folder. 
 
 If a *patternfile* of the `ignore.d` folder matches, the matching has failed. 
-On the other hand, if a *patternfile* of `match.d` matches, the 
+On the other hand, if a *patternfile* of the `match.d` folder matches, the 
 matching has succeeded. *patternfiles* are matched in sort order of their
 filename.
 
@@ -160,10 +160,10 @@ mulle-monitor -e callback list
 
 ### mulle-monitor task
 
-Manage *task* plugins.
+A *task* is a bash script plugin. It needs to define a function 
+`task_<task>_main` to be a usable task plugin. 
 
-Add a sourcable shell script as a *task*. It needs to define a function 
-`task_<task>_main` to be a usable plugin. So for the task "world":
+Add a sourcable shell script as a for a task "world":
 
 ```
 cat <<EOF > my-plugin.sh
@@ -208,8 +208,7 @@ The filename that generated the event is then classified using **matching**
 The result of this classification is the name of the *callback*. 
 
 The *callback* will now be executed. As arguments it gets the event type 
-(e.g. **update**), the filename, and the category (the last part, after the 
-`--`, of the matching *patternfile*). 
+(e.g. **update**), the filename, and the category of the matching *patternfile*. 
 
 The *callback* may produce a *task* name, by echoing it to stdout. If a 
 *task* name is produced, then this *task* is loaded by **mulle-monitor** 
