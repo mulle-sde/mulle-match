@@ -21,6 +21,6 @@ DEPENDENCIES='${TOOLS_TAP}mulle-bashfunctions
 fswatch
 '
 
-DEBIAN_DEPENDENCIES="ifnotifywait"
+DEBIAN_DEPENDENCIES="ifnotifywait,mulle-bashfunctions"
 
 
