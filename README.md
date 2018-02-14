@@ -58,20 +58,15 @@ Example:
 A *patternfile* resides in either the `ignore.d` folder or the `match.d` 
 folder. 
 
+![](dox/mulle-monitor-match.png)
+
 If a *patternfile* of the `ignore.d` folder matches, the matching has failed. 
 On the other hand, if a *patternfile* of the `match.d` folder matches, the 
 matching has succeeded. *patternfiles* are matched in sort order of their
 filename.
 
-![](dox/mulle-monitor-match.png)
-
-> * the *patternfiles* are green
-> * the blue uppercase boxes represent environment variables
-
-
 > The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
 > explains this in much more detail.
-
 
 Add a *patternfile* to select the *callback* "hello":
 
@@ -99,7 +94,7 @@ List all *patternfiles*:
 mulle-monitor -e patternfile list
 ```
 
-> Note: Due to  caching of patternfiles, you need
+> Note: Due to  caching of compiled patternfiles, you need
 > to restart `mulle-monitor run` to pick up edits to a *patternfile*.
 
 
