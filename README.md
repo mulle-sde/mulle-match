@@ -1,4 +1,4 @@
- 🕵🏻‍ Extensible filesystem observation
+🕵🏻‍ Extensible filesystem observation with callbacks 
 
 ... for Linux, OS X, FreeBSD, Windows
 
@@ -11,12 +11,8 @@ in the working directory (and its sub-directories) using
 matches those filenames against a set of *patternfiles* to determine the
 appropriate executable to call. 
 
-**mulle-monitor** comes with no *patternfiles*, *callbacks*, or *tasks*
-built-in.
-
 
 ![](dox/mulle-monitor-overview.png)
-
 
 
 ## Install
@@ -57,13 +53,15 @@ Example:
 ```
 
 > The matching is a bit less sophisticated than .gitignore though, since
-> * matches everything.
+> a `*` matches everything.
 
-*patternfiles* reside in the folders `ignore.d` or `match.d`. 
+A *patternfile* resides in either the `ignore.d` folder or the `match.d` 
+folder. 
 
 If a *patternfile* of the `ignore.d` folder matches, the matching has failed. 
-On the other hand, if a *patternfile* of `match.d` marches, the 
-matching has succeeded. *patternfiles* are matched in sort order.
+On the other hand, if a *patternfile* of `match.d` matches, the 
+matching has succeeded. *patternfiles* are matched in sort order of their
+filename.
 
 ![](dox/mulle-monitor-match.png)
 
@@ -80,6 +78,13 @@ Add a *patternfile* to select the *callback* "hello":
 ```
 echo "*.png" > pattern.txt
 mulle-monitor -e patternfile install hello pattern.txt
+```
+
+You can optionally specify a category for the patternfile, which will be 
+forwarded to the callback:
+
+```
+mulle-monitor -e patternfile install --category special hello pattern.txt
 ```
 
 Remove a *patternfile*:
@@ -117,7 +122,7 @@ mulle-monitor -e match --pattern '*.png' pix/foo.png
 ### mulle-monitor find
 
 This is a facility to retrieve all filenames that match *patternfiles*. You can 
-decide which *patternfile* should be used by supplying a filter.
+decide which *patternfile* should be used by supplying an optional filter.
 
 This example lists all the files, that pass through *patternfiles* of type 
 "hello":
@@ -157,7 +162,8 @@ mulle-monitor -e callback list
 
 Manage *task* plugins.
 
-Add a sourcable shell script as a *task*. It needs to define the function `task_world_main` to be a usable plugin for the task "world":
+Add a sourcable shell script as a *task*. It needs to define a function 
+`task_<task>_main` to be a usable plugin. So for the task "world":
 
 ```
 cat <<EOF > my-plugin.sh
@@ -201,9 +207,9 @@ The filename that generated the event is then classified using **matching**
 (see `mulle-monitor patternfile` for more information). 
 The result of this classification is the name of the *callback*. 
 
-The *callback* will now be executed. As its arguments it gets the event type 
-(e.g. **update**), the filename, and the category (last part, after the --, 
-of the matching *patternfile*). 
+The *callback* will now be executed. As arguments it gets the event type 
+(e.g. **update**), the filename, and the category (the last part, after the 
+`--`, of the matching *patternfile*). 
 
 The *callback* may produce a *task* name, by echoing it to stdout. If a 
 *task* name is produced, then this *task* is loaded by **mulle-monitor** 
@@ -211,3 +217,6 @@ and executed.
 
 > The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
 > explains this also in much more detail.
+
+> **mulle-monitor** comes with no predefined *patternfiles*, *callbacks*, or 
+> *tasks*.
