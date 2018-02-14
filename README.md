@@ -1,4 +1,4 @@
-🕵🏻‍ Extensible filesystem observation with callbacks 
+🕵🏻‍ Extensible filesystem observation with callbacks
 
 ... for Linux, OS X, FreeBSD, Windows
 
@@ -9,7 +9,7 @@ in the working directory (and its sub-directories) using
 [fswatch](https://github.com/emcrisostomo/fswatch) or
 [inotifywait](https://linux.die.net/man/1/inotifywait). It then
 matches those filenames against a set of *patternfiles* to determine the
-appropriate executable to call. 
+appropriate executable to call.
 
 
 ![](dox/mulle-monitor-overview.png)
@@ -36,8 +36,8 @@ Executable      | Description
 
 ### mulle-monitor patternfile
 
-A *patternfile* is made up of one or more *patterns*. It is quite like a 
-`.gitignore` file, with the same semantics for negation. 
+A *patternfile* is made up of one or more *patterns*. It is quite like a
+`.gitignore` file, with the same semantics for negation.
 
 
 Example:
@@ -55,17 +55,17 @@ Example:
 > The matching is a bit less sophisticated than .gitignore though, since
 > a `*` matches everything.
 
-A *patternfile* resides in either the `ignore.d` folder or the `match.d` 
-folder. 
+A *patternfile* resides in either the `ignore.d` folder or the `match.d`
+folder.
 
 ![](dox/mulle-monitor-match.png)
 
-If a *patternfile* of the `ignore.d` folder matches, the matching has failed. 
-On the other hand, if a *patternfile* of the `match.d` folder matches, the 
+If a *patternfile* of the `ignore.d` folder matches, the matching has failed.
+On the other hand, if a *patternfile* of the `match.d` folder matches, the
 matching has succeeded. *patternfiles* are matched in sort order of their
 filename.
 
-> The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
+> The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki)
 > explains this in much more detail.
 
 Add a *patternfile* to select the *callback* "hello" for PNG files:
@@ -75,7 +75,7 @@ echo "*.png" > pattern.txt
 mulle-monitor -e patternfile install hello pattern.txt
 ```
 
-You can optionally specify a category for the patternfile, which will be 
+You can optionally specify a *category* for the patternfile, which will be
 forwarded to the callback:
 
 ```
@@ -100,7 +100,7 @@ mulle-monitor -e patternfile list
 
 ### mulle-monitor match
 
-To test your installed *patternfile* you can use `mulle-monitor match`. It 
+To test your installed *patternfile* you can use `mulle-monitor match`. It
 will output the *callback* name if a file matches.
 
 ```
@@ -116,10 +116,10 @@ mulle-monitor -e match --pattern '*.png' pix/foo.png
 
 ### mulle-monitor find
 
-This is a facility to retrieve all filenames that match *patternfiles*. You can 
+This is a facility to retrieve all filenames that match *patternfiles*. You can
 decide which *patternfile* should be used by supplying an optional filter.
 
-This example lists all the files, that pass through *patternfiles* of type 
+This example lists all the files, that pass through *patternfiles* of type
 "hello":
 
 ```
@@ -155,8 +155,8 @@ mulle-monitor -e callback list
 
 ### mulle-monitor task
 
-A *task* is a bash script plugin. It needs to define a function 
-`task_<task>_main` to be a usable task plugin. 
+A *task* is a bash script plugin. It needs to define a function
+`task_<task>_main` to be a usable task plugin.
 
 Add a sourcable shell script as a for a task "world":
 
@@ -173,7 +173,7 @@ mulle-monitor -e task install world "my-plugin.sh"
 Remove a *task* named "world":
 
 ```
-mulle-monitor -e task uninstall world 
+mulle-monitor -e task uninstall world
 ```
 
 
@@ -190,7 +190,7 @@ mulle-monitor -e task list
 mulle-monitor -e run
 ```
 
-`mulle-monitor run` observes the working directory and waits for filesystem 
+`mulle-monitor run` observes the working directory and waits for filesystem
 events.
 
 ![](dox/mulle-monitor-run.png)
@@ -198,19 +198,21 @@ events.
 If an incoming event can not be categorized as one of these three event types:
 **create**, **update**, **delete** it is ignored.
 
-The filename that generated the event is then classified using **matching**
-(see `mulle-monitor patternfile` for more information). 
-The result of this classification is the name of the *callback*. 
+The filename that generated the event is then classified using *patternfile*
+matching (see [`mulle-monitor patternfile`](#mulle-monitor-patternfile) for
+more information).
+The result of this classification is the name of the *callback*.
 
-The *callback* will now be executed. As arguments it gets the event type 
-(e.g. **update**), the filename, and the category of the matching *patternfile*. 
+The *callback* will now be executed. As arguments it gets the event type
+(e.g. **update**), the filename, and the *category* of the matching
+*patternfile*.
 
-The *callback* may produce a *task* name, by echoing it to stdout. If a 
-*task* name is produced, then this *task* is loaded by **mulle-monitor** 
-and executed. 
+The *callback* may produce a *task* name, by echoing it to stdout. If a
+*task* name is produced, then this *task* is loaded by **mulle-monitor**
+and executed.
 
-> The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki) 
+> The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki)
 > explains this also in much more detail.
 
-> **mulle-monitor** comes with no predefined *patternfiles*, *callbacks*, or 
+> **mulle-monitor** comes with no predefined *patternfiles*, *callbacks*, or
 > *tasks*.
