@@ -46,7 +46,7 @@ Usage:
    Monitor changes in the working directory.
 
 Options:
-   cat <<EOF >&2
+   -i             : monitor only non-ignored files and folders
    -if <filter>   : specify a filter for ignoring <type>
    -mf <filter>   : specify a filter for matching <type>
 EOF
@@ -60,80 +60,12 @@ EOF
                     Example: filter is "header*,!header_private"
 EOF
    fi
+   cat <<EOF >&2
+   -p             : pause monitoring during callback and task
+   -s             : run task synchronously
+EOF
    exit 1
 }
-
-
-#
-# watch
-#
-process_event()
-{
-   log_entry "process_event" "$@"
-
-   local ignore="$1"
-   local match="$2"
-   local filepath="$3"
-   local cmd="$4"
-
-   local action
-   local matchname
-
-   # cheap
-   if ! action="`file_action_of_command "${cmd}" `"
-   then
-      return 1
-   fi
-
-   #
-   # not as cheap
-   #
-   if ! matchname="`match_filepath "${ignore}" "${match}" "${filepath}" `"
-   then
-      return 1
-   fi
-
-   local contenttype
-   local category
-
-   contenttype="`matchfile_get_type "${matchname}" `"
-   category="`matchfile_get_category "${matchname}" `"
-
-
-   log_fluff "Do ${action} callback \"${contenttype}\" with \"${category}\""
-
-   run_callback_main "${contenttype}" "${filepath}" "${action}" "${category}"
-}
-
-
-file_action_of_command()
-{
-   log_entry "file_action_of_command" "$@"
-
-   local cmd="$1"
-
-   case "${cmd}" in
-      *CREATE*|*MOVED_TO*|*RENAMED*)
-         echo "create"
-      ;;
-
-
-      *DELETE*|*MOVED_FROM*)
-         echo "delete"
-      ;;
-
-      # PLATFORMSPECIFIC:ISFILE is touch apparently (at least on OS X)
-      *CLOSE_WRITE*|PLATFORMSPECIFIC:ISFILE|*UPDATED*|*MODIFY*)
-         echo "update"
-      ;;
-
-      *)
-         log_debug "\"${cmd}\" is boring"
-         return 1
-      ;;
-   esac
-}
-
 
 
 #
@@ -147,7 +79,6 @@ is_binary_missing()
    fi
    return 0
 }
-
 
 
 check_fswatch()
@@ -215,6 +146,109 @@ ${C_INFO}You then need to exit ${MULLE_EXECUTABLE_NAME} and reenter it."
 }
 
 
+#
+# return _action in global variable
+#
+_action_of_event_command()
+{
+   log_entry "_action_of_event_command" "$@"
+
+   local cmd="$1"
+
+   case "${cmd}" in
+      *CREATE*|*MOVED_TO*|*RENAMED*)
+         _action="create"
+      ;;
+
+      *DELETE*|*MOVED_FROM*)
+         _action="delete"
+      ;;
+
+      # PLATFORMSPECIFIC:ISFILE is touch apparently (at least on OS X)
+      *CLOSE_WRITE*|PLATFORMSPECIFIC:ISFILE|*UPDATED*|*MODIFY*)
+         _action="update"
+      ;;
+
+      *)
+         log_debug "\"${cmd}\" is boring"
+         _action="boring"
+         return 1
+      ;;
+   esac
+   return 0
+}
+
+
+#
+# process event, return in global variables for speeds sake
+#
+# _callback
+# _action
+# _category
+# _
+_process_event()
+{
+   log_entry "process_event" "$@"
+
+   local ignore="$1"
+   local match="$2"
+   local filepath="$3"
+   local cmd="$4"
+
+     # cheap
+   if ! _action_of_event_command "${cmd}"
+   then
+      return 1
+   fi
+
+
+   local _patternfile
+
+   #
+   # not as cheap
+   #
+   if ! _match_filepath "${ignore}" "${match}" "${filepath}"
+   then
+      return 1
+   fi
+
+   _callback="`patternfile_get_callback "${_patternfile}" `"
+   _category="`patternfile_get_category "${_patternfile}" `"
+
+   [ -z "${_callback}" ] && internal_fail "_callback is empty"
+
+   return 0
+}
+
+
+callback_and_task()
+{
+   log_entry "callback_and_task" "$@"
+
+   local callback="$1"
+   local action="$2"
+   local filepath="$3"
+   local category="$4"
+
+   local task
+
+   if task="`run_callback_main "${callback}" "${action}" "${filepath}" "${category}"`"
+   then
+      if [ ! -z "${task}" ]
+      then
+         log_info "Task ${C_MAGENTA}${C_BOLD}${task}"
+
+         if [ "${OPTION_SYNCHRONOUS}" = "YES" ]
+         then
+            eval run_task_main ${task}
+         else
+            eval run_task_job ${task}
+         fi
+      fi
+   fi
+}
+
+
 _watch_using_fswatch()
 {
    log_entry "_watch_using_fswatch" "$@"
@@ -222,27 +256,6 @@ _watch_using_fswatch()
    local ignore="$1" ; shift
    local match="$1" ; shift
 
-   #
-   # Why monitoring stops, when executing a build.
-   #
-   # This used to be like `fswatch | read -> craft`
-   #
-   # A general problem was that events are queing up during a build
-   # These are filtered out eventually, but it still can be quite a
-   # bit of load. Also the pipe in fswatch will fill up and then
-   # block. I suspect, that then we are missing all events until the
-   # pipe has been drained.
-   #
-   # Because the craft is run in the reading pipe, there were no
-   # parallel builds.
-   #
-   # Since events are probably lost anyway, it shouldn't matter if we
-   # turn off monitoring during a build. If this ever becomes a problem
-   # we can memorize the time of the last watch. Then do a find if
-   # anything interesting has changed (timestamp), and if yes run an update
-   # before monitoring again.
-   #
-   local filepath
    local cmd
    local workingdir
    local escaped_workingdir
@@ -260,24 +273,23 @@ _watch_using_fswatch()
       # extract filepath from line and
       # make it a relative filepath
       #
-      filepath="`LC_ALL=C sed -e 's/^\(.*\) \(.*\)$/\1/' \
-                              -e "s/^${escaped_workingdir}//" <<< "${line}" `"
+      _filepath="`LC_ALL=C sed -e 's/^\(.*\) \(.*\)$/\1/' \
+                               -e "s/^${escaped_workingdir}//" <<< "${line}" `"
 
-      [ -z "${filepath}" ] && internal_fail "failed to parse \"${line}\""
+      [ -z "${_filepath}" ] && internal_fail "failed to parse \"${line}\""
 
       cmd="`echo "${line}" | LC_ALL=C sed 's/^\(.*\) \(.*\)$/\2/' | tr '[a-z]' '[A-Z]'`"
 
-      if ! _task="`process_event "${ignore}" "${match}" "${filepath}" "${cmd}"`"
+      if _process_event "${ignore}" "${match}" "${_filepath}" "${cmd}"
       then
-         continue
+         if [ "${OPTION_PAUSE}" = "YES" ]
+         then
+            return 0
+         else
+            callback_and_task "${_callback}" "${_action}" "${_filepath}" "${_category}"
+         fi
       fi
-
-      [ -z "${_task}" ] && continue
-      [ "${OPTION_PAUSE}" = "YES" ] && return 0
-
-      eval run_task_main ${_task}
-
-   done < <( "${FSWATCH}" -r -x --event-flag-separator : "$@" )  # bashism
+   done < <( eval_exekutor "'${FSWATCH}'" -r -x --event-flag-separator : "$@" )  # bashism
 
    IFS="${DEFAULT_IFS}"
    return 1
@@ -288,13 +300,15 @@ watch_using_fswatch()
 {
    log_entry "watch_using_fswatch" "$@"
 
-   local _task
+   local task
+   local _action
+   local _category
+   local _callback
+   local _filepath
 
    while _watch_using_fswatch "$@"
    do
-      [ -z "${_task}" ] && internal_fail "_task is empty"
-
-      eval run_task_main ${_task}
+      callback_and_task "${_callback}" "${_action}" "${_filepath}" "${_category}"
    done
 }
 
@@ -331,7 +345,6 @@ _watch_using_inotifywait()
    # see watch_using_fswatch comment
    local directory
    local filename
-   local contenttype
    local cmd
    local _line
    local _field
@@ -353,19 +366,18 @@ _watch_using_inotifywait()
       cmd="${_field}"
       filename="`_remove_quotes "${_line}" `"
 
-      filepath="` filepath_concat "${directory}" "${filename}" `"
+      _filepath="` filepath_concat "${directory}" "${filename}" `"
 
-      if ! _task="`process_event "${ignore}" "${match}" "${filepath}" "${cmd}"`"
+      if _process_event "${ignore}" "${match}" "${_filepath}" "${cmd}"
       then
-         continue
+         if [ "${OPTION_PAUSE}" = "YES" ]
+         then
+            return 0
+         else
+            callback_and_task "${_callback}" "${_action}" "${_filepath}" "${_category}"
+         fi
       fi
-
-      [ -z "${_task}" ] && continue
-      [ "${OPTION_PAUSE}" = "YES" ] && return 0
-
-      eval run_task_main ${_task}
-
-   done < <( "${INOTIFYWAIT}" -q -r -m -c "$@" )  # bashism
+   done < <( eval_exekutor "'${INOTIFYWAIT}'" -q -r -m -c "$@" )  # bashism
 
    IFS="${DEFAULT_IFS}"
    return 1
@@ -376,13 +388,16 @@ watch_using_inotifywait()
 {
    log_entry "watch_using_inotifywait" "$@"
 
-   local _task
+   local task
+   local _action
+   local _category
+   local _callback
+   local _filepath
 
    while _watch_using_inotifywait "$@"
    do
-      [ -z "${_task}" ] && internal_fail "_task is empty"
-
-      eval run_task_main ${_task}
+      # only if OPTION_PAUSE=YES
+      callback_and_task "${_callback}" "${_action}" "${_filepath}" "${_category}"
    done
 }
 
@@ -452,7 +467,9 @@ monitor_run_main()
 
    local OPTION_IGNORE_FILTER
    local OPTION_MATCH_FILTER
+   local OPTION_MONITOR_WITH_IGNORE_D="NO"
    local OPTION_PAUSE="NO"
+   local OPTION_SYNCHRONOUS="NO"
 
    #
    # handle options
@@ -464,8 +481,12 @@ monitor_run_main()
             monitor_run_usage
          ;;
 
-         -p|--task-pauses-observation)
-            OPTION_PAUSE="YES"
+         -a|--all)
+            OPTION_MONITOR_WITH_IGNORE_D="NO"
+         ;;
+
+         -i|--ignore)
+            OPTION_MONITOR_WITH_IGNORE_D="YES"
          ;;
 
          -if|--ignore-filter)
@@ -480,6 +501,22 @@ monitor_run_main()
             shift
 
             OPTION_MATCH_FILTER="$1"
+         ;;
+
+         -p|--pause)
+            OPTION_PAUSE="YES"
+         ;;
+
+         --no-pause)
+            OPTION_PAUSE="NO"
+         ;;
+
+         -s|--synchronous)
+            OPTION_SYNCHRONOUS="YES"
+         ;;
+
+         --asynchronous)
+            OPTION_SYNCHRONOUS="NO"
          ;;
 
          -*)
@@ -514,6 +551,11 @@ monitor_run_main()
    then
       # shellcheck source=src/mulle-monitor-match.sh
       . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+   fi
+   if [ -z "${MULLE_MONITOR_FIND_SH}" ]
+   then
+      # shellcheck source=src/mulle-monitor-find.sh
+      . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-find.sh" || exit 1
    fi
    if [ -z "${MULLE_MONITOR_CALLBACK_SH}" ]
    then
@@ -555,7 +597,7 @@ monitor_run_main()
    log_verbose "==> Start monitoring"
    log_fluff "Edits in your directory \"${PROJECT_DIR}\" are now monitored."
 
-   log_info "Press [CTRL]-[C] to quit"
+   log_info "Monitor is running. [CTRL]-[C] to quit"
 
    local _cache
    local ignore
@@ -570,16 +612,32 @@ monitor_run_main()
    match="${_cache}"
 
    #
-   # "." is the directory we monitor, I think in theory we could
-   # watch multiple in parallel
+   # Only monitor **existing** top level folders. WHY ?
+   # Because when you have the build folder in the project directory
+   # the amount of file change events is not really nice
    #
+   local quoted_toplevel
+
+   if [ "${OPTION_MONITOR_WITH_IGNORE_D}" = "YES" ]
+   then
+      quoted_toplevel="`_find_toplevel_files "${ignore}"`"
+      if [ -z "${quoted_toplevel}" ]
+      then
+         fail "\"ignore.d\" leaves nothing to be monitored"
+      fi
+   else
+      quoted_toplevel="'.'"
+   fi
+
+   log_verbose "Monitoring: ${quoted_toplevel}"
+
    case "${MULLE_UNAME}" in
       linux)
-         watch_using_inotifywait "${ignore}" "${match}" "."
+         watch_using_inotifywait "${ignore}" "${match}" "${quoted_toplevel}"
       ;;
 
       *)
-         watch_using_fswatch "${ignore}" "${match}" "."
+         watch_using_fswatch "${ignore}" "${match}" "${quoted_toplevel}"
       ;;
    esac
 

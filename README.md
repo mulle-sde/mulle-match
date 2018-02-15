@@ -82,6 +82,17 @@ forwarded to the callback:
 mulle-monitor -e patternfile install --category special hello pattern.txt
 ```
 
+It may be useful, especially in conjunction with `mulle-monitor find`, 
+that `mulle-monitor` may ignore large and changing folders like `.git` and 
+`build`. Install into the `ignore.d` folder with `-i`:
+
+```
+echo ".git/" > pattern.txt
+echo "build/" >> pattern.txt
+mulle-monitor -e patternfile install -i folders pattern.txt
+```
+
+
 Remove a *patternfile*:
 
 ```
@@ -156,13 +167,13 @@ mulle-monitor -e callback list
 ### mulle-monitor task
 
 A *task* is a bash script plugin. It needs to define a function
-`task_<task>_main` to be a usable task plugin.
+`<task>_task_run` to be a usable task plugin.
 
 Add a sourcable shell script as a for a task "world":
 
 ```
 cat <<EOF > my-plugin.sh
-task_world_main()
+world_task_run()
 {
    echo "VfL Bochum 1848"
 }

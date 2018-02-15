@@ -348,12 +348,12 @@ monitor_find_main()
 
    _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
                                         "${OPTION_IGNORE_FILTER}" \
-                                        "${MULLE_MONITOR_DIR}/var/cache"
+                                        "${MULLE_MONITOR_DIR}/var/cache/monitor"
    ignore_patterncaches="${_cache}"
 
    _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
                                         "${OPTION_MATCH_FILTER}" \
-                                         "${MULLE_MONITOR_DIR}/var/cache"
+                                         "${MULLE_MONITOR_DIR}/var/cache/monitor"
    match_patterncaches="${_cache}"
 
 

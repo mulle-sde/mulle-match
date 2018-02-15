@@ -32,13 +32,12 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.4
+MULLE_EXECUTABLE_VERSION=0.1.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
 #
 # This is the main user interface to mulle-monitor
-# sorta like git
 #
 
 trap_fail()
@@ -55,6 +54,7 @@ SHOWN_COMMANDS="\
    run            : monitor files and run scripts"
 
 HIDDEN_COMMANDS="\
+   clean          : remove var/run files
    find           : find files that match patternfiles
    libexec-dir    : print path to mulle-monitor libexec
    match          : match filenames against patternfiles
@@ -351,6 +351,13 @@ pass the -e flag"
          monitor_callback_main "$@"
       ;;
 
+      clean)
+         # shellcheck source=src/mulle-monitor-clean.sh
+         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-clean.sh"
+
+         monitor_clean_main "$@"
+      ;;
+
       libexec-dir|library-path)
          echo "${MULLE_MONITOR_LIBEXEC_DIR}"
       ;;
@@ -397,6 +404,11 @@ pass the -e flag"
       version)
          echo "${MULLE_EXECUTABLE_VERSION}"
          return 0
+      ;;
+
+      "")
+         MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE_NAME}"
+         usage "${MULLE_TRACE}"
       ;;
 
       *)

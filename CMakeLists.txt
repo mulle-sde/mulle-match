@@ -18,6 +18,7 @@ mulle-monitor
 
 set( LIBRARY_SCRIPTS
 src/mulle-monitor-callback.sh
+src/mulle-monitor-clean.sh
 src/mulle-monitor-find.sh
 src/mulle-monitor-match.sh
 src/mulle-monitor-patternfile.sh

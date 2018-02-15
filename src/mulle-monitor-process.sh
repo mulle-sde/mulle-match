@@ -73,7 +73,6 @@ does_pid_exist()
 }
 
 
-
 done_pid()
 {
    log_entry "done_pid" "$@"
@@ -95,7 +94,7 @@ kill_pid()
    old_pid="`get_pid "${pid_file}"`"
    if [ ! -z "${old_pid}" ]
    then
-      log_verbose "Killing tests with pid: ${old_pid}"
+      log_verbose "Killing pid: ${old_pid}"
       kill "${old_pid}" 2> /dev/null
    fi
 
@@ -110,7 +109,26 @@ announce_pid()
    local pid="$1"
    local pid_file="$2"
 
+   mkdir_if_missing "`fast_dirname "${pid_file}"`"
    redirect_exekutor "${pid_file}" echo "${pid}" || exit 1
+}
+
+
+announce_current_pid()
+{
+   log_entry "announce_pid" "$@"
+
+   local pid_file="$1"
+
+   local pid
+
+   if [ -z "${BASHPID}" ]
+   then
+      pid="$(sh -c 'echo $PPID && :')"
+   else
+      pid="${BASHPID}"
+   fi
+   announce_pid "${pid}" "$1"
 }
 
 
@@ -129,4 +147,24 @@ check_pid()
    fi
    does_pid_exist "${old_pid}"
 }
+
+#
+# path handling
+#
+path_without_first_directory()
+{
+   case "$@" in
+      /*)
+         path_without_first_directory `echo "$@" | cut -c2-`
+         ;;
+
+      */*)
+         echo "$@" | LC_ALL=C sed 's,^[^/]*/,,'
+         ;;
+      *)
+         echo "$@"
+         ;;
+   esac
+}
+
 

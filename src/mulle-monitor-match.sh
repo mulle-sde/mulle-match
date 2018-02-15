@@ -561,17 +561,21 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
                                      "${varname}" \
                                      "${cachedirectory}" # will add to _cache
       fi
-      eval "${varname}_f='${patternfile}'"
       _cache="`add_line "${_cache}" "${varname}"`"
+
+      local varname_f
+
+      varname_f="`fast_basename "${patternfile}"`"
+      eval "${varname}_f='${varname_f}'"
    done
 
    shopt -u nullglob
 }
 
 
-matchfile_get_type()
+patternfile_get_callback()
 {
-   log_entry "matchfile_get_type" "$@"
+   log_entry "patternfile_get_callback" "$@"
 
    local filename="$1"
 
@@ -579,9 +583,9 @@ matchfile_get_type()
 }
 
 
-matchfile_get_category()
+patternfile_get_category()
 {
-   log_entry "matchfile_get_category" "$@"
+   log_entry "patternfile_get_category" "$@"
 
    local filename="$1"
 
@@ -589,13 +593,13 @@ matchfile_get_category()
 }
 
 
-matchfile_get_executable()
+patternfile_get_executable()
 {
-   log_entry "matchfile_get_executable" "$@"
+   log_entry "patternfile_get_executable" "$@"
 
    local filename="$1"
 
-   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
+   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1-callback/p' <<< "${filename}"
 }
 
 
@@ -654,9 +658,12 @@ _match_assert_filename()
 }
 
 
+#
+# returns patternfile in global _patternfile
+#
 _match_filepath()
 {
-   log_entry "match_filepath" "$@"
+   log_entry "_match_filepath" "$@"
 
    local ignore="$1"
    local match="$2"
@@ -750,13 +757,13 @@ _match_print_patternfilename()
    do
       case "${format}" in
          \%c*)
-            matchcategory="`matchfile_get_category "${matchname}" `" || exit 1
+            matchcategory="`patternfile_get_category "${matchname}" `" || exit 1
             s="${s}${matchcategory}"
             format="${format:2}"
          ;;
 
          \%e*)
-            matchexecutable="`matchfile_get_executable "${matchname}" `" || exit 1
+            matchexecutable="`patternfile_get_executable "${matchname}" `" || exit 1
             s="${s}${matchexecutable}"
             format="${format:2}"
          ;;
@@ -772,13 +779,13 @@ _match_print_patternfilename()
          ;;
 
          \%t*)
-            matchtype="`matchfile_get_type "${matchname}" `" || exit 1
+            matchtype="`patternfile_get_callback "${matchname}" `" || exit 1
             s="${s}${matchtype}"
             format="${format:2}"
          ;;
 
          \%I*)
-            matchcategory="`matchfile_get_category "${matchname}" `" || exit 1
+            matchcategory="`patternfile_get_category "${matchname}" `" || exit 1
             uppercase="`tr 'a-z' 'A-Z' <<< "${matchcategory}" | tr '-' '_' `"
             s="${s}${uppercase}"
             format="${format:2}"

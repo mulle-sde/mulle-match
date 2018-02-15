@@ -291,7 +291,6 @@ locate_callback_main()
 }
 
 
-
 run_callback_main()
 {
    log_entry "run_callback_main" "$@"
@@ -301,6 +300,8 @@ run_callback_main()
    [ "$#" -lt 1 ] && run_callback_usage
 
    local callback="$1"; shift
+
+   [ -z "${callback}" ] && internal_fail "empty callback"
 
    local _executable
 

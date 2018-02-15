@@ -41,29 +41,21 @@ monitor_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task [options] <command>
+   ${MULLE_EXECUTABLE_NAME} task <command>
 
    Manage tasks. A task is a plugin that is loaded by the monitor and executed
    on behalf of a callback. A callback may print a taskname to stdout. This is
    then used by the monitor to run the task.
 
-   The reason for separating tasks and callbacks
-   are:
-      callbacks can be written in any language
-      callbacks are one shot and keep no state
-      tasks must be written in bash
-      tasks can keep state in the running monitor, this is useful for job
-      control.
-
-Options:
-   -h        : this help
-
 Commands:
-   install   : install
+   install   : install a bash script as a task
+   kill      : kill a running task
    list      : list installed tasks
-   uninstall : uninstall
-   require   : load task and check that the required main function is present
+   ps        : list running tasks
+   uninstall : uninstall a task
+   test      : load task and check that the required main function is present
    run       : run task
+   status    : get status of running or last ran task
 EOF
    exit 1
 }
@@ -121,7 +113,7 @@ EOF
 }
 
 
-require_task_usage()
+test_task_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -130,10 +122,67 @@ require_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} require run <task>
+   ${MULLE_EXECUTABLE_NAME} task test <task>
 
-   Load a task and check that the requirements are meant. This means that
-   the task must provide an entry function called <task>_task_main.
+   Load a task and check that the task provides an entry function called
+   <task>_task_run.
+EOF
+   exit 1
+}
+
+
+ps_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task ps
+
+   List running tasks and their pids.
+EOF
+   exit 1
+}
+
+
+kill_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task kill <task>
+
+   Kill a running task.
+EOF
+   exit 1
+}
+
+
+status_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task status <task>
+
+   Check status of a task. These are the returned values:
+
+   done    : task successfully
+   failed  : task completed with errors
+   running : still running
+   unknown : possibly never ran yet
+
 EOF
    exit 1
 }
@@ -179,6 +228,40 @@ _cheap_help_options()
 
       shift
    done
+}
+
+
+_task_donefile()
+{
+   log_entry "_task_donefile" "$@"
+
+   local task="$1"
+
+   echo "${MULLE_MONITOR_DIR}/var/run/monitor/${task}-task"
+}
+
+
+_task_pidfile()
+{
+   log_entry "_task_pidfile" "$@"
+
+   local task="$1"
+
+   echo "${MULLE_MONITOR_DIR}/var/run/monitor/${task}-task.pid"
+
+}
+
+_task_main_function()
+{
+   log_entry "_task_main_function" "$@"
+
+   local task="$1"
+
+   local taskidentifier
+
+   taskidentifier="`tr -c '[a-zA-Z0-9_\n]' '_' <<< "${task}"`"
+
+   echo "${taskidentifier}_task_run"
 }
 
 
@@ -231,36 +314,15 @@ _load_task()
 }
 
 
-list_task_main()
+_require_task()
 {
-   log_entry "list_task_main" "$@"
-
-   [ "$#" -ne 0 ] && list_task_usage
-
-   log_info "Tasks:"
-   if [ -d "${MULLE_MONITOR_DIR}/libexec" ]
-   then
-   (
-      cd "${MULLE_MONITOR_DIR}/libexec"
-      ls -1 *-task.sh 2> /dev/null | sed -e 's/-task\.sh//'
-   )
-   fi
-}
-
-
-require_task_main()
-{
-   log_entry "require_task_main" "$@"
-
-   _cheap_help_options "require_task_usage"
-
-   [ "$#" -lt 1 ] && require_task_usage
+   log_entry "_require_task" "$@"
 
    local task="$1"
 
    local functionname
 
-   functionname="task_${task}_main"
+   functionname="`_task_main_function "${task}"`"
    if [ "`type -t "${functionname}"`" != "function" ]
    then
       _load_task "${task}" "${functionname}"
@@ -268,22 +330,107 @@ require_task_main()
 }
 
 
-# "Hidden" command for testing
-locate_task_main()
+remove_task_job()
 {
-   log_entry "locate_task_main" "$@"
+   log_entry "add_task_job" "$@"
 
-   _cheap_help_options "run_task_usage"
+   local task="$1"
 
-   [ "$#" -lt 1 ] && run_task_usage
+   local taskpidfile
+
+   taskpidfile="`_task_pidfile "${task}"`"
+   kill_pid "${taskpidfile}"
+}
+
+
+remember_task_rval()
+{
+   log_entry "remember_task_rval" "$@"
+
+   local task="$1"
+   local rval="$2"
+
+   local taskdonefile
+   local status
+
+   status="failed"
+   case "${rval}" in
+      0)
+         status="done"
+      ;;
+
+      "")
+         internal_fail "rval is empty"
+      ;;
+   esac
+
+   taskdonefile="`_task_donefile "${task}"`"
+   mkdir_if_missing "`fast_dirname "${taskdonefile}"`"
+   redirect_exekutor "${taskdonefile}" echo "${status}"
+}
+
+
+add_task_job()
+{
+   log_entry "add_task_job" "$@"
+
+   local task="$1" ; shift
+   local taskdelay="$1" ; shift
+   # rest commandline
+
+   local taskpidfile
+
+   taskpidfile="`_task_pidfile "${task}"`"
+   kill_pid "${taskpidfile}"
+
+   local timestamp
+
+   timestamp="`date +"%s"`"
+   timestamp="`expr $timestamp + ${taskdelay}`"
+
+   case "${MULLE_UNAME}" in
+      darwin)
+         log_fluff "==> Scheduled task \"${task}\" for" `date -r ${timestamp} "+%H:%M:%S"`
+      ;;
+   esac
+
+   (
+      trap 'log_fluff "Task \"${task}\" with pid ${BASHPID} killed" ; exit 1' TERM
+
+      announce_current_pid "${taskpidfile}"
+      sleep "${taskdelay}"
+
+      log_fluff "==> Starting task"
+
+      eval_exekutor "$@"
+      remember_task_rval "${task}" "$?"
+
+      log_fluff "==> Ended task"
+
+      done_pid "${taskpidfile}"
+   ) &
+}
+
+
+run_task_job()
+{
+   log_entry "run_task_job" "$@"
 
    local task="$1"; shift
 
-   local _plugin
+   local functionname
 
-   _locate_task "${task}" || exit 1
+   _require_task "${task}" || exit 1
+   functionname="`_task_main_function "${task}"`"
 
-   exekutor echo "${_plugin}"
+   #
+   # check that a task of same name is not running/schedulded. If yes
+   # prempt it.
+   #
+   # Delay task schedule by 1 second, so that we can "coalesce"
+   # incoming events
+   #
+   add_task_job "${task}" "1" "'${functionname}'" "$@"
 }
 
 
@@ -291,18 +438,26 @@ run_task_main()
 {
    log_entry "run_task_main" "$@"
 
-   _cheap_help_options "run_task_usage"
-
-   [ "$#" -lt 1 ] && run_task_usage
-
    local task="$1"; shift
 
    local functionname
+   local taskidentifier
 
-   require_task_main "${task}" || exit 1
+   taskidentifier="`tr -c '[a-zA-Z0-9_\n]' '_' <<< "${task}"`"
 
-   functionname="task_${task}_main"
+   _require_task "${task}" || exit 1
+   functionname="`_task_main_function "${task}"`"
+
+   local taskpidfile
+
+   taskpidfile="`_task_pidfile "${task}"`"
+   kill_pid "${taskpidfile}"
+
+   announce_current_pid "${taskpidfile}"
    exekutor "${functionname}" "$@"
+   remember_task_rval "${task}" "$?"
+
+   done_pid "${taskpidfile}"
 }
 
 
@@ -372,6 +527,146 @@ uninstall_task_main()
 }
 
 
+list_task_main()
+{
+   log_entry "list_task_main" "$@"
+
+   [ "$#" -ne 0 ] && list_task_usage
+
+   log_info "Tasks:"
+   if [ -d "${MULLE_MONITOR_DIR}/libexec" ]
+   then
+   (
+      cd "${MULLE_MONITOR_DIR}/libexec"
+      ls -1 *-task.sh 2> /dev/null | sed -e 's/-task\.sh//'
+   )
+   fi
+}
+
+
+test_task_main()
+{
+   log_entry "test_task_main" "$@"
+
+   _cheap_help_options "test_task_usage"
+
+   [ "$#" -lt 1 ] && test_task_usage
+
+   _require_task "$@"
+}
+
+
+status_task_main()
+{
+   log_entry "status_task_main" "$@"
+
+   _cheap_help_options "status_task_usage"
+
+   [ "$#" -lt 1 ] && status_task_usage
+
+   local task="$1"
+
+   local taskpidfile
+   local taskdonefile
+
+   taskpidfile="`_task_pidfile "${task}"`"
+   if [ -f "${taskpidfile}" ]
+   then
+      echo "running"
+      return
+   fi
+
+   taskdonefile="`_task_donefile "${task}"`"
+   if [ -f "${taskdonefile}" ]
+   then
+      cat "${taskdonefile}"
+      return
+   fi
+
+   echo "unknown"
+}
+
+
+kill_task_main()
+{
+   log_entry "status_task_main" "$@"
+
+   _cheap_help_options "kill_task_usage"
+
+   [ "$#" -lt 1 ] && kill_task_usage
+
+   local task="$1"
+
+   local taskdonefile
+
+   taskpidfile="`_task_pidfile "${task}"`"
+   if [ ! -f "${taskpidfile}" ]
+   then
+      log_warning "Task \"${task}\" not known to be running. \
+Started by a different monitor ?"
+      return 1
+   fi
+
+   local pid
+
+   pid="`cat "${taskpidfile}"`"
+   if [ "${pid}" != "$$" ]
+   then
+      log_fluff "Killing \"${task}\" with pid $pid"
+      kill $pid
+   else
+      log_warning "Task \"${task}\" is running synchronous, can't kill"
+   fi
+}
+
+
+ps_task_main()
+{
+   log_entry "ps_task_main" "$@"
+
+   [ "$#" -ne 0 ] && list_task_usage
+
+   log_info "Running Tasks:"
+   if [ -d "${MULLE_MONITOR_DIR}/var/run/monitor" ]
+   then
+   (
+      cd "${MULLE_MONITOR_DIR}/var/run/monitor"
+      IFS="
+"
+      for pidfile in `ls -1 *-task.pid 2> /dev/null`
+      do
+         task="`sed -e 's/-task\.pid//' <<< "${pidfile}"`"
+         pid="`cat "${pidfile}"`"
+         if [ "${pid}" = "$$" ]
+         then
+            pid=""
+         fi
+         echo "$pid" "${task}"
+      done
+   )
+   fi
+}
+
+
+# "Hidden" command for testing
+locate_task_main()
+{
+   log_entry "locate_task_main" "$@"
+
+   _cheap_help_options "run_task_usage"
+
+   [ "$#" -lt 1 ] && run_task_usage
+
+   local task="$1"; shift
+
+   local _plugin
+
+   _locate_task "${task}" || exit 1
+
+   exekutor echo "${_plugin}"
+}
+
+
 
 ###
 ###  MAIN
@@ -404,7 +699,7 @@ monitor_task_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      list|locate|require|run|install|uninstall)
+      install|kill|list|locate|ps|run|status|test|uninstall)
          ${cmd}_task_main "$@"
       ;;
 
