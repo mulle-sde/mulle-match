@@ -236,7 +236,7 @@ callback_and_task()
    then
       if [ ! -z "${task}" ]
       then
-         log_info "Task ${C_MAGENTA}${C_BOLD}${task}"
+         log_verbose "Task ${C_MAGENTA}${C_BOLD}${task}"
 
          if [ "${OPTION_SYNCHRONOUS}" = "YES" ]
          then
