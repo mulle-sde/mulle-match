@@ -122,7 +122,8 @@ find_emit_by_category()
 
    while [ ! -z "${remainder}" ]
    do
-      collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q}' <<< "${remainder}" `"
+      # https://stackoverflow.com/questions/1773939/how-to-use-sed-to-return-something-from-first-line-which-matches-and-quit-early
+      collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q;}' <<< "${remainder}" `"
       collection="`egrep "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
       "${emitter}" "${collectname}" "${collection}"
 
