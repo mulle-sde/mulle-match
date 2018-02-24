@@ -43,7 +43,7 @@ monitor_find_usage()
 Usage:
    ${MULLE_EXECUTABLE_NAME} find [options]
 
-   Find matching files in the project directory.
+   Find files matching the patternfiles in the project directory.
 
 Options:
    -f <format>    : specify output values
@@ -318,7 +318,7 @@ monitor_find_main()
             OPTION_MATCH_FILTER="$1"
          ;;
 
-         --format)
+         -f|--format)
             [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
             shift
 

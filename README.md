@@ -52,9 +52,6 @@ Example:
 !*~.*
 ```
 
-> The matching is a bit less sophisticated than .gitignore though, since
-> a `*` matches everything.
-
 A *patternfile* resides in either the `ignore.d` folder or the `match.d`
 folder.
 

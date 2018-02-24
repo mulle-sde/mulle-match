@@ -76,7 +76,7 @@ EOF
                     A type expression is either a type name with wildcard
                     characters or a negated type expression. An expression is
                     negated by being prefixed with !.
-                    Example: filter is "header*,!header_private"
+                    Example: "header*,!header_private"
 EOF
    cat <<EOF >&2
    -p <pattern>   : match a single pattern against a single filename
@@ -108,6 +108,61 @@ _match_assert_pattern()
 }
 
 
+#
+# to get .gitignore like matching, where * means only a file in a directory
+# and ** means match whatever (afaik) transform the pattern before
+#
+# ** -> *
+# * -> *([^/])
+#
+_transform_path_pattern()
+{
+   local pattern="$1"
+
+   local prefix
+   local suffix
+
+   case "${pattern}" in
+      *\*\*/*)
+         prefix="`sed -e s'|\(.*\)\*\*\/(.*\)|\1|' <<< "${pattern}"`"
+         suffix="`sed -e s'|\(.*\)\*\*\/(.*\)|\2|' <<< "${pattern}"`"
+         prefix="`_transform_path_pattern "${prefix}"`"
+         suffix="`_transform_path_pattern "${suffix}"`"
+
+         echo "${prefix}*${suffix}"
+         return
+      ;;
+
+      *\*\**)
+         fail "Invalid pattern. ** must be followed by /"
+      ;;
+
+      *\*\(*)
+         # do nothing for *()
+      ;;
+
+      */\*)
+         prefix="`_transform_path_pattern "${prefix%?}"`"
+         echo "${prefix}*([^/])"
+         return
+      ;;
+
+      *\**)
+         prefix="`sed -e s'|\(.*\)\*\(.*\)|\1|' <<< "${pattern}"`"
+         suffix="`sed -e s'|\(.*\)\*\(.*\)|\2|' <<< "${pattern}"`"
+         prefix="`_transform_path_pattern "${prefix}"`"
+         suffix="`_transform_path_pattern "${suffix}"`"
+
+         echo "${prefix}*([^/])${suffix}"
+         return
+      ;;
+   esac
+
+   echo "${pattern}"
+}
+
+
+# extglob must be set
 pattern_emit_matchcode()
 {
    log_entry "pattern_emit_matchcode" "$@"
@@ -122,7 +177,8 @@ pattern_emit_matchcode()
    #
    case "${pattern}" in
       !!*)
-         # consider that an escape for whatever purpose
+         # consider that an escape for extglob pattern
+         pattern="${pattern:1}"
       ;;
 
       !*)
@@ -132,8 +188,13 @@ pattern_emit_matchcode()
       ;;
    esac
 
-
    _match_assert_pattern "${pattern}"
+
+   case "${pattern}" in
+      *\**)
+         pattern="`_transform_path_pattern "${pattern}"`"
+      ;;
+   esac
 
    case "${pattern}" in
       /*/)
@@ -175,6 +236,28 @@ EOF
 EOF
       ;;
 
+      #
+      # experimental code to do test after pattern matching
+      #
+      \[\ -?\ *\ \])
+         local testchar
+
+         testchar="${pattern:3:1}"
+         pattern="${pattern:5}"
+         pattern="${pattern%??}"
+         cat <<EOF
+   case "\$1" in
+      ${pattern?}|*/${pattern})
+         if [ -${testchar} "\$1" ]
+         then
+            return ${YES}
+         fi
+      ;;
+   esac
+   return $NO
+EOF
+      ;;
+
       *)
          cat <<EOF
    case "\$1" in
@@ -202,7 +285,6 @@ _pattern_function_header()
       echo "   log_entry ${functionname} \"\$@\""
    fi
 }
-
 
 
 pattern_emit_function()
@@ -256,9 +338,11 @@ pattern_matches_relative_filename()
    _match_assert_filename "${filename}"
 
    functionname="`pattern_unique_functionname`"
+
    declaration="`pattern_emit_function "${functionname}" "${pattern}"`"
    log_debug "define: ${declaration}"
    eval "${declaration}"
+
    "${functionname}" "${filename}"  # just leak
 }
 
@@ -450,7 +534,6 @@ _patternfilefunction_create()
    bigbody="
    local rval=1
 "
-
    set -o noglob ; IFS="
 "
    for pattern in ${contents}
@@ -483,7 +566,8 @@ ${functiontext}"
    done
    IFS="${DEFAULT_IFS}"; set +o noglob
 
-   # finish up the patterfile function
+   # finish up the patternfile function
+   #
    bigbody="${bigbody}
    return \${rval}"
 
@@ -599,7 +683,7 @@ patternfile_get_executable()
 
    local filename="$1"
 
-   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1-callback/p' <<< "${filename}"
+   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
 }
 
 
@@ -863,6 +947,13 @@ monitor_match_main()
             monitor_match_usage
          ;;
 
+         -f|--format)
+            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            shift
+
+            OPTION_FORMAT="$1"
+         ;;
+
          -if|--ignore-filter)
             [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
             shift
@@ -875,13 +966,6 @@ monitor_match_main()
             shift
 
             OPTION_MATCH_FILTER="$1"
-         ;;
-
-         --format)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
-            shift
-
-            OPTION_FORMAT="$1"
          ;;
 
          -p|--pattern)

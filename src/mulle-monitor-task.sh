@@ -48,13 +48,14 @@ Usage:
    then used by the monitor to run the task.
 
 Commands:
-   install   : install a bash script as a task
-   kill      : kill a running task
-   list      : list installed tasks
-   ps        : list running tasks
-   uninstall : uninstall a task
-   test      : load task and check that the required main function is present
-   run       : run task
+   cat        : print the task script to stdout
+   install    : install a bash script as a task
+   kill       : kill a running task
+   list       : list installed tasks
+   ps         : list running tasks
+   uninstall  : uninstall a task
+   test       : load task and check that the required main function is present
+   run        : run task
    status    : get status of running or last ran task
 EOF
    exit 1
@@ -206,6 +207,25 @@ EOF
 }
 
 
+cat_task_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} task cat <task>
+
+   Print the task script to stdout.
+
+EOF
+   exit 1
+}
+
+
+
 _cheap_help_options()
 {
    local usage="$1"
@@ -265,7 +285,8 @@ _task_main_function()
 }
 
 
-_task_plugin_filename()
+# sets _plugin
+_task_plugin_install_filename()
 {
    log_entry "_task_plugin_filename" "$@"
 
@@ -277,6 +298,24 @@ _task_plugin_filename()
 }
 
 
+# sets _plugin
+_task_plugin_filename()
+{
+   log_entry "_task_plugin_filename" "$@"
+
+   local task="$1"
+
+   [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
+
+   _plugin="${MULLE_MONITOR_DIR}/share/libexec/${task}-task.sh"
+   if [ ! -f "${_plugin}" ]
+   then
+      _plugin="${MULLE_MONITOR_DIR}/libexec/${task}-task.sh"
+   fi
+}
+
+
+# sets _plugin
 _locate_task()
 {
    log_entry "_locate_task" "$@"
@@ -438,7 +477,11 @@ run_task_main()
 {
    log_entry "run_task_main" "$@"
 
-   local task="$1"; shift
+   local task="$1"
+
+   [ -z "${task}" ] && cat_task_usage "Empty task"
+
+   shift
 
    local functionname
    local taskidentifier
@@ -461,6 +504,22 @@ run_task_main()
 }
 
 
+cat_task_main()
+{
+   log_entry "run_task_main" "$@"
+
+   local task="$1"
+
+   [ -z "${task}" ] && cat_task_usage "Empty task"
+
+   local _plugin
+
+   _locate_task "${task}" || exit 1
+
+   exekutor cat "${_plugin}"
+}
+
+
 install_task_main()
 {
    log_entry "install_task_main" "$@"
@@ -472,12 +531,13 @@ install_task_main()
    local task="$1"
    local filename="$2"
 
+   [ -z "${task}" ] && install_task_usage "Empty task"
    [ -z "${filename}" ] && install_task_usage "missing filename"
    [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
 
    local _plugin
 
-   _task_plugin_filename "${task}"
+   _task_plugin_install_ilename "${task}"
 
    [ -e "${_plugin}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
       && fail "\"${_plugin}\" already exists. Use -f to clobber"
@@ -515,7 +575,7 @@ uninstall_task_main()
 
    local _plugin
 
-   _task_plugin_filename "${task}"
+   _task_plugin_install_filename "${task}"
 
    if [ ! -e "${_plugin}" ]
    then
@@ -533,11 +593,23 @@ list_task_main()
 
    [ "$#" -ne 0 ] && list_task_usage
 
-   log_info "Tasks:"
    if [ -d "${MULLE_MONITOR_DIR}/libexec" ]
    then
    (
+      log_info "Custom Tasks:"
+      log_verbose "Custom tasks override extension tasks of same name"
+
       cd "${MULLE_MONITOR_DIR}/libexec"
+      ls -1 *-task.sh 2> /dev/null | sed -e 's/-task\.sh//'
+   )
+   fi
+
+   if [ -d "${MULLE_MONITOR_DIR}/share/libexec" ]
+   then
+   (
+      log_info "Extension Tasks:"
+
+      cd "${MULLE_MONITOR_DIR}/share/libexec"
       ls -1 *-task.sh 2> /dev/null | sed -e 's/-task\.sh//'
    )
    fi
@@ -699,7 +771,7 @@ monitor_task_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      install|kill|list|locate|ps|run|status|test|uninstall)
+      cat|install|kill|list|locate|ps|run|status|test|uninstall)
          ${cmd}_task_main "$@"
       ;;
 

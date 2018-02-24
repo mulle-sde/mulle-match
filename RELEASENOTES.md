@@ -1,3 +1,10 @@
+## 0.2.0
+
+* also search share/libexec and share/bin, so that extensions can install into share only
+* experimentally add [ -? <pattern> ] to test for directory or file or some such
+* add cat commands to task and callback
+
+
 ### 0.1.2
 
 * Various small improvements

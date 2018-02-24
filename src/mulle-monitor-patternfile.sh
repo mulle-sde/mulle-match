@@ -44,17 +44,16 @@ Usage:
    ${MULLE_EXECUTABLE_NAME} patternfile [options] <command>
 
    Operations on patternfiles. A patternfile is a list of patterns. Each
-   pattern is on its own line. A pattern behaves similiat to a line in
-   .gitignore. But '**' is not any different than '*' and '*' matches all
-   characters.
+   pattern is on its own line. A pattern behaves similiar to a line in
+   .gitignore.
 
    Use the -i flag to choose "ignore" patternfiles instead of the default
    "match" patternfiles.
 
-   This example matches all JPG and PNG files, except those starting with an
+   This example matches all JPG and all PNG files, except those starting with an
    underscore:
 
-   *.png
+   pix/**/*.png
    *.jpg
    !_*
 
@@ -63,7 +62,7 @@ Options:
    -i         : use ignore patternfiles
 
 Commands:
-   dump       : show contents of patternfile
+   cat        : show contents of patternfile
    list       : list patternfiles currently in use
    install    : install a patternfile
    uninstall  : remove a patternfile
@@ -72,7 +71,7 @@ EOF
 }
 
 
-dump_patternfile_usage()
+cat_patternfile_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -81,9 +80,9 @@ dump_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile dump <patternfile>
+   ${MULLE_EXECUTABLE_NAME} patternfile cat <patternfile>
 
-   Read contents of a patternfile and dump it to stdout. You get the names of
+   Read contents of a patternfile and prinz it to stdout. You get the names of
    the available patternfiles using:
 
       \`${MULLE_EXECUTABLE_NAME}patternfile list\`
@@ -155,7 +154,7 @@ Usage:
 
 Options:
    -h   : this help
-   -d   : dump patternfile contents
+   -c   : cat patternfile contents
 EOF
    exit 1
 }
@@ -190,7 +189,7 @@ list_patternfile_main()
             list_patternfile_usage
          ;;
 
-         -d|--dump-contents)
+         -c|--cat)
             OPTION_DUMP="YES"
          ;;
 
@@ -239,19 +238,19 @@ list_patternfile_main()
 }
 
 
-dump_patternfile_main()
+cat_patternfile_main()
 {
-   log_entry "dump_patternfile_main" "$@"
+   log_entry "cat_patternfile_main" "$@"
 
    while [ "$#" -ne 0 ]
    do
       case "$1" in
          -h|--help)
-            dump_patternfile_usage
+            cat_patternfile_usage
          ;;
 
          -*)
-            dump_patternfile_usage "unknown option \"$1\""
+            cat_patternfile_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -262,17 +261,17 @@ dump_patternfile_main()
       shift
    done
 
-   [ "$#" -ne 1 ] && dump_patternfile_usage
+   [ "$#" -ne 1 ] && cat_patternfile_usage
 
    local filename="$1"
 
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         cat "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
+         exekutor cat "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
       ;;
 
       *)
-         cat "${MULLE_MONITOR_MATCH_DIR}/${filename}"
+         exekutor cat "${MULLE_MONITOR_MATCH_DIR}/${filename}"
       ;;
    esac
 }
@@ -491,7 +490,7 @@ monitor_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      dump|install|uninstall)
+      cat|install|uninstall)
          ${cmd}_patternfile_main "$@"
       ;;
 

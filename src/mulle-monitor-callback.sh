@@ -54,10 +54,11 @@ Options:
    -h        : this help
 
 Commands:
-   install   : install a callback
-   list      : list installed callbacks
-   uninstall : uninstall a callback
-   run       : run a callback
+   cat <callback> : print callback to stdout (hopefully its not binary)
+   install        : install a callback
+   list           : list installed callbacks
+   uninstall      : uninstall a callback
+   run            : run a callback
 EOF
    exit 1
 }
@@ -75,9 +76,6 @@ Usage:
    ${MULLE_EXECUTABLE_NAME} callback install [options] <callback> <executable>
 
    Install an executable as a mulle-sde callback.
-
-Options:
-   -h        : this help
 EOF
    exit 1
 }
@@ -92,12 +90,10 @@ uninstall_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback uninstall [options] <callback>
+   ${MULLE_EXECUTABLE_NAME} callback uninstall <callback>
 
    Remove callback.
 
-Options:
-   -h        : this help
 EOF
    exit 1
 }
@@ -116,8 +112,6 @@ Usage:
 
    List installed callbacks.
 
-Options:
-   -h        : this help
 EOF
    exit 1
 }
@@ -136,10 +130,38 @@ Usage:
 
    Run a callback with any number of arguments.
 
-Options:
-   -h        : this help
 EOF
    exit 1
+}
+
+
+cat_callback_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE_NAME} callback cat <callback>
+
+   Print a callback to stdout. Works nicely, if the callback is a script.
+   Not so nice, if its a compiled binary..
+
+EOF
+   exit 1
+}
+
+
+
+_callback_executable_install_filename()
+{
+   log_entry "_callback_executable_install_filename" "$@"
+
+   local callback="$1"
+
+   _executable="${MULLE_MONITOR_DIR}/bin/${callback}-callback"
 }
 
 
@@ -152,6 +174,10 @@ _callback_executable_filename()
    [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
 
    _executable="${MULLE_MONITOR_DIR}/bin/${callback}-callback"
+   if [ ! -x "${_executable}" ]
+   then
+      _executable="${MULLE_MONITOR_DIR}/share/bin/${callback}-callback"
+   fi
    [ -x "${_executable}" ]
 }
 
@@ -217,7 +243,7 @@ uninstall_callback_main()
 
    local _executable
 
-   _callback_executable_filename "${callback}"
+   _callback_executable_install_filename "${callback}"
 
    if [ ! -e "${_executable}" ]
    then
@@ -245,7 +271,7 @@ install_callback_main()
 
    local _executable
 
-   _callback_executable_filename "${callback}"
+   _callback_executable_install_filename "${callback}"
 
    [ -e "${_executable}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
       && fail "\"${_executable}\" already exists. Use -f to clobber"
@@ -301,7 +327,7 @@ run_callback_main()
 
    local callback="$1"; shift
 
-   [ -z "${callback}" ] && internal_fail "empty callback"
+   [ -z "${callback}" ] && run_callback_usage "empty callback"
 
    local _executable
 
@@ -323,16 +349,50 @@ list_callback_main()
 
    [ "$#" -ne 0 ] && list_callback_usage
 
-   log_info "Callbacks:"
    if [ -d "${MULLE_MONITOR_DIR}/bin" ]
    then
    (
+      log_info "Custom Callbacks:"
+      log_verbose "Custom callbacks override extension callbacks of same name"
+
       cd "${MULLE_MONITOR_DIR}/bin"
+      ls -1 *-callback 2> /dev/null | sed -e 's/-callback$//'
+   )
+   fi
+
+   if [ -d "${MULLE_MONITOR_DIR}/share/bin" ]
+   then
+   (
+      log_info "Extension Callbacks:"
+
+      cd "${MULLE_MONITOR_DIR}/share/bin"
       ls -1 *-callback 2> /dev/null | sed -e 's/-callback$//'
    )
    fi
 }
 
+cat_callback_main()
+{
+   log_entry "cat_callback_main" "$@"
+
+   _cheap_help_options "cat_callback_main"
+
+   [ "$#" -lt 1 ] && cat_callback_usage
+
+   local callback="$1"; shift
+
+   [ -z "${callback}" ] && cat_callback_usage "empty callback"
+
+   local _executable
+
+   if ! _locate_callback "${callback}"
+   then
+      fail "Callback \"${callback}\" not found"
+      return 1
+   fi
+
+   exekutor cat "${callback}"
+}
 
 
 ###
