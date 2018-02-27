@@ -161,6 +161,14 @@ _callback_executable_install_filename()
 
    local callback="$1"
 
+   local name
+
+   name="`tr -c '[a-zA-Z0-9-\n]' '_' <<< "${callback}"`"
+   if [ "${name}" != "${callback}" ]
+   then
+      fail "\"${callback}\" must be a-zA-Z0-9-"
+   fi
+
    _executable="${MULLE_MONITOR_DIR}/bin/${callback}-callback"
 }
 

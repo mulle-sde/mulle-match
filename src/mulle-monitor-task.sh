@@ -271,17 +271,23 @@ _task_pidfile()
 
 }
 
-_task_main_function()
+#
+# return in _functionname
+#
+__task_run_functionname()
 {
-   log_entry "_task_main_function" "$@"
+   log_entry "__task_run_functionname" "$@"
 
    local task="$1"
+
+   [ -z "${task}" ] && internal_fail "empty task"
 
    local taskidentifier
 
    taskidentifier="`tr -c '[a-zA-Z0-9_\n]' '_' <<< "${task}"`"
+   _functionname="${taskidentifier}_task_run"
 
-   echo "${taskidentifier}_task_run"
+   log_debug "task functionname: \"${_functionname}\""
 }
 
 
@@ -291,6 +297,14 @@ _task_plugin_install_filename()
    log_entry "_task_plugin_filename" "$@"
 
    local task="$1"
+
+   local name
+
+   name="`tr -c '[a-zA-Z0-9-\n]' '_' <<< "${task}"`"
+   if [ "${name}" != "${task}" ]
+   then
+      fail "\"${task}\" must be a-zA-Z0-9-"
+   fi
 
    [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "MULLE_MONITOR_DIR not set"
 
@@ -359,12 +373,12 @@ _require_task()
 
    local task="$1"
 
-   local functionname
+   local _functionname
 
-   functionname="`_task_main_function "${task}"`"
-   if [ "`type -t "${functionname}"`" != "function" ]
+   __task_run_functionname "${task}"
+   if [ "`type -t "${_functionname}"`" != "function" ]
    then
-      _load_task "${task}" "${functionname}"
+      _load_task "${task}" "${_functionname}"
    fi
 }
 
@@ -457,10 +471,10 @@ run_task_job()
 
    local task="$1"; shift
 
-   local functionname
+   local _functionname
 
    _require_task "${task}" || exit 1
-   functionname="`_task_main_function "${task}"`"
+   __task_run_functionname "${task}"
 
    #
    # check that a task of same name is not running/schedulded. If yes
@@ -469,7 +483,7 @@ run_task_job()
    # Delay task schedule by 1 second, so that we can "coalesce"
    # incoming events
    #
-   add_task_job "${task}" "1" "'${functionname}'" "$@"
+   add_task_job "${task}" "1" "'${_functionname}'" "$@"
 }
 
 
@@ -483,13 +497,15 @@ run_task_main()
 
    shift
 
-   local functionname
    local taskidentifier
 
    taskidentifier="`tr -c '[a-zA-Z0-9_\n]' '_' <<< "${task}"`"
 
    _require_task "${task}" || exit 1
-   functionname="`_task_main_function "${task}"`"
+
+   local _functionname
+
+   __task_run_functionname "${task}" # get it in _functionname back
 
    local taskpidfile
 
@@ -497,7 +513,7 @@ run_task_main()
    kill_pid "${taskpidfile}"
 
    announce_current_pid "${taskpidfile}"
-   exekutor "${functionname}" "$@"
+   exekutor "${_functionname}" "$@"
    remember_task_rval "${task}" "$?"
 
    done_pid "${taskpidfile}"

@@ -1,3 +1,8 @@
+## 0.3.0
+
+* Various small improvements
+
+
 ## 0.2.0
 
 * also search share/libexec and share/bin, so that extensions can install into share only
