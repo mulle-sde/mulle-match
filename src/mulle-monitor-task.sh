@@ -41,7 +41,7 @@ monitor_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task <command>
+   ${MULLE_USAGE_NAME} task <command>
 
    Manage tasks. A task is a plugin that is loaded by the monitor and executed
    on behalf of a callback. A callback may print a taskname to stdout. This is
@@ -71,7 +71,7 @@ install_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task install <task> <script>
+   ${MULLE_USAGE_NAME} task install <task> <script>
 
    Install a sourceable bash script as a mulle-sde task. You may specify '-' as
    to read it from stdin.
@@ -89,7 +89,7 @@ uninstall_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task uninstall <task>
+   ${MULLE_USAGE_NAME} task uninstall <task>
 
    Remove a task.
 EOF
@@ -106,7 +106,7 @@ list_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task list
+   ${MULLE_USAGE_NAME} task list
 
    List installed tasks.
 EOF
@@ -123,7 +123,7 @@ test_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task test <task>
+   ${MULLE_USAGE_NAME} task test <task>
 
    Load a task and check that the task provides an entry function called
    <task>_task_run.
@@ -141,7 +141,7 @@ ps_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task ps
+   ${MULLE_USAGE_NAME} task ps
 
    List running tasks and their pids.
 EOF
@@ -158,7 +158,7 @@ kill_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task kill <task>
+   ${MULLE_USAGE_NAME} task kill <task>
 
    Kill a running task.
 EOF
@@ -175,7 +175,7 @@ status_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task status <task>
+   ${MULLE_USAGE_NAME} task status <task>
 
    Check status of a task. These are the returned values:
 
@@ -198,7 +198,7 @@ run_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task run <task> ...
+   ${MULLE_USAGE_NAME} task run <task> ...
 
    Run a task. Depending on the task, you may be able to pass additional
    arguments to the task.
@@ -216,7 +216,7 @@ cat_task_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} task cat <task>
+   ${MULLE_USAGE_NAME} task cat <task>
 
    Print the task script to stdout.
 

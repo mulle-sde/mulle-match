@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.3.1
+MULLE_EXECUTABLE_VERSION=0.3.2
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -116,7 +116,7 @@ _usage()
 
    cat <<EOF
 Usage:
-   ${MULLE_EXECUTABLE_NAME} [flags] [command]
+   ${MULLE_USAGE_NAME} [flags] [command]
 
    The filesystem monitor. Invokes callbacks based on changes to files. A
    callback may optionally invoke a task. Which callback is invoked, is based
@@ -143,7 +143,7 @@ EOF
 
    cat <<EOF
 
-   Use ${MULLE_EXECUTABLE_NAME} <command> -h for topical help.
+   Use ${MULLE_USAGE_NAME} <command> -h for topical help.
 EOF
 
    exit 1

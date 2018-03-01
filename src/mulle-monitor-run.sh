@@ -41,7 +41,7 @@ monitor_run_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} run [options]
+   ${MULLE_USAGE_NAME} run [options]
 
    Monitor changes in the working directory.
 
@@ -112,7 +112,7 @@ check_fswatch()
 
    fail "To use monitor you have to install the prerequisite \"fswatch\":
 ${C_BOLD}${C_RESET}   ${info}
-${C_INFO}You then need to exit ${MULLE_EXECUTABLE_NAME} and reenter it."
+${C_INFO}You then need to exit ${MULLE_USAGE_NAME} and reenter it."
 }
 
 
@@ -142,7 +142,7 @@ check_inotifywait()
 
    fail "To use monitor you have to install the prerequisite \"inotifywait\":
 ${C_BOLD}${C_RESET}   ${info}
-${C_INFO}You then need to exit ${MULLE_EXECUTABLE_NAME} and reenter it."
+${C_INFO}You then need to exit ${MULLE_USAGE_NAME} and reenter it."
 }
 
 

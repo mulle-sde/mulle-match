@@ -41,7 +41,7 @@ monitor_match_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} match [options] <filename>
+   ${MULLE_USAGE_NAME} match [options] <filename>
 
    Run the mulle-monitor file classification with the given filename.
    It will emit the callback being matched, if there is any.

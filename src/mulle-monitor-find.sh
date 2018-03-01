@@ -41,7 +41,7 @@ monitor_find_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} find [options]
+   ${MULLE_USAGE_NAME} find [options]
 
    Find files matching the patternfiles in the project directory.
 

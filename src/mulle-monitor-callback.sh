@@ -41,14 +41,14 @@ monitor_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback [options] <command> <type> ...
+   ${MULLE_USAGE_NAME} callback [options] <command> <type> ...
 
    A callback is executed, when there has been an interesting change in the
    filesystem. These changes are categorized by "patternfile"s and
    are used to determine the callback to execute.
    A callback may return string, which will be interpreted as a "task" to
-   perform. See \`${MULLE_EXECUTABLE_NAME} task help\` and
-   \`${MULLE_EXECUTABLE_NAME} patternfile help\` for more information.
+   perform. See \`${MULLE_USAGE_NAME} task help\` and
+   \`${MULLE_USAGE_NAME} patternfile help\` for more information.
 
 Options:
    -h        : this help
@@ -73,7 +73,7 @@ install_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback install [options] <callback> <executable>
+   ${MULLE_USAGE_NAME} callback install [options] <callback> <executable>
 
    Install an executable as a mulle-sde callback.
 EOF
@@ -90,7 +90,7 @@ uninstall_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback uninstall <callback>
+   ${MULLE_USAGE_NAME} callback uninstall <callback>
 
    Remove callback.
 
@@ -108,7 +108,7 @@ list_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback list
+   ${MULLE_USAGE_NAME} callback list
 
    List installed callbacks.
 
@@ -126,7 +126,7 @@ run_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback run <callback> ...
+   ${MULLE_USAGE_NAME} callback run <callback> ...
 
    Run a callback with any number of arguments.
 
@@ -144,7 +144,7 @@ cat_callback_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} callback cat <callback>
+   ${MULLE_USAGE_NAME} callback cat <callback>
 
    Print a callback to stdout. Works nicely, if the callback is a script.
    Not so nice, if its a compiled binary..

@@ -41,7 +41,7 @@ monitor_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile [options] <command>
+   ${MULLE_USAGE_NAME} patternfile [options] <command>
 
    Operations on patternfiles. A patternfile is a list of patterns. Each
    pattern is on its own line. A pattern behaves similiar to a line in
@@ -80,12 +80,12 @@ cat_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile cat <patternfile>
+   ${MULLE_USAGE_NAME} patternfile cat <patternfile>
 
    Read contents of a patternfile and prinz it to stdout. You get the names of
    the available patternfiles using:
 
-      \`${MULLE_EXECUTABLE_NAME}patternfile list\`
+      \`${MULLE_USAGE_NAME}patternfile list\`
 EOF
    exit 1
 }
@@ -100,7 +100,7 @@ install_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile install [options] <callback> <file>
+   ${MULLE_USAGE_NAME} patternfile install [options] <callback> <file>
 
    Install a patternfile to match files to a callback.
 
@@ -108,7 +108,7 @@ Usage:
    callback \"c_files\":
 
       ( echo '*.h' ; echo ".c" ) | \
-         ${MULLE_EXECUTABLE_NAME} patternfile set c_files -
+         ${MULLE_USAGE_NAME} patternfile set c_files -
 
 Options:
    -c <name>    : give this patternfile category. The defaults are
@@ -131,7 +131,7 @@ uninstall_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile uninstall <file>
+   ${MULLE_USAGE_NAME} patternfile uninstall <file>
 
    Remove a patternfile.
 EOF
@@ -148,7 +148,7 @@ list_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE_NAME} patternfile list [options]
+   ${MULLE_USAGE_NAME} patternfile list [options]
 
    List patternfiles.
 
