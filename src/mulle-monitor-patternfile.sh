@@ -185,7 +185,7 @@ list_patternfile_main()
    while [ "$#" -ne 0 ]
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             list_patternfile_usage
          ;;
 
@@ -245,7 +245,7 @@ cat_patternfile_main()
    while [ "$#" -ne 0 ]
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             cat_patternfile_usage
          ;;
 
@@ -352,7 +352,7 @@ install_patternfile_main()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             install_patternfile_usage
          ;;
 
@@ -449,7 +449,7 @@ monitor_patternfile_main()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             monitor_patternfile_usage
          ;;
 

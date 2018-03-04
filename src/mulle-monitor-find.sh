@@ -300,7 +300,7 @@ monitor_find_main()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             monitor_find_usage
          ;;
 

@@ -7,8 +7,8 @@ build-*.d/
 .mulle-sde/
 .mulle-monitor/
 mulle-project/publisher-info.sh
-_CMakeHeaders.cmake
-_CMakeSources.cmake
+_Headers.cmake
+_Sources.cmake
 *.sublime-workspace
 *.graffle
 tests/10-run-inotifywait/src/foo.sh

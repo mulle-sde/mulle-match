@@ -477,7 +477,7 @@ monitor_run_main()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             monitor_run_usage
          ;;
 

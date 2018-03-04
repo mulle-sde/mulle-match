@@ -221,7 +221,7 @@ _cheap_help_options()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             "${usage}"
          ;;
 

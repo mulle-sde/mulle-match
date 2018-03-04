@@ -943,7 +943,7 @@ monitor_match_main()
    while :
    do
       case "$1" in
-         -h|--help)
+         -h*|--help|help)
             monitor_match_usage
          ;;
 
