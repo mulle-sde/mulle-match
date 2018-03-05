@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_MONITOR_FIND_SH="included"
+MULLE_MATCH_FIND_SH="included"
 
 
-monitor_find_usage()
+match_find_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -271,9 +271,9 @@ find_filenames()
 ###
 ###  MAIN
 ###
-monitor_find_main()
+match_find_main()
 {
-   log_entry "monitor_find_main" "$@"
+   log_entry "match_find_main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -301,32 +301,32 @@ monitor_find_main()
    do
       case "$1" in
          -h*|--help|help)
-            monitor_find_usage
+            match_find_usage
          ;;
 
          -if|--ignore-filter)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
             shift
 
             OPTION_IGNORE_FILTER="$1"
          ;;
 
          -mf|--match-filter)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
             shift
 
             OPTION_MATCH_FILTER="$1"
          ;;
 
          -f|--format)
-            [ $# -eq 1 ] && monitor_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
             shift
 
             OPTION_FORMAT="$1"
          ;;
 
          -*)
-            monitor_find_usage "unknown option \"$1\""
+            match_find_usage "unknown option \"$1\""
             ;;
 
          *)
@@ -337,24 +337,24 @@ monitor_find_main()
       shift
    done
 
-   [ "$#" -ne 0 ] && monitor_find_usage "superflous arguments \"$*\""
+   [ "$#" -ne 0 ] && match_find_usage "superflous arguments \"$*\""
 
-   if [ -z "${MULLE_MONITOR_MATCH_SH}" ]
+   if [ -z "${MULLE_MATCH_MATCH_SH}" ]
    then
-      # shellcheck source=src/mulle-monitor-match.sh
-      . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+      # shellcheck source=src/mulle-match-match.sh
+      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
    fi
 
    local _cache
 
-   _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MATCH_IGNORE_DIR}" \
                                         "${OPTION_IGNORE_FILTER}" \
-                                        "${MULLE_MONITOR_DIR}/var/cache/monitor"
+                                        "${MULLE_MATCH_DIR}/var/cache/match"
    ignore_patterncaches="${_cache}"
 
-   _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MATCH_MATCH_DIR}" \
                                         "${OPTION_MATCH_FILTER}" \
-                                         "${MULLE_MONITOR_DIR}/var/cache/monitor"
+                                         "${MULLE_MATCH_DIR}/var/cache/match"
    match_patterncaches="${_cache}"
 
 

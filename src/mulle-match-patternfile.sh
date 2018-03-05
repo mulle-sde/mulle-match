@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_MONITOR_PATTERN_FILE_SH="included"
+MULLE_MATCH_PATTERN_FILE_SH="included"
 
 
-monitor_patternfile_usage()
+match_patternfile_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -58,8 +58,7 @@ Usage:
    !_*
 
 Options:
-   -h         : this help
-   -i         : use ignore patternfiles
+   -i         : use ignore.d patternfiles
 
 Commands:
    cat        : show contents of patternfile
@@ -114,7 +113,6 @@ Options:
    -c <name>    : give this patternfile category. The defaults are
                   "all"/"none" for match.d/ignore.d respectively. This will be
                   passed to the callback as a parameter.
-   -h           : this help
    -p <digits>  : position, the default is 50. Patternfiles with lower numbers
                   are matched first. (shell sort order)
 EOF
@@ -153,7 +151,6 @@ Usage:
    List patternfiles.
 
 Options:
-   -h   : this help
    -c   : cat patternfile contents
 EOF
    exit 1
@@ -207,10 +204,10 @@ list_patternfile_main()
 
    local directory
 
-   directory="${MULLE_MONITOR_MATCH_DIR}"
+   directory="${MULLE_MATCH_MATCH_DIR}"
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         directory="${MULLE_MONITOR_IGNORE_DIR}"
+         directory="${MULLE_MATCH_IGNORE_DIR}"
       ;;
    esac
 
@@ -267,11 +264,11 @@ cat_patternfile_main()
 
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         exekutor cat "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
+         exekutor cat "${MULLE_MATCH_IGNORE_DIR}/${filename}"
       ;;
 
       *)
-         exekutor cat "${MULLE_MONITOR_MATCH_DIR}/${filename}"
+         exekutor cat "${MULLE_MATCH_MATCH_DIR}/${filename}"
       ;;
    esac
 }
@@ -287,11 +284,11 @@ uninstall_patternfile_main()
 
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         remove_file_if_present "${MULLE_MONITOR_IGNORE_DIR}/${filename}"
+         remove_file_if_present "${MULLE_MATCH_IGNORE_DIR}/${filename}"
       ;;
 
       *)
-         remove_file_if_present "${MULLE_MONITOR_MATCH_DIR}/${filename}"
+         remove_file_if_present "${MULLE_MATCH_MATCH_DIR}/${filename}"
       ;;
    esac
 }
@@ -327,18 +324,18 @@ setup_etc_if_needed()
 
    local folder="$1"
 
-   if [ -d "${MULLE_MONITOR_ETC_DIR}/${folder}" ]
+   if [ -d "${MULLE_MATCH_ETC_DIR}/${folder}" ]
    then
       log_fluff "etc folder already setup"
       return
    fi
 
-   if [ -f "${MULLE_MONITOR_DIR}/share/${folder}" ]
+   if [ -f "${MULLE_MATCH_DIR}/share/${folder}" ]
    then
-      mkdir_if_missing "${MULLE_MONITOR_ETC_DIR}"
-      exekutor cp -Ra "${MULLE_MONITOR_DIR}/share/${folder}" "${MULLE_MONITOR_ETC_DIR}"
+      mkdir_if_missing "${MULLE_MATCH_ETC_DIR}"
+      exekutor cp -Ra "${MULLE_MATCH_DIR}/share/${folder}" "${MULLE_MATCH_ETC_DIR}"
    else
-      mkdir_if_missing "${MULLE_MONITOR_ETC_DIR}/${folder}"
+      mkdir_if_missing "${MULLE_MATCH_ETC_DIR}/${folder}"
    fi
 }
 
@@ -404,7 +401,7 @@ install_patternfile_main()
    local dstfile
 
    patternfile="${OPTION_POSITION}-${typename}--${OPTION_CATEGORY}"
-   dstfile="${MULLE_MONITOR_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
 
    [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
       && fail "\"${dstfile}\" already exists. Use -f to clobber"
@@ -426,9 +423,9 @@ install_patternfile_main()
 ###
 ###  MAIN
 ###
-monitor_patternfile_main()
+match_patternfile_main()
 {
-   log_entry "monitor_patternfile_main" "$@"
+   log_entry "match_patternfile_main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -450,7 +447,7 @@ monitor_patternfile_main()
    do
       case "$1" in
          -h*|--help|help)
-            monitor_patternfile_usage
+            match_patternfile_usage
          ;;
 
          -i)
@@ -474,7 +471,7 @@ monitor_patternfile_main()
          ;;
 
          -*)
-            monitor_patternfile_usage "unknown option \"$1\""
+            match_patternfile_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -515,11 +512,11 @@ monitor_patternfile_main()
       ;;
 
       "")
-         monitor_patternfile_usage
+         match_patternfile_usage
       ;;
 
       *)
-         monitor_patternfile_usage "unknown command \"${cmd}\""
+         match_patternfile_usage "unknown command \"${cmd}\""
       ;;
    esac
 }

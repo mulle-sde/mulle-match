@@ -22,7 +22,7 @@ set( CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/mulle-nat/${PROJECT_NAME}
 #
 # mulle-test is optional
 #
-set( CPACK_DEBIAN_PACKAGE_DEPENDS "inotifywait", "mulle-bashfunctions")
+set( CPACK_DEBIAN_PACKAGE_DEPENDS "mulle-bashfunctions")
 
 # stuff needed for RPM
 

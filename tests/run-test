@@ -14,11 +14,11 @@ main()
 {
    _options_mini_main "$@"
 
-   MULLE_MONITOR="`which mulle-monitor`" || exit 1
+   MULLE_MATCH="`which mulle-match`" || exit 1
 
    local i
 
-   log_verbose "mulle-monitor: `mulle-monitor version` (`mulle-monitor library-path`)"
+   log_verbose "mulle-match: `mulle-match version` (`mulle-match library-path`)"
 
    OUTPUT_DEVICE=
    for i in "${TEST_DIR}"/*

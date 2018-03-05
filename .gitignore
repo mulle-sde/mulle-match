@@ -5,7 +5,7 @@ build/
 build-*.d/
 .mulle-env/
 .mulle-sde/
-.mulle-monitor/
+.mulle-match/
 mulle-project/publisher-info.sh
 _Headers.cmake
 _Sources.cmake

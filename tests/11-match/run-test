@@ -3,25 +3,25 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-run_mulle_monitor()
+run_mulle_match()
 {
    echo "####################################" >&2
-   echo mulle-monitor ${MULLE_MONITOR_FLAGS} "$@"  >&2
+   echo mulle-match ${MULLE_MATCH_FLAGS} "$@"  >&2
    echo "####################################" >&2
 
-   "${MULLE_MONITOR}" ${MULLE_MONITOR_FLAGS} "$@" || fail "\`mulle-monitor $*\` failed"
+   "${MULLE_MATCH}" ${MULLE_MATCH_FLAGS} "$@" || fail "\`mulle-match $*\` failed"
 }
 
 
-expect_mulle_monitor()
+expect_mulle_match()
 {
-   log_entry "expect_mulle_monitor" "$@"
+   log_entry "expect_mulle_match" "$@"
 
    local expected="$1"; shift
 
    local result
 
-   result="`run_mulle_monitor "$@"`" || exit 1
+   result="`run_mulle_match "$@"`" || exit 1
 
    if [ "${result}" != "${expected}" ]
    then
@@ -30,30 +30,32 @@ expect_mulle_monitor()
 }
 
 
-expect_failure_mulle_monitor()
+expect_failure_mulle_match()
 {
-   log_entry "expect_failure_mulle_monitor" "$@"
+   log_entry "expect_failure_mulle_match" "$@"
 
    local result
 
-   if result="`run_mulle_monitor "$@"`"
+   if result="`run_mulle_match "$@"`"
    then
       fail "Did not fail unexpectedly"
+   else
+      log_info "Failed as expected"
    fi
 }
 
 
 main()
 {
-   MULLE_MONITOR_FLAGS="$@"
+   MULLE_MATCH_FLAGS="$@"
 
    _options_mini_main "$@"
 
    #-----------
 
-   expect_mulle_monitor "type0negative-did-update" -e -md "match.d" match "a"
-   expect_mulle_monitor "type0positive-did-update" -e -md "match.d" match "b"
-   expect_failure_mulle_monitor -e -md "match.d" match "c"
+   expect_mulle_match "type0negative" -e -md "match.d" match "a"
+   expect_mulle_match "type0positive" -e -md "match.d" match "b"
+   expect_failure_mulle_match -e -md "match.d" match "c"
 
    log_verbose "----- #1 PASSED -----"
 
@@ -68,7 +70,7 @@ init()
 
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 
-   MULLE_MONITOR="${MULLE_MONITOR:-${PWD}/../../mulle-monitor}"
+   MULLE_MATCH="${MULLE_MATCH:-${PWD}/../../mulle-match}"
 }
 
 

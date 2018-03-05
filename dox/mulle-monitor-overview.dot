@@ -7,10 +7,10 @@ digraph G {
     {
         label = "Language agnostic";
 
-        "mulle-sde"       -> "mulle-monitor"
-        "mulle-monitor"   -> "mulle-craft"
-        "mulle-monitor"   -> "mulle-test"
+        "mulle-sde"       -> "mulle-match"
+        "mulle-match"   -> "mulle-craft"
+        "mulle-match"   -> "mulle-test"
 
-        "mulle-monitor"   [ color="dodgerblue"; fontcolor="dodgerblue"; penwidth="2"]
+        "mulle-match"   [ color="dodgerblue"; fontcolor="dodgerblue"; penwidth="2"]
     }
 }

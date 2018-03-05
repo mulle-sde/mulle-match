@@ -52,9 +52,11 @@ expect_match_print_filepath()
 
 main()
 {
-   MULLE_MONITOR_FLAGS="$@"
+   MULLE_MATCH_FLAGS="$@"
 
    _options_mini_main "$@"
+
+   shopt -s extglob
 
    #
    # memo: remember we only deal with relative paths w/o leading /!
@@ -99,11 +101,11 @@ init()
 
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 
-   MULLE_MONITOR="${MULLE_MONITOR:-${PWD}/../../mulle-monitor}"
+   MULLE_MATCH="${MULLE_MATCH:-${PWD}/../../mulle-match}"
 
-   MULLE_MONITOR_LIBEXEC_DIR="`"${MULLE_MONITOR}" "libexec-dir"`" || exit 1
+   MULLE_MATCH_LIBEXEC_DIR="`"${MULLE_MATCH}" "libexec-dir"`" || exit 1
 
-   . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh" || exit 1
+   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
 }
 
 

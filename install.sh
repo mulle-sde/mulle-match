@@ -169,8 +169,8 @@ main()
    cd "`dirname -- "$0"`"
 
    bin="${prefix}/bin"
-   libexec="${prefix}/libexec/mulle-monitor"
-   share="${prefix}/share/mulle-monitor"
+   libexec="${prefix}/libexec/mulle-match"
+   share="${prefix}/share/mulle-match"
 
    if [ ! -d "${bin}" ]
    then
@@ -182,8 +182,8 @@ main()
       mkdir -p "${libexec}" || fail "could not create ${libexec}"
    fi
 
-   install -m "${mode}" "mulle-monitor" "${bin}/mulle-monitor" || exit 1
-   printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/mulle-monitor" >&2
+   install -m "${mode}" "mulle-match" "${bin}/mulle-match" || exit 1
+   printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/mulle-match" >&2
 
    for i in src/mulle*
    do

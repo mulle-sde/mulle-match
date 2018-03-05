@@ -32,12 +32,12 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.3.3
+MULLE_EXECUTABLE_VERSION=0.0.1
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
 #
-# This is the main user interface to mulle-monitor
+# This is the main user interface to mulle-match
 #
 
 trap_fail()
@@ -47,18 +47,14 @@ trap_fail()
 
 
 SHOWN_COMMANDS="\
-   callback       : manage callbacks
-   init           : create a new project
-   patternfile    : manage patternfiles
-   task           : manage tasks
-   run            : monitor files and run scripts"
+   clean          : remove cached patternfiles
+   find           : find files that match patternfiles
+   match          : match filenames against patternfiles
+   patternfile    : manage patternfiles"
 
 HIDDEN_COMMANDS="\
-   clean          : remove var/run files
-   find           : find files that match patternfiles
-   libexec-dir    : print path to mulle-monitor libexec
-   match          : match filenames against patternfiles
-   uname          : mulle-monitors simplified uname(1)"
+   libexec-dir    : print path to mulle-match libexec
+   uname          : mulle-matchs simplified uname(1)"
 
 
 print_commands()
@@ -76,11 +72,10 @@ print_commands()
 
 print_hidden_flags()
 {
-   echo "   -cd <dir>      : set MULLE_MONITOR_DIR"
-   echo "   -id <dir>      : set MULLE_MONITOR_IGNORE_DIR"
-   echo "   -md <dir>      : set MULLE_MONITOR_MATCH_DIR"
-   echo "   -ed <dir>      : set MULLE_MONITOR_ETC_DIR"
-
+   echo "   -cd <dir>      : set MULLE_MATCH_DIR"
+   echo "   -ed <dir>      : set MULLE_MATCH_ETC_DIR"
+   echo "   -id <dir>      : set MULLE_MATCH_IGNORE_DIR"
+   echo "   -md <dir>      : set MULLE_MATCH_MATCH_DIR"
 }
 
 
@@ -118,9 +113,8 @@ _usage()
 Usage:
    ${MULLE_USAGE_NAME} [flags] [command]
 
-   The filesystem monitor. Invokes callbacks based on changes to files. A
-   callback may optionally invoke a task. Which callback is invoked, is based
-   on patternfiles, which are .gitignore like rule files.
+   Match filenames to a user-definable set of patternfiles.
+   Also: find alls files matching those patternfiles.
 
 Flags:
 EOF
@@ -137,7 +131,7 @@ EOF
    if [ "${verbose}" = "NO" ]
    then
       cat <<EOF
-      (use mulle-monitor -v help to show more commands)
+      (use mulle-match -v help to show more commands)
 EOF
    fi
 
@@ -157,65 +151,6 @@ usage()
 }
 
 
-monitor_environment()
-{
-   log_entry "monitor_environment" "$@"
-
-   # lame but practical
-   if [ -z "${MULLE_MONITOR_DIR}" ]
-   then
-      if [ -d ".mulle-sde" ]
-      then
-         log_fluff "MULLE_MONITOR_DIR default is .mulle-sde"
-         MULLE_MONITOR_DIR=".mulle-sde"
-      else
-         log_fluff "MULLE_MONITOR_DIR default is .mulle-monitor"
-         MULLE_MONITOR_DIR=".mulle-monitor"
-      fi
-   fi
-
-   MULLE_MONITOR_ETC_DIR="${MULLE_MONITOR_ETC_DIR:-${MULLE_MONITOR_DIR}/etc}"
-
-   case "${MULLE_MONITOR_MATCH_DIR}" in
-      NO)
-         MULLE_MONITOR_MATCH_DIR=""
-         log_fluff "Not using \"MULLE_MONITOR_MATCH_DIR\""
-      ;;
-
-      "")
-         MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_ETC_DIR}/match.d"
-         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
-         then
-            MULLE_MONITOR_MATCH_DIR="${MULLE_MONITOR_DIR}/share/match.d"
-         fi
-         if [ ! -d "${MULLE_MONITOR_MATCH_DIR}" ]
-         then
-            log_warning "There is no directory \"${MULLE_MONITOR_MATCH_DIR}\" set up"
-            MULLE_MONITOR_MATCH_DIR=""
-         fi
-      ;;
-   esac
-
-   case "${MULLE_MONITOR_IGNORE_DIR}" in
-      NO)
-         MULLE_MONITOR_IGNORE_DIR=""
-         log_fluff "Not using \"MULLE_MONITOR_IGNORE_DIR\""
-      ;;
-
-      "")
-         MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_ETC_DIR}/ignore.d"
-         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
-         then
-            MULLE_MONITOR_IGNORE_DIR="${MULLE_MONITOR_DIR}/share/ignore.d"
-         fi
-         if [ ! -d "${MULLE_MONITOR_IGNORE_DIR}" ]
-         then
-            log_fluff "There is no directory \"${MULLE_MONITOR_IGNORE_DIR}\" set up"
-            MULLE_MONITOR_IGNORE_DIR=""
-         fi
-      ;;
-   esac
-}
 
 
 main()
@@ -246,43 +181,43 @@ main()
       fi
 
       case "$1" in
-         -e)
-            FLAG_OUTSIDE_ENV="YES"
-         ;;
-
-         -f)
-            MULLE_FLAG_MAGNUM_FORCE="YES"
+         -h*|--help|help)
+            usage "${MULLE_TRACE}"
          ;;
 
          -cd|--config-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
             shift
 
-            MULLE_MONITOR_DIR="$1"
+            MULLE_MATCH_DIR="$1"
+         ;;
+
+         -e)
+            FLAG_OUTSIDE_ENV="YES"
          ;;
 
          -ed|--etc-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
             shift
 
-            MULLE_MONITOR_ETC_DIR="$1"
+            MULLE_MATCH_ETC_DIR="$1"
+         ;;
+
+         -f)
+            MULLE_FLAG_MAGNUM_FORCE="YES"
+         ;;
+
+         -id|--ignore-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+
+            MULLE_MATCH_IGNORE_DIR="$1"
          ;;
 
          -md|--match-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
             shift
 
-            MULLE_MONITOR_MATCH_DIR="$1"
-         ;;
-
-         -id|--ignore-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
-
-            MULLE_MONITOR_IGNORE_DIR="$1"
-         ;;
-
-         -h*|--help|help)
-            usage "${MULLE_TRACE}"
+            MULLE_MATCH_MATCH_DIR="$1"
          ;;
 
          --version)
@@ -321,7 +256,7 @@ main()
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
       case "${cmd}" in
-         callback|find|match|run|task)
+         find|match)
             fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, \
 pass the -e flag"
          ;;
@@ -337,64 +272,45 @@ pass the -e flag"
 
    MULLE_EXECUTABLE_OPTIONS="$@"
 
-   monitor_environment
+   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-environment.sh" || exit 1
+
+   match_environment
 
    case "${cmd}" in
       help)
          usage "${MULLE_TRACE}"
       ;;
 
-      callback)
-         # shellcheck source=src/mulle-monitor-callback.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-callback.sh"
-
-         monitor_callback_main "$@"
-      ;;
-
       clean)
-         # shellcheck source=src/mulle-monitor-clean.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-clean.sh"
+         # shellcheck source=src/mulle-match-clean.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-clean.sh"
 
-         monitor_clean_main "$@"
+         match_clean_main "$@"
       ;;
 
       libexec-dir|library-path)
-         echo "${MULLE_MONITOR_LIBEXEC_DIR}"
+         echo "${MULLE_MATCH_LIBEXEC_DIR}"
       ;;
 
       match)
-         # shellcheck source=src/mulle-monitor-match.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-match.sh"
+         # shellcheck source=src/mulle-match-match.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh"
 
-         monitor_match_main "$@"
+         match_match_main "$@"
       ;;
 
       find)
-         # shellcheck source=src/mulle-monitor-run.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-find.sh"
+         # shellcheck source=src/mulle-match-run.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-find.sh"
 
-         monitor_find_main "$@"
+         match_find_main "$@"
       ;;
 
       patternfile)
-         # shellcheck source=src/mulle-monitor-patternfile.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-patternfile.sh"
+         # shellcheck source=src/mulle-match-patternfile.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
 
-         monitor_patternfile_main "$@"
-      ;;
-
-      run)
-         # shellcheck source=src/mulle-monitor-run.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-run.sh"
-
-         monitor_run_main "$@"
-      ;;
-
-      task)
-         # shellcheck source=src/mulle-monitor-task.sh
-         . "${MULLE_MONITOR_LIBEXEC_DIR}/mulle-monitor-task.sh"
-
-         monitor_task_main "$@"
+         match_patternfile_main "$@"
       ;;
 
       uname)
@@ -456,16 +372,16 @@ _init()
 
    local _libexec_dir
 
-   _get_libexec_dir "$0" "mulle-monitor" "mulle-monitor-match.sh"
+   _get_libexec_dir "$0" "mulle-match" "mulle-match-match.sh"
 
-   MULLE_MONITOR_LIBEXEC_DIR="${_libexec_dir}"
+   MULLE_MATCH_LIBEXEC_DIR="${_libexec_dir}"
 
    #
    # minimal setup exit
    #
    case "$1" in
       "libexec-dir"|"library-path")
-         echo "${MULLE_MONITOR_LIBEXEC_DIR}"
+         echo "${MULLE_MATCH_LIBEXEC_DIR}"
          exit 0
       ;;
    esac
@@ -475,8 +391,6 @@ _init()
 
    trap trap_fail INT
    set -o pipefail
-
-   shopt -s extglob || internal_fail "Cant extglob"
 
    MULLE_ARGUMENTS="$*"
 }

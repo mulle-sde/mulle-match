@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_MONITOR_MATCH_SH="included"
+MULLE_MATCH_MATCH_SH="included"
 
 
-monitor_match_usage()
+match_match_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -43,7 +43,7 @@ monitor_match_usage()
 Usage:
    ${MULLE_USAGE_NAME} match [options] <filename>
 
-   Run the mulle-monitor file classification with the given filename.
+   Run the mulle-match file classification with the given filename.
    It will emit the callback being matched, if there is any.
 
    A match file has the form 00-type--category.
@@ -334,6 +334,8 @@ pattern_matches_relative_filename()
 
    local functionname
    local declaration
+
+   shopt -s extglob
 
    _match_assert_filename "${filename}"
 
@@ -657,6 +659,9 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 }
 
 
+#
+# TODO: use bash string functions with case for this
+#
 patternfile_get_callback()
 {
    log_entry "patternfile_get_callback" "$@"
@@ -797,6 +802,8 @@ match_filepath()
 
    local rval
 
+   shopt -s extglob
+
    if _match_filepath "$@"
    then
       echo "`fast_basename "${_patternfile}"`"
@@ -917,9 +924,9 @@ match_print_filepath()
 ###
 ###  MAIN
 ###
-monitor_match_main()
+match_match_main()
 {
-   log_entry "monitor_match_main" "$@"
+   log_entry "match_match_main" "$@"
 
    local OPTION_FORMAT="%e\\n"
    local OPTION_MATCH_FILTER
@@ -944,39 +951,39 @@ monitor_match_main()
    do
       case "$1" in
          -h*|--help|help)
-            monitor_match_usage
+            match_match_usage
          ;;
 
          -f|--format)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
 
             OPTION_FORMAT="$1"
          ;;
 
          -if|--ignore-filter)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
 
             OPTION_IGNORE_FILTER="$1"
          ;;
 
          -mf|--match-filter)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
 
             OPTION_MATCH_FILTER="$1"
          ;;
 
          -p|--pattern)
-            [ $# -eq 1 ] && monitor_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
 
             OPTION_PATTERN="$1"
          ;;
 
          -*)
-            monitor_match_usage "unknown option \"$1\""
+            match_match_usage "unknown option \"$1\""
             ;;
 
          *)
@@ -989,7 +996,7 @@ monitor_match_main()
 
    local rval
 
-   [ "$#" -eq  0 ] && monitor_match_usage "missing filename"
+   [ "$#" -eq  0 ] && match_match_usage "missing filename"
 
    if [ ! -z "${OPTION_PATTERN}" ]
    then
@@ -1011,14 +1018,14 @@ monitor_match_main()
 
    local _cache
 
-   _patternfilefunctions_passing_filter "${MULLE_MONITOR_IGNORE_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MATCH_IGNORE_DIR}" \
                                          "${OPTION_IGNORE_FILTER}" \
-                                         "${MULLE_MONITOR_DIR}/var/cache"
+                                         "${MULLE_MATCH_DIR}/var/cache"
    ignore="${_cache}"
 
-   _patternfilefunctions_passing_filter "${MULLE_MONITOR_MATCH_DIR}" \
+   _patternfilefunctions_passing_filter "${MULLE_MATCH_MATCH_DIR}" \
                                         "${OPTION_MATCH_FILTER}" \
-                                        "${MULLE_MONITOR_DIR}/var/cache"
+                                        "${MULLE_MATCH_DIR}/var/cache"
    match="${_cache}"
 
    while [ $# -ne 0 ]

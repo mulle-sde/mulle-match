@@ -30,11 +30,10 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #
 
-MULLE_MONITOR_CLEAN_SH="included"
+MULLE_MATCH_CLEAN_SH="included"
 
 
-
-monitor_clean_usage()
+match_clean_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -56,9 +55,9 @@ EOF
 ###
 ###  MAIN
 ###
-monitor_clean_main()
+match_clean_main()
 {
-   log_entry "monitor_clean_main" "$@"
+   log_entry "match_clean_main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -75,11 +74,11 @@ monitor_clean_main()
    do
       case "$1" in
          -h*|--help|help)
-            monitor_clean_usage
+            match_clean_usage
          ;;
 
          -*)
-            monitor_clean_usage "unknown option \"$1\""
+            match_clean_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -90,14 +89,14 @@ monitor_clean_main()
       shift
    done
 
-   [ -z "${MULLE_MONITOR_DIR}" ] && internal_fail "empty MULLE_MONITOR_DIR"
+   [ -z "${MULLE_MATCH_DIR}" ] && internal_fail "empty MULLE_MATCH_DIR"
 
    #
-   # why another /monitor ?
-   # because MULLE_MONITOR_DIR could be shared with other MULLE tools
+   # why another /match ?
+   # because MULLE_MATCH_DIR could be shared with other MULLE tools
    # like mulle-sde and we don't want to wipe their stuff
    #
-   rmdir_safer "${MULLE_MONITOR_DIR}/var/run/monitor"
-   rmdir_safer "${MULLE_MONITOR_DIR}/var/cache/monitor"
+   rmdir_safer "${MULLE_MATCH_DIR}/var/run/match"
+   rmdir_safer "${MULLE_MATCH_DIR}/var/cache/match"
 }
 

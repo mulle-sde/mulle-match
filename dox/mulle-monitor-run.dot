@@ -1,15 +1,15 @@
 digraph G {
     graph [rankdir = TD];
 
-    { rank="same"; "mulle-monitor run" }
+    { rank="same"; "mulle-match run" }
     { rank="same"; "event", "task name", "callback name" }
     { rank="same"; "fswatch", "callback", "task" }
     { rank="same"; "patternfile" }
 
-    "mulle-monitor run"   [ shape="none", fontcolor="blue", fontname="monospace"]
+    "mulle-match run"   [ shape="none", fontcolor="blue", fontname="monospace"]
     "fswatch"     [ shape="none", fontcolor="blue", fontname="monospace"]
 
-    "mulle-monitor run" -> "fswatch"     [ label=" run" ]
+    "mulle-match run" -> "fswatch"     [ label=" run" ]
     "fswatch"   -> event                 [ label=" produce" ]
     event -> "patternfile"               [ label=" match" ]
     "callback name" -> "callback"        [ label=" run" ]

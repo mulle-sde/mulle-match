@@ -2,7 +2,7 @@
 # If you don't have this file, there will be no homebrew
 # formula operations.
 #
-PROJECT="mulle-monitor"      # your project/repository name
+PROJECT="mulle-match"      # your project/repository name
 DESC="🕵🏻‍ Extensible filesystem observation with callbacks"
 LANGUAGE="bash"             # c,cpp, objc, bash ...
 
@@ -18,9 +18,8 @@ LANGUAGE="bash"             # c,cpp, objc, bash ...
 # So keep them single quoted.
 #
 DEPENDENCIES='${TOOLS_TAP}mulle-bashfunctions
-fswatch
 '
 
-DEBIAN_DEPENDENCIES="ifnotifywait,mulle-bashfunctions"
+DEBIAN_DEPENDENCIES="mulle-bashfunctions"
 
 

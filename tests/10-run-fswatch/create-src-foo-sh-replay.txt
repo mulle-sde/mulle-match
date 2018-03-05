@@ -1,1 +1,0 @@
-/home/nat/srcM/mulle-monitor/tests/10-run-fswatch/src/foo.sh Created:Updated:IsFile
