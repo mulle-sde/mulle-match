@@ -4,15 +4,11 @@
 
 ![](mulle-match.png)
 
-**mulle-match** watches for the creation, deletion and updates of files
-in the working directory (and its sub-directories) using
-[fswatch](https://github.com/emcrisostomo/fswatch) or
-[inotifywait](https://linux.die.net/man/1/inotifywait). It then
-matches those filenames against a set of *patternfiles* to determine the
-appropriate executable to call.
+**mulle-match** matches filenames against a set of .gitignore like patternfiles
+to categorize files according to their filenames and location.
 
 
-![](dox/mulle-match-overview.png)
+![](dox/mulle-sde-overview.png)
 
 
 ## Install
@@ -62,7 +58,7 @@ On the other hand, if a *patternfile* of the `match.d` folder matches, the
 matching has succeeded. *patternfiles* are matched in sort order of their
 filename.
 
-> The [Wiki](https://github.com/mulle-sde/mulle-match/wiki)
+> The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki)
 > explains this in much more detail.
 
 Add a *patternfile* to select the *callback* "hello" for PNG files:
@@ -135,92 +131,3 @@ mulle-match -e find --match-filter "hello"
 ```
 
 
-### mulle-match callback
-
-
-Add a *callback* for "hello":
-
-```
-cat <<EOF > my-callback.py
-#!/usr/bin/env python
-print "world"
-EOF
-mulle-match -e callback install hello my-callback.py
-```
-
-Remove a *callback*:
-
-```
-mulle-match -e callback uninstall hello
-```
-
-List all *callbacks*:
-
-```
-mulle-match -e callback list
-```
-
-
-### mulle-match task
-
-A *task* is a bash script plugin. It needs to define a function
-`<task>_task_run` to be a usable task plugin.
-
-Add a sourcable shell script as a for a task "world":
-
-```
-cat <<EOF > my-plugin.sh
-world_task_run()
-{
-   echo "VfL Bochum 1848"
-}
-EOF
-mulle-match -e task install world "my-plugin.sh"
-```
-
-Remove a *task* named "world":
-
-```
-mulle-match -e task uninstall world
-```
-
-
-List all *tasks*:
-
-```
-mulle-match -e task list
-```
-
-
-### mulle-match run
-
-```
-mulle-match -e run
-```
-
-`mulle-match run` observes the working directory and waits for filesystem
-events.
-
-![](dox/mulle-match-run.png)
-
-If an incoming event can not be categorized as one of these three event types:
-**create**, **update**, **delete** it is ignored.
-
-The filename that generated the event is then classified using *patternfile*
-matching (see [`mulle-match patternfile`](#mulle-match-patternfile) for
-more information).
-The result of this classification is the name of the *callback*.
-
-The *callback* will now be executed. As arguments it gets the event type
-(e.g. **update**), the filename, and the *category* of the matching
-*patternfile*.
-
-The *callback* may produce a *task* name, by echoing it to stdout. If a
-*task* name is produced, then this *task* is loaded by **mulle-match**
-and executed.
-
-> The [Wiki](https://github.com/mulle-sde/mulle-match/wiki)
-> explains this also in much more detail.
-
-> **mulle-match** comes with no predefined *patternfiles*, *callbacks*, or
-> *tasks*.

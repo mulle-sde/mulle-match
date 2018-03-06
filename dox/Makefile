@@ -1,8 +1,7 @@
 
-PIX=mulle-match-run.png \
-mulle-match-match.png \
+PIX=mulle-match-match.png \
 mulle-match-match-fs.png \
-mulle-match-overview.png \
+mulle-sde-overview.png \
 
 %.png: %.dot
 	dot -Tpng -o $*.png $<

@@ -1,0 +1,9 @@
+digraph G {
+    graph [rankdir = TD];
+
+    node[shape=record];
+
+    "mulle-sde" -> "mulle-monitor" [ label="runs", style="dotted"]
+    "mulle-monitor" -> "mulle-match"  [ label="runs", style="dotted"]
+    "mulle-match" [ color="blue", fontcolor="blue"]
+}
