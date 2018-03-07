@@ -48,8 +48,12 @@ Example:
 !*~.*
 ```
 
-A *patternfile* resides in either the `ignore.d` folder or the `match.d`
-folder.
+A *patternfile* resides in either the `ignore.d` folder or the
+`match.d` folder. It's filename is composed of three segements. 
+The first digit segment is there to proritize patternfiles. Lower
+numbers are matched before higher numbers (`ls` sorting)
+. The second segment gives the type of the file. And the last segment
+the category of the file. A type is required, a category is optional. 
 
 ![](dox/mulle-match-match.png)
 
@@ -61,23 +65,21 @@ filename.
 > The [Wiki](https://github.com/mulle-sde/mulle-monitor/wiki)
 > explains this in much more detail.
 
-Add a *patternfile* to select the *callback* "hello" for PNG files:
+Add a *patternfile* to select PNG files. We give it a type "hello":
 
 ```
 echo "*.png" > pattern.txt
 mulle-match -e patternfile install hello pattern.txt
 ```
 
-You can optionally specify a *category* for the patternfile, which will be
-forwarded to the callback:
+You can optionally specify a *category* for the patternfile:
 
 ```
 mulle-match -e patternfile install --category special hello pattern.txt
 ```
 
 It may be useful, especially in conjunction with `mulle-match find`,
-that `mulle-match` may ignore large and changing folders like `.git` and
-`build`. Install into the `ignore.d` folder with `-i`:
+that large and changing folders like `.git` and `build` are ignored. Install the following patternfile into the `ignore.d` folder with `-i`:
 
 ```
 echo ".git/" > pattern.txt
@@ -98,14 +100,11 @@ List all *patternfiles*:
 mulle-match -e patternfile list
 ```
 
-> Note: Due to  caching of compiled patternfiles, you need
-> to restart `mulle-match run` to pick up edits to a *patternfile*.
-
 
 ### mulle-match match
 
 To test your installed *patternfile* you can use `mulle-match match`. It
-will output the *callback* name if a file matches.
+will output the patternfile name if one matches.
 
 ```
 mulle-match -e match pix/foo.png
@@ -120,7 +119,7 @@ mulle-match -e match --pattern '*.png' pix/foo.png
 
 ### mulle-match find
 
-This is a facility to retrieve all filenames that match *patternfiles*. You can
+This is a facility to retrieve all filenames that match any *patternfile*. You can
 decide which *patternfile* should be used by supplying an optional filter.
 
 This example lists all the files, that pass through *patternfiles* of type

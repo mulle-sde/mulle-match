@@ -1,3 +1,7 @@
+### 0.0.3
+
+* use different format defaults
+
 ### 0.0.2
 
 * update dox a little
