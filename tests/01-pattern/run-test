@@ -5,6 +5,8 @@
 
 expect_pattern_matches_text()
 {
+   log_entry "expect_pattern_matches_text" "$@"
+
    local pattern="$1"
    local text="$2"
 
@@ -17,6 +19,8 @@ expect_pattern_matches_text()
 
 expect_pattern_not_matches_text()
 {
+   log_entry "expect_pattern_not_matches_text" "$@"
+
    local pattern="$1"
    local text="$2"
 
@@ -63,6 +67,7 @@ main()
    expect_pattern_matches_text "*.c" "a.c"
    expect_pattern_matches_text "*.c" "a.b.c"
    expect_pattern_matches_text "*.c" "a/b.c"
+
    log_verbose "----- #4 PASSED -----"
 
    expect_pattern_matches_text     "/foo" "foo"
@@ -87,6 +92,24 @@ main()
    expect_pattern_matches_text 'src/' 'src'
    expect_pattern_matches_text '*'    'src/foo.sh'
    expect_pattern_matches_text '*'    'foo/bar/whatever.sh'
+
+   # new stuff with **
+   expect_pattern_matches_text '**/*.c' 'a.c'
+   expect_pattern_matches_text '**/*.c' 'b/a.c'
+   expect_pattern_matches_text '**/*.c' 'c/b/a.c'
+
+   expect_pattern_matches_text 'a/**/*.c' 'a/a.c'
+   expect_pattern_matches_text 'a/**/*.c' 'a/b/a.c'
+   expect_pattern_matches_text 'a/**/*.c' 'a/b/c/a.c'
+   expect_pattern_not_matches_text 'a/**/*.c' 'b/a.c'
+   expect_pattern_not_matches_text 'a/**/*.c' 'a.c'
+
+   # but not as much with *
+
+   expect_pattern_not_matches_text '*/*.c' 'a.c'
+   expect_pattern_matches_text '*/*.c' 'b/a.c'
+   expect_pattern_not_matches_text '*/*.c' 'c/b/a.c'
+
 
    log_verbose "----- #8 PASSED -----"
 

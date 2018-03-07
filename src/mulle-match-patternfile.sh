@@ -99,9 +99,9 @@ install_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile install [options] <callback> <file>
+   ${MULLE_USAGE_NAME} patternfile install [options] <type> <filename>
 
-   Install a patternfile to match files to a callback.
+   Install a patternfile for a specific type.
 
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -111,8 +111,7 @@ Usage:
 
 Options:
    -c <name>    : give this patternfile category. The defaults are
-                  "all"/"none" for match.d/ignore.d respectively. This will be
-                  passed to the callback as a parameter.
+                  "all"/"none" for match.d/ignore.d respectively.
    -p <digits>  : position, the default is 50. Patternfiles with lower numbers
                   are matched first. (shell sort order)
 EOF
@@ -129,7 +128,7 @@ uninstall_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile uninstall <file>
+   ${MULLE_USAGE_NAME} patternfile uninstall <filename>
 
    Remove a patternfile.
 EOF
@@ -157,6 +156,29 @@ EOF
 }
 
 
+edit_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile edit [options] <filename>
+
+   Edit a patternfiles
+
+Options:
+   -e <editor>   : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
+EOF
+   exit 1
+}
+
+
+#
+#
+#
 _list_patternfiles()
 {
    log_entry "_list_patternfiles" "$@"
@@ -353,7 +375,7 @@ install_patternfile_main()
             install_patternfile_usage
          ;;
 
-         -i)
+         -i|--ignore-dir|--ignore)
             OPTION_FOLDER_NAME="ignore.d"
             if [ "${OPTION_CATEGORY}" = "all" ]
             then
@@ -361,14 +383,14 @@ install_patternfile_main()
             fi
          ;;
 
-         -c)
+         -c|--category)
             [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
             shift
 
             OPTION_CATEGORY="$1"
          ;;
 
-         -p)
+         -p|--position)
             [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
             shift
             OPTION_POSITION="$1"
@@ -416,6 +438,47 @@ install_patternfile_main()
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
    redirect_exekutor "${dstfile}" echo "${contents}"
+}
+
+
+
+edit_patternfile_main()
+{
+   log_entry "edit_patternfile_main" "$@"
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            edit_patternfile_usage
+         ;;
+
+         -e|--editor)
+            [ $# -eq 1 ] && edit_patternfile_usage "missing argument to $1"
+            shift
+
+            EDITOR="$1"
+         ;;
+
+         -*)
+            edit_patternfile_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -ne 1 ] && edit_patternfile_usage
+
+   local filename="$1"
+
+   setup_etc_if_needed "${OPTION_FOLDER_NAME}"
+
+   exekutor "${EDITOR:-vi}" "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
 }
 
 
@@ -487,7 +550,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      cat|install|uninstall)
+      cat|edit|install|uninstall)
          ${cmd}_patternfile_main "$@"
       ;;
 

@@ -119,19 +119,32 @@ _match_assert_pattern()
 #
 _transform_path_pattern()
 {
+   log_entry "_transform_path_pattern" "$@"
+
    local pattern="$1"
 
    local prefix
    local suffix
 
    case "${pattern}" in
-      *\*\*/*)
-         prefix="`sed -e s'|\(.*\)\*\*\/(.*\)|\1|' <<< "${pattern}"`"
-         suffix="`sed -e s'|\(.*\)\*\*\/(.*\)|\2|' <<< "${pattern}"`"
+      */\*\*/*)
+         prefix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\1|' <<< "${pattern}"`"
+         suffix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\2|' <<< "${pattern}"`"
          prefix="`_transform_path_pattern "${prefix}"`"
          suffix="`_transform_path_pattern "${suffix}"`"
 
+         log_debug "prefix: $prefix"
+         log_debug "suffix: $suffix"
          echo "${prefix}*${suffix}"
+         return
+      ;;
+
+      \*\*/*)
+         suffix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\2|' <<< "${pattern}"`"
+         suffix="`_transform_path_pattern "${suffix}"`"
+
+         log_debug "suffix: $suffix"
+         echo "${suffix}"
          return
       ;;
 
@@ -162,6 +175,45 @@ _transform_path_pattern()
 
    echo "${pattern}"
 }
+
+
+
+print_case_expression()
+{
+   log_entry "print_case_expression" "$@"
+
+   local pattern="$1"
+
+   case "${pattern}" in
+      /*/)
+         # support older bashes
+         local snip
+
+         snip="${pattern:1}"
+         snip="${snip%?}"
+
+         echo "      ${snip}|${pattern:1}*)"
+      ;;
+
+      /*)
+         echo "      ${pattern:1})"
+      ;;
+
+      */)
+         echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
+      ;;
+
+      *\]\)\/*)
+         echo "      ${pattern})"
+      ;;
+
+      *)
+         echo "      ${pattern}|*/${pattern})"
+      ;;
+   esac
+}
+
+
 
 
 # extglob must be set
@@ -198,46 +250,9 @@ pattern_emit_matchcode()
       ;;
    esac
 
+   echo "   case "\$1" in"
+
    case "${pattern}" in
-      /*/)
-         # support older bashes
-         local snip
-
-         snip="${pattern:1}"
-         snip="${snip%?}"
-
-         cat <<EOF
-   case "\$1" in
-      ${snip}|${pattern:1}*)
-         return $YES
-      ;;
-   esac
-   return $NO
-EOF
-      ;;
-
-      /*)
-         cat <<EOF
-   case "\$1" in
-      ${pattern:1})
-         return $YES
-      ;;
-   esac
-   return $NO
-EOF
-      ;;
-
-      */)
-         cat <<EOF
-   case "\$1" in
-      ${pattern%?}|${pattern}*|*/${pattern}*)
-         return $YES
-      ;;
-   esac
-   return $NO
-EOF
-      ;;
-
       #
       # experimental code to do test after pattern matching
       #
@@ -247,30 +262,39 @@ EOF
          testchar="${pattern:3:1}"
          pattern="${pattern:5}"
          pattern="${pattern%??}"
+
+         print_case_expression "${pattern}"
+
          cat <<EOF
-   case "\$1" in
-      ${pattern?}|*/${pattern})
          if [ -${testchar} "\$1" ]
          then
-            return ${YES}
+            return $YES
          fi
       ;;
    esac
    return $NO
 EOF
+         return
       ;;
+   esac
 
-      *)
-         cat <<EOF
-   case "\$1" in
-      ${pattern}|*/${pattern})
+   #
+   # "normal path" outputs something like:
+   # case "$1" in
+   # *([^/]).c|*/*([^/]).c)
+   #      return 0
+   #   ;;
+   #esac
+   #return 1
+
+   print_case_expression "${pattern}"
+
+   cat <<EOF
          return $YES
       ;;
    esac
    return $NO
 EOF
-      ;;
-   esac
 }
 
 
