@@ -85,7 +85,7 @@ main()
 
    expect_match_print_filepath "a;1-a--;a"     "%t;%m;%f\\n"    "${ignore}" "${match}" "a"
    expect_match_print_filepath "b;x;2-b--x;b"  "%t;%c;%m;%f\\n" "${ignore}" "${match}" "b"
-   expect_match_print_filepath "b;X;2-b--x;b"  "%t;%I;%m;%f\\n" "${ignore}" "${match}" "b"
+   expect_match_print_filepath "b;X;2-b--x;b"  "%t;%C;%m;%f\\n" "${ignore}" "${match}" "b"
    expect_match_print_filepath "aa;4-aa--;aa"  "%t;%m;%f\\n"    "${ignore}" "${match}" "aa"
    expect_match_print_filepath "aa;4-aa--;aaa" "%t;%m;%f\\n"    "${ignore}" "${match}" "aaa"
 

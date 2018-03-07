@@ -55,11 +55,13 @@ EOF
    then
      cat <<EOF >&2
                     This is like a simplified C printf format:
-                        %c : category of match file (can be empty)
-                        %e : executable name of callback
-                        %f : filename that was matched
-                        %m : the full match filename
-                        %t : type of match file
+                        %c : category of patternfile (can be empty)
+                        %C : category of patternfile as upcase identifier
+                        %f : input filename that was matched
+                        %m : the matching patternfile
+                        %p : the relative path pof the matching patternfile
+                        %t : type of patternfile
+                        %T : type of patternfile as upcase identifier
                         \\n : a linefeed
                      (e.g. "category=%c,type=%t\\n)"
 EOF
@@ -659,38 +661,6 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 }
 
 
-#
-# TODO: use bash string functions with case for this
-#
-patternfile_get_callback()
-{
-   log_entry "patternfile_get_callback" "$@"
-
-   local filename="$1"
-
-   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
-}
-
-
-patternfile_get_category()
-{
-   log_entry "patternfile_get_category" "$@"
-
-   local filename="$1"
-
-   sed -n -e 's/^[0-9]*-[^-]*--\(.*\)/\1/p' <<< "${filename}"
-}
-
-
-patternfile_get_executable()
-{
-   log_entry "patternfile_get_executable" "$@"
-
-   local filename="$1"
-
-   sed -n -e 's/^[0-9]*-\([^-].*\)--.*/\1/p' <<< "${filename}"
-}
-
 
 #
 # returns value in _patternfile
@@ -715,7 +685,7 @@ _patternfilefunctions_match_relative_filename()
 
       if "${functionname}" "${filename}"
       then
-         _patternfile="`eval echo \$\{${functionname}_f\}`"
+         eval _patternfile="\${${functionname}_f}"
          log_verbose "\"${filename}\" did match \"${_patternfile}\""
          return 0
       fi
@@ -806,7 +776,7 @@ match_filepath()
 
    if _match_filepath "$@"
    then
-      echo "`fast_basename "${_patternfile}"`"
+      echo "${_patternfile##*/}"
       return 0
    fi
 
@@ -836,7 +806,7 @@ _match_print_patternfilename()
 
    local matchname
 
-   matchname="`fast_basename "${patternfile}"`"
+   matchname="${patternfile##*/}"
 
    local matchtype
    local matchcategory
@@ -848,14 +818,8 @@ _match_print_patternfilename()
    do
       case "${format}" in
          \%c*)
-            matchcategory="`patternfile_get_category "${matchname}" `" || exit 1
-            s="${s}${matchcategory}"
-            format="${format:2}"
-         ;;
-
-         \%e*)
-            matchexecutable="`patternfile_get_executable "${matchname}" `" || exit 1
-            s="${s}${matchexecutable}"
+            matchcategory="${matchname##*--}"
+            s="${s}${matchcategory##*--}"
             format="${format:2}"
          ;;
 
@@ -869,15 +833,29 @@ _match_print_patternfilename()
             format="${format:2}"
          ;;
 
+         \%p*)
+            s="${s}${patternfile}"
+            format="${format:2}"
+         ;;
+
          \%t*)
-            matchtype="`patternfile_get_callback "${matchname}" `" || exit 1
+            matchtype="${matchname%--*}"
+            matchtype="${matchtype##*-}"
             s="${s}${matchtype}"
             format="${format:2}"
          ;;
 
-         \%I*)
-            matchcategory="`patternfile_get_category "${matchname}" `" || exit 1
-            uppercase="`tr 'a-z' 'A-Z' <<< "${matchcategory}" | tr '-' '_' `"
+         \%C*)
+            matchcategory="${matchname##*--}"
+            uppercase="`tr 'a-z-' 'A-Z_' <<< "${matchcategory}"`"
+            s="${s}${uppercase}"
+            format="${format:2}"
+         ;;
+
+         \%T*)
+            matchtype="${matchname%--*}"
+            matchtype="${matchtype##*-}"
+            uppercase="`tr 'a-z-' 'A-Z_' <<< "${matchtype}"`"
             s="${s}${uppercase}"
             format="${format:2}"
          ;;
@@ -895,7 +873,7 @@ _match_print_patternfilename()
       esac
    done
 
-   exekutor printf "%s" "$s"
+   exekutor printf "%s" "${s}"
 }
 
 
@@ -916,7 +894,12 @@ match_print_filepath()
       return 1
    fi
 
-   _match_print_patternfilename "${format}" "${_patternfile}"
+   if [ -z "${format}" ]
+   then
+      echo "${_patternfile##*/}"
+   else
+      _match_print_patternfilename "${format}" "${_patternfile}"
+   fi
 }
 
 
@@ -928,7 +911,7 @@ match_match_main()
 {
    log_entry "match_match_main" "$@"
 
-   local OPTION_FORMAT="%e\\n"
+   local OPTION_FORMAT="%m\\n"
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
    local OPTION_PATTERN
