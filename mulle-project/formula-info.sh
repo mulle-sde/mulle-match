@@ -3,7 +3,7 @@
 # formula operations.
 #
 PROJECT="mulle-match"      # your project/repository name
-DESC="🕵🏻‍ Extensible filesystem observation with callbacks"
+DESC="💕 Match filenames against a set of .gitignore like patternfiles"
 LANGUAGE="bash"             # c,cpp, objc, bash ...
 
 # LANGUAGE="c"             # c,cpp, objc, bash ...
