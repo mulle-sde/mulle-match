@@ -62,9 +62,11 @@ Options:
 
 Commands:
    cat        : show contents of patternfile
+   edit       : edit a patternfile
    list       : list patternfiles currently in use
-   install    : install a patternfile
-   uninstall  : remove a patternfile
+   add        : add a patternfile
+   rename     : rename a patternfile
+   remove    : remove a patternfile
 EOF
    exit 1
 }
@@ -90,7 +92,7 @@ EOF
 }
 
 
-install_patternfile_usage()
+add_patternfile_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -99,9 +101,9 @@ install_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile install [options] <type> <filename>
+   ${MULLE_USAGE_NAME} patternfile add [options] <type> <filename>
 
-   Install a patternfile for a specific type.
+   Add a patternfile for a specific type.
 
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -119,7 +121,7 @@ EOF
 }
 
 
-uninstall_patternfile_usage()
+rename_patternfile_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -128,7 +130,30 @@ uninstall_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile uninstall <filename>
+   ${MULLE_USAGE_NAME} patternfile rename [options] <srcfilename> [dstfilename]
+
+   Rename an existing patternfile. You can also set portions of the patternfile
+   with options, instead of providing a full destination patternfile name.
+
+Options:
+   -c <category>  : change the of a patternfile
+   -p <digits>    : change position of the patternfile
+   -t <type>      : change type of the patternfile
+EOF
+   exit 1
+}
+
+
+remove_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile remove <filename>
 
    Remove a patternfile.
 EOF
@@ -170,7 +195,8 @@ Usage:
    Edit a patternfiles
 
 Options:
-   -e <editor>   : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
+   -e <editor>      : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
+   -t <patternfile> : use patternfile as template
 EOF
    exit 1
 }
@@ -296,23 +322,21 @@ cat_patternfile_main()
 }
 
 
-uninstall_patternfile_main()
+remove_patternfile_main()
 {
-   log_entry "uninstall_patternfile_main" "$@"
+   log_entry "remove_patternfile_main" "$@"
 
-   [ "$#" -ne 1 ] && uninstall_patternfile_usage
+   [ "$#" -ne 1 ] && remove_patternfile_usage
 
    local filename="$1"
 
-   case "${OPTION_FOLDER_NAME}" in
-      ignore.d)
-         remove_file_if_present "${MULLE_MATCH_IGNORE_DIR}/${filename}"
-      ;;
+   setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
-      *)
-         remove_file_if_present "${MULLE_MATCH_MATCH_DIR}/${filename}"
-      ;;
-   esac
+   local dstfile
+
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+
+   remove_file_if_present "${dstfile}"
 }
 
 
@@ -336,7 +360,7 @@ _validate_category()
 {
    log_entry "_validate_category" "$@"
 
-   [ -z "`tr -d '0-9A-Za-z_' <<< "$1"`" ]
+   [ -z "`tr -d '0-9A-Za-z-_' <<< "$1"`" ]
 }
 
 
@@ -352,19 +376,30 @@ setup_etc_if_needed()
       return
    fi
 
-   if [ -f "${MULLE_MATCH_DIR}/share/${folder}" ]
+   mkdir_if_missing "${MULLE_MATCH_ETC_DIR}/${folder}"
+   if [ ! -d "${MULLE_MATCH_DIR}/share/${folder}" ]
    then
-      mkdir_if_missing "${MULLE_MATCH_ETC_DIR}"
-      exekutor cp -Ra "${MULLE_MATCH_DIR}/share/${folder}" "${MULLE_MATCH_ETC_DIR}"
-   else
-      mkdir_if_missing "${MULLE_MATCH_ETC_DIR}/${folder}"
+      return
+   fi
+
+   local flags
+
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      flags="-v"
+   fi
+
+   if dir_has_files "${MULLE_MATCH_DIR}/share/${folder}"
+   then
+      exekutor cp ${flags} "${MULLE_MATCH_DIR}/share/${folder}"/* "${MULLE_MATCH_ETC_DIR}/${folder}"
+      exekutor chmod ug+w "${MULLE_MATCH_ETC_DIR}/${folder}"/*
    fi
 }
 
 
-install_patternfile_main()
+add_patternfile_main()
 {
-   log_entry "install_patternfile_main" "$@"
+   log_entry "add_patternfile_main" "$@"
 
    local OPTION_POSITION="50"
 
@@ -372,7 +407,7 @@ install_patternfile_main()
    do
       case "$1" in
          -h*|--help|help)
-            install_patternfile_usage
+            add_patternfile_usage
          ;;
 
          -i|--ignore-dir|--ignore)
@@ -384,20 +419,20 @@ install_patternfile_main()
          ;;
 
          -c|--category)
-            [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] && add_patternfile_usage "missing argument to $1"
             shift
 
             OPTION_CATEGORY="$1"
          ;;
 
          -p|--position)
-            [ $# -eq 1 ] && install_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] && add_patternfile_usage "missing argument to $1"
             shift
             OPTION_POSITION="$1"
          ;;
 
          -*)
-            install_patternfile_usage "unknown option \"$1\""
+            add_patternfile_usage "unknown option \"$1\""
          ;;
 
          *)
@@ -407,7 +442,7 @@ install_patternfile_main()
 
       shift
    done
-   [ "$#" -ne 2 ] && install_patternfile_usage
+   [ "$#" -ne 2 ] && add_patternfile_usage
 
    local typename="$1"
    local filename="$2"
@@ -415,8 +450,8 @@ install_patternfile_main()
    [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
 
    _validate_digits "${OPTION_POSITION}"   || fail "position should only contain digits"
-   _validate_typename "${typename}"        || fail "type should only contain a-z and digits"
-   _validate_category "${OPTION_CATEGORY}" || fail "category should only contain a-z and digits"
+   _validate_typename "${typename}"        || fail "type should only contain a-z _ and digits"
+   _validate_category "${OPTION_CATEGORY}" || fail "category should only contain a-z _- and digits"
 
    local patternfile
    local contents
@@ -441,10 +476,134 @@ install_patternfile_main()
 }
 
 
+rename_patternfile_main()
+{
+   log_entry "rename_patternfile_main" "$@"
+
+   local OPTION_CATEGORY
+   local OPTION_POSITION
+   local OPTION_TYPE
+
+   while :
+   do
+      case "$1" in
+         -h*|--help|help)
+            rename_patternfile_usage
+         ;;
+
+         -i|--ignore-dir|--ignore)
+            OPTION_FOLDER_NAME="ignore.d"
+            if [ "${OPTION_CATEGORY}" = "all" ]
+            then
+               OPTION_CATEGORY="none"
+            fi
+         ;;
+
+         -c|--category)
+            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            shift
+
+            OPTION_CATEGORY="$1"
+         ;;
+
+         -p|--position)
+            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            shift
+
+            OPTION_POSITION="$1"
+         ;;
+
+         -t|--type)
+            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            shift
+
+            OPTION_TYPE="$1"
+         ;;
+
+         -*)
+            rename_patternfile_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -lt 1 -o "$#" -gt 2 ] && rename_patternfile_usage
+
+   local patternfile="$1"
+   local dstpatternfile="$2"
+
+   local matchposition
+   local matchtype
+   local matchcategory
+
+   if [ ! -z "${dstpatternfile}" ]
+   then
+      matchposition="${dstpatternfile%%-*}"
+      matchtype="${dstpatternfile%--*}"
+      matchtype="${matchtype##*-}"
+      matchcategory="${dstpatternfile##*--}"
+   else
+      matchposition="${patternfile%%-*}"
+      matchtype="${patternfile%--*}"
+      matchtype="${matchtype##*-}"
+      matchcategory="${patternfile##*--}"
+   fi
+
+   matchposition="${OPTION_POSITION:-${matchposition}}"
+   matchtype="${OPTION_TYPE:-${matchtype}}"
+   matchcategory="${OPTION_CATEGORY:-${matchcategory}}"
+
+   _validate_digits "${matchposition}"   || fail "position should only contain digits"
+   _validate_typename "${matchtype}"     || fail "type should only contain a-z and digits"
+   _validate_category "${matchcategory}" || fail "category should only contain a-z and digits"
+
+   local dstfile
+   local srcfile
+
+   dstpatternfile="${matchposition}-${matchtype}--${matchcategory}"
+   if [ "${dstpatternfile}" = "${patternfile}" ]
+   then
+      log_warning "No change in filename"
+      return 0
+   fi
+
+   local srcfile
+
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${dstpatternfile}"
+
+   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
+      && fail "\"${dstfile}\" already exists. Use -f to clobber"
+
+   setup_etc_if_needed "${OPTION_FOLDER_NAME}"
+
+   srcfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
+
+   case "${OPTION_FOLDER_NAME}" in
+      ignore.d)
+         srcfile="${MULLE_MATCH_IGNORE_DIR}/${patternfile}"
+      ;;
+
+      *)
+         srcfile="${MULLE_MATCH_MATCH_DIR}/${patternfile}"
+      ;;
+   esac
+
+   [ ! -f "${srcfile}" ] && fail "\"${patternfile}\" not found (at ${srcfile})"
+
+   exekutor mv "${srcfile}" "${dstfile}"
+}
+
 
 edit_patternfile_main()
 {
    log_entry "edit_patternfile_main" "$@"
+
+   local templatefile
 
    while [ "$#" -ne 0 ]
    do
@@ -458,6 +617,13 @@ edit_patternfile_main()
             shift
 
             EDITOR="$1"
+         ;;
+
+         -t|--template|--template-file)
+            [ $# -eq 1 ] && edit_patternfile_usage "missing argument to $1"
+            shift
+
+            templatefile="$1"
          ;;
 
          -*)
@@ -476,9 +642,41 @@ edit_patternfile_main()
 
    local filename="$1"
 
+   local dstfile
+
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
-   exekutor "${EDITOR:-vi}" "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+
+   if [ ! -z "${templatefile}" ]
+   then
+      local srcfile
+      local flag
+
+      srcfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${templatefile}"
+
+      if [ ! -f "${srcfile}" ]
+      then
+         fail "Patternfile \"${templatefile}\" not found"
+      fi
+
+      if [ "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" -a -f "${dstfile}" ]
+      then
+         fail "\"${dstfile}\" already exists. Use -f to clobber"
+      fi
+
+      local flags
+
+      if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+      then
+         flags="-v"
+      fi
+
+      exekutor cp ${flags} "${srcfile}" "${dstfile}" || exit 1
+      exekutor chmod ug+w "${dstfile}"
+   fi
+
+   exekutor "${EDITOR:-vi}" "${dstfile}"
 }
 
 
@@ -513,7 +711,7 @@ match_patternfile_main()
             match_patternfile_usage
          ;;
 
-         -i)
+         -i|--ignore-only)
             ONLY_IGNORE="YES"
             ONLY_MATCH="NO"
             OPTION_FOLDER_NAME="ignore.d"
@@ -523,7 +721,7 @@ match_patternfile_main()
             fi
          ;;
 
-         -m)
+         -m|--match-only)
             ONLY_IGNORE="NO"
             ONLY_MATCH="YES"
             OPTION_FOLDER_NAME="match.d"
@@ -550,7 +748,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      cat|edit|install|uninstall)
+      cat|edit|add|rename|remove)
          ${cmd}_patternfile_main "$@"
       ;;
 

@@ -21,6 +21,7 @@ src/mulle-match-clean.sh
 src/mulle-match-find.sh
 src/mulle-match-match.sh
 src/mulle-match-patternfile.sh
+src/mulle-match-bash-completion.sh
 )
 
 

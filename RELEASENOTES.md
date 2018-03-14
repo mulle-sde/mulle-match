@@ -1,3 +1,7 @@
+### 0.0.5
+
+* use only -md filtering for less surprises, add bash completion
+
 ### 0.0.4
 
 * Various small improvements

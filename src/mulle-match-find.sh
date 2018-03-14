@@ -64,7 +64,6 @@ EOF
    fi
 
    cat <<EOF >&2
-   -if <filter>   : specify a filter for ignoring <type>
    -mf <filter>   : specify a filter for matching <type>
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
@@ -160,6 +159,7 @@ _find_toplevel_files()
 
    local filenames
    local filename
+
    #
    # to reduce the search tree, first do a search in root only
    # and drop all ignored stuff
@@ -195,8 +195,9 @@ _parallel_find_filtered_files()
 
    local quoted_filenames="$1"
    local format="$2"
-   local ignore="$3"
-   local match="$4"
+   local filter="$3"
+   local ignore="$4"
+   local match="$5"
 
    local maxjobs
    local running
@@ -221,7 +222,7 @@ _parallel_find_filtered_files()
          sleep 0.01s # 100Hz
       done
 
-      match_print_filepath "${format}" "${ignore}" "${match}" "${filename}" &
+      match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename}" &
 
       shift
    done
@@ -238,8 +239,9 @@ _find_filenames()
    log_entry "_find_filenames" "$@"
 
    local format="$1"
-   local ignore="$2"
-   local match="$3"
+   local filter="$2"
+   local ignore="$3"
+   local match="$4"
 
    #
    # now with that out of the way, lets go
@@ -254,6 +256,7 @@ _find_filenames()
 
    _parallel_find_filtered_files "${quoted_filenames}" \
                                  "${format}" \
+                                 "${filter}" \
                                  "${ignore}" \
                                  "${match}"
 }
@@ -304,13 +307,6 @@ match_find_main()
             match_find_usage
          ;;
 
-         -if|--ignore-filter)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
-            shift
-
-            OPTION_IGNORE_FILTER="$1"
-         ;;
-
          -mf|--match-filter)
             [ $# -eq 1 ] && match_find_usage "missing argument to $1"
             shift
@@ -346,19 +342,20 @@ match_find_main()
    fi
 
    local _cache
+   local ignore_patterncache
+   local match_patterncache
 
-   _patternfilefunctions_passing_filter "${MULLE_MATCH_IGNORE_DIR}" \
-                                        "${OPTION_IGNORE_FILTER}" \
-                                        "${MULLE_MATCH_DIR}/var/cache/match"
-   ignore_patterncaches="${_cache}"
+   _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
+                                "${MULLE_MATCH_DIR}/var/cache/match"
+   ignore_patterncache="${_cache}"
 
-   _patternfilefunctions_passing_filter "${MULLE_MATCH_MATCH_DIR}" \
-                                        "${OPTION_MATCH_FILTER}" \
-                                         "${MULLE_MATCH_DIR}/var/cache/match"
-   match_patterncaches="${_cache}"
+   _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
+                                "${MULLE_MATCH_DIR}/var/cache/match"
+   match_patterncache="${_cache}"
 
 
    find_filenames "${OPTION_FORMAT}" \
-                  "${ignore_patterncaches}" \
-                  "${match_patterncaches}"
+                  "${OPTION_MATCH_FILTER}" \
+                  "${ignore_patterncache}" \
+                  "${match_patterncache}"
 }

@@ -68,8 +68,7 @@ EOF
    fi
 
    cat <<EOF >&2
-   -if <filter>   : specify a filter for ignoring <type>
-   -mf <filter>   : specify a filter for matching <type>
+   -mf <filter>   : specify a filter for matching <type> e.g. "source|tests"
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
    then
@@ -439,63 +438,6 @@ patternfile_match_relative_filename()
 }
 
 
-#
-# a filter is
-# <filter> : <texpr>  | <filter> , <texpr>
-# <texpr>  : ! <type> | <type>
-#
-# Think about using pattern_matches_relative_filename for this
-#
-filter_patternfilename()
-{
-   local filter="$1"
-   local patternfile="$2"
-
-   local texpr
-   local shouldmatch
-
-   IFS=","
-   set -o noglob
-   for texpr in ${filter}
-   do
-      set +o noglob
-
-      IFS="${DEFAULT_IFS}"
-
-      shouldmatch="YES"
-      case "${texpr}" in
-         !*)
-            shouldmatch="NO"
-            texpr="${texpr:1}"
-         ;;
-      esac
-
-      match="[0-9]*-${texpr}--*"
-
-      case "${patternfile}" in
-         ${match}|*/${match})
-            if [ "${shouldmatch}" = "NO" ]
-            then
-               return 1
-            fi
-         ;;
-
-         *)
-            if [ "${shouldmatch}" = "YES" ]
-            then
-               return 1
-            fi
-         ;;
-      esac
-   done
-   IFS="${DEFAULT_IFS}"
-   set +o noglob
-
-   return 0
-}
-
-
-
 patternfile_identifier()
 {
    log_entry "patternfile_identifier" "$@"
@@ -626,9 +568,9 @@ ${functiontext}"
 # TODO: cache functions in filesystem
 #
 # !!! Don't backtick this !!!
-_patternfilefunctions_passing_filter()
+_define_patternfilefunctions()
 {
-   log_entry "_patternfilefunctions_passing_filter" "$@"
+   log_entry "_define_patternfilefunctions" "$@"
 
    local directory="$1"
    local filter="$2"
@@ -656,12 +598,6 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
             continue
          ;;
       esac
-
-      if [ ! -z "${filter}" ] && ! filter_patternfilename "${filter}" "${patternfile}"
-      then
-         log_debug "\"${patternfile}\" did not pass filter \"${filter}\""
-         continue
-      fi
 
       local varname
 
@@ -835,6 +771,7 @@ _match_print_patternfilename()
    local matchtype
    local matchcategory
    local matchexecutable
+   local matchdigits
    local uppercase
    local s
 
@@ -843,7 +780,13 @@ _match_print_patternfilename()
       case "${format}" in
          \%c*)
             matchcategory="${matchname##*--}"
-            s="${s}${matchcategory##*--}"
+            s="${s}${matchcategory}"
+            format="${format:2}"
+         ;;
+
+         \%d*)
+            matchdigits="${matchname%%-*}"
+            s="${s}${matchdigits}"
             format="${format:2}"
          ;;
 
@@ -906,6 +849,7 @@ match_print_filepath()
    log_entry "match_print_filepath" "$@"
 
    local format="$1" ; shift
+   local filter="$1" ; shift
    local filename="$3" # sic
 
    local _patternfile
@@ -918,9 +862,29 @@ match_print_filepath()
       return 1
    fi
 
+   local patternfilename
+
+   patternfilename="${_patternfile##*/}"
+   if [ ! -z "${filter}" ]
+   then
+      local matchtype
+
+      matchtype="${patternfilename%--*}"
+      matchtype="${matchtype##*-}"
+      case "${matchtype}" in
+         ${filter})
+            # pass
+         ;;
+
+         *)
+            return 1
+         ;;
+      esac
+   fi
+
    if [ -z "${format}" ]
    then
-      echo "${_patternfile##*/}"
+      echo "${patternfilename}"
    else
       _match_print_patternfilename "${format}" "${_patternfile}"
    fi
@@ -968,13 +932,6 @@ match_match_main()
             OPTION_FORMAT="$1"
          ;;
 
-         -if|--ignore-filter)
-            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
-            shift
-
-            OPTION_IGNORE_FILTER="$1"
-         ;;
-
          -mf|--match-filter)
             [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
@@ -1020,26 +977,25 @@ match_match_main()
 
    rval=0
 
-   local ignore
-   local match
+   local ignore_patterncache
+   local match_patterncache
 
    local _cache
 
-   _patternfilefunctions_passing_filter "${MULLE_MATCH_IGNORE_DIR}" \
-                                         "${OPTION_IGNORE_FILTER}" \
-                                         "${MULLE_MATCH_DIR}/var/cache"
-   ignore="${_cache}"
+   _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
+                                "${MULLE_MATCH_DIR}/var/cache"
+   ignore_patterncache="${_cache}"
 
-   _patternfilefunctions_passing_filter "${MULLE_MATCH_MATCH_DIR}" \
-                                        "${OPTION_MATCH_FILTER}" \
-                                        "${MULLE_MATCH_DIR}/var/cache"
-   match="${_cache}"
+   _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
+                                "${MULLE_MATCH_DIR}/var/cache"
+   match_patterncache="${_cache}"
 
    while [ $# -ne 0 ]
    do
       if match_print_filepath "${OPTION_FORMAT}" \
-                              "${ignore}" \
-                              "${match}" \
+                              "${OPTION_MATCH_FILTER}" \
+                              "${ignore_patterncache}" \
+                              "${match_patterncache}" \
                               "$1"
       then
          if [ $rval -ne 0 ]

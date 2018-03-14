@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.4
+MULLE_EXECUTABLE_VERSION=0.0.5
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -46,20 +46,20 @@ trap_fail()
 }
 
 
-SHOWN_COMMANDS="\
+print_commands()
+{
+   local show_all="${1:-NO}"
+
+   SHOWN_COMMANDS="\
    clean          : remove cached patternfiles
    find           : find files that match patternfiles
    match          : match filenames against patternfiles
    patternfile    : manage patternfiles"
 
-HIDDEN_COMMANDS="\
+   HIDDEN_COMMANDS="\
    libexec-dir    : print path to mulle-match libexec
    uname          : mulle-matchs simplified uname(1)"
 
-
-print_commands()
-{
-   local show_all="${1:-NO}"
 
    echo "${SHOWN_COMMANDS}"
 
@@ -243,8 +243,6 @@ main()
    cmd="$1"
    [ $# -ne 0 ] && shift
 
-   MULLE_EXECUTABLE_FAIL_PREFIX="`concat "${MULLE_EXECUTABLE_NAME}" "${cmd}" `"
-
    if [ "${FLAG_OUTSIDE_ENV}" = "YES" ]
    then
       MULLE_VIRTUAL_ROOT="${PWD}"
@@ -321,12 +319,10 @@ pass the -e flag"
       ;;
 
       "")
-         MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE_NAME}"
          usage "${MULLE_TRACE}"
       ;;
 
       *)
-         MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE_NAME}"
          log_error "Unknown command \"${cmd}\""
          usage "${MULLE_TRACE}"
       ;;
