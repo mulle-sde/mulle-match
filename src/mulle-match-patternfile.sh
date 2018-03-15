@@ -62,11 +62,12 @@ Options:
 
 Commands:
    cat        : show contents of patternfile
+   copy       : copy a patternfile
    edit       : edit a patternfile
    list       : list patternfiles currently in use
    add        : add a patternfile
    rename     : rename a patternfile
-   remove    : remove a patternfile
+   remove     : remove a patternfile
 EOF
    exit 1
 }
@@ -116,6 +117,29 @@ Options:
                   "all"/"none" for match.d/ignore.d respectively.
    -p <digits>  : position, the default is 50. Patternfiles with lower numbers
                   are matched first. (shell sort order)
+EOF
+   exit 1
+}
+
+
+copy_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile rename [options] <srcfilename> [dstfilename]
+
+   Copy an existing patternfile. You can also set portions of the patternfile
+   with options, instead of providing a full destination patternfile name.
+
+Options:
+   -c <category>  : change the of a patternfile
+   -p <digits>    : change position of the patternfile
+   -t <type>      : change type of the patternfile
 EOF
    exit 1
 }
@@ -483,12 +507,17 @@ rename_patternfile_main()
    local OPTION_CATEGORY
    local OPTION_POSITION
    local OPTION_TYPE
+   local operation
+
+   local usage="rename_patternfile_usage"
+
+   operation="mv"
 
    while :
    do
       case "$1" in
          -h*|--help|help)
-            rename_patternfile_usage
+            ${usage}
          ;;
 
          -i|--ignore-dir|--ignore)
@@ -500,28 +529,33 @@ rename_patternfile_main()
          ;;
 
          -c|--category)
-            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] && "${usage}" "missing argument to $1"
             shift
 
             OPTION_CATEGORY="$1"
          ;;
 
          -p|--position)
-            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] &&  ${usage} "missing argument to $1"
             shift
 
             OPTION_POSITION="$1"
          ;;
 
          -t|--type)
-            [ $# -eq 1 ] && rename_patternfile_usage "missing argument to $1"
+            [ $# -eq 1 ] &&  ${usage} "missing argument to $1"
             shift
 
             OPTION_TYPE="$1"
          ;;
 
+         --copy)
+            operation="cp"
+            usage="copy_patternfile_usage"
+         ;;
+
          -*)
-            rename_patternfile_usage "unknown option \"$1\""
+             ${usage} "unknown option \"$1\""
          ;;
 
          *)
@@ -532,7 +566,7 @@ rename_patternfile_main()
       shift
    done
 
-   [ "$#" -lt 1 -o "$#" -gt 2 ] && rename_patternfile_usage
+   [ "$#" -lt 1 -o "$#" -gt 2 ] &&  ${usage}
 
    local patternfile="$1"
    local dstpatternfile="$2"
@@ -595,7 +629,15 @@ rename_patternfile_main()
 
    [ ! -f "${srcfile}" ] && fail "\"${patternfile}\" not found (at ${srcfile})"
 
-   exekutor mv "${srcfile}" "${dstfile}"
+   exekutor ${operation} "${srcfile}" "${dstfile}"
+}
+
+
+copy_patternfile_main()
+{
+   log_entry "copy_patternfile_main" "$@"
+
+   rename_patternfile_main --copy "$@"
 }
 
 
@@ -748,7 +790,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      cat|edit|add|rename|remove)
+      cat|copy|edit|add|rename|remove)
          ${cmd}_patternfile_main "$@"
       ;;
 

@@ -1,3 +1,7 @@
+### 0.0.6
+
+* add patternfile copy
+
 ### 0.0.5
 
 * use only -md filtering for less surprises, add bash completion

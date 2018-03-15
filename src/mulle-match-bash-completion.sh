@@ -52,7 +52,7 @@ _mulle_match_complete()
    done
 
    case "$prev" in
-      cat|edit|rename|remove)
+      cat|copy|edit|rename|remove)
          files="`mulle-match -s patternfile ${flags} list`"
          COMPREPLY=( $( compgen -W "${files}" -- $cur ) )
       ;;
