@@ -1,3 +1,7 @@
+### 0.0.7
+
+* fix usage ugliness
+
 ### 0.0.6
 
 * add patternfile copy

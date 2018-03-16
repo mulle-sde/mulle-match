@@ -109,8 +109,7 @@ Usage:
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
 
-      ( echo '*.h' ; echo ".c" ) | \
-         ${MULLE_USAGE_NAME} patternfile set c_files -
+      ( echo '*.h' ; echo '*.c' ) | ${MULLE_USAGE_NAME} patternfile set c_files -
 
 Options:
    -c <name>    : give this patternfile category. The defaults are
