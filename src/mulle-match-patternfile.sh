@@ -61,13 +61,14 @@ Options:
    -i         : use ignore.d patternfiles
 
 Commands:
+   add        : add a patternfile
    cat        : show contents of patternfile
    copy       : copy a patternfile
    edit       : edit a patternfile
    list       : list patternfiles currently in use
-   add        : add a patternfile
-   rename     : rename a patternfile
    remove     : remove a patternfile
+   rename     : rename a patternfile
+   repair     : repair symlinks (if available)
 EOF
    exit 1
 }
@@ -220,6 +221,27 @@ Usage:
 Options:
    -e <editor>      : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
    -t <patternfile> : use patternfile as template
+EOF
+   exit 1
+}
+
+
+repair_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile repair [options]
+
+   Repair symlinks to original patternfile. Useful after having done an
+   extension upgrade to get changes, when you have custom changes.
+
+Options:
+   --add      : add new (or previously deleted) patternfiles
 EOF
    exit 1
 }
@@ -387,6 +409,100 @@ _validate_category()
 }
 
 
+prepare_for_write_of_patternfile()
+{
+   log_entry "prepare_for_write_of_patternfile" "$@"
+
+   local filename="$1"
+
+   if [ -L "${filename}" ]
+   then
+      exekutor rm "${filename}"
+   fi
+}
+
+
+make_file_from_symlinked_patternfile()
+{
+   log_entry "make_file_from_symlinked_patternfile" "$@"
+
+   local dstfile="$1"
+
+   if [ ! -L "${dstfile}" ]
+   then
+      return 1
+   fi
+
+   local flags
+
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      flags="-v"
+   fi
+
+   local targetfile
+
+   targetfile="`readlink "${dstfile}"`"
+   exekutor rm "${dstfile}"
+
+   if [ ! -f "${targetfile}" ]
+   then
+      return 1
+   fi
+
+   exekutor cp ${flags} "${targetfile}" "${dstfile}" || exit 1
+   exekutor chmod ug+w "${dstfile}"
+}
+
+
+symlink_or_copy_patternfile()
+{
+   log_entry "symlink_or_copy_patternfile" "$@"
+
+   local srcfile="$1"
+   local dstdir="$2"
+   local patternfile="$3"
+
+   [ -f "${srcfile}" ] || internal_fail "\"${srcfile}\" does not exist or not a file"
+   [ -d "${dstdir}" ]  || internal_fail "\"${dstdir}\" does not exist or not a directory"
+
+   local dstfile
+
+   if [ -z "${patternfile}" ]
+   then
+      dstfile="${dstdir}/"
+   else
+      dstfile="`filepath_concat "${dstdir}" "${patternfile}"`"
+
+      if [ -e "${dstfile}" ]
+      then
+         fail "\"${dstfile}\" already exists"
+      fi
+   fi
+
+   local flags
+
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      flags="-v"
+   fi
+
+   case "${MULLE_UNAME}" in
+      mingw)
+         exekutor cp ${flags} "${srcfile}" "${dstfile}"
+         exekutor chmod ug+w "${dstfile}"
+         return $?
+      ;;
+   esac
+
+   local linkrel
+
+   linkrel="`relative_path_between "${srcfile}" "${dstdir}"`"
+
+   exekutor ln -s ${flags} "${linkrel}" "${dstfile}"
+}
+
+
 setup_etc_if_needed()
 {
    log_entry "setup_etc_if_needed" "$@"
@@ -399,11 +515,8 @@ setup_etc_if_needed()
       return
    fi
 
+   # always create etc now
    mkdir_if_missing "${MULLE_MATCH_ETC_DIR}/${folder}"
-   if [ ! -d "${MULLE_MATCH_DIR}/share/${folder}" ]
-   then
-      return
-   fi
 
    local flags
 
@@ -412,11 +525,20 @@ setup_etc_if_needed()
       flags="-v"
    fi
 
-   if dir_has_files "${MULLE_MATCH_DIR}/share/${folder}"
-   then
-      exekutor cp ${flags} "${MULLE_MATCH_DIR}/share/${folder}"/* "${MULLE_MATCH_ETC_DIR}/${folder}"
-      exekutor chmod ug+w "${MULLE_MATCH_ETC_DIR}/${folder}"/*
-   fi
+   local patternfile
+   local filename
+
+   #
+   # use per default symlinks and change to file on edit (makes it
+   # easier to upgrade unedited files
+   #
+   shopt -s nullglob
+   for patternfile in "${MULLE_MATCH_DIR}/share/${folder}"/*
+   do
+      shopt -u nullglob
+      symlink_or_copy_patternfile "${patternfile}" "${MULLE_MATCH_ETC_DIR}/${folder}"
+   done
+   set -u nullglob
 }
 
 
@@ -495,6 +617,7 @@ add_patternfile_main()
 
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
+   prepare_for_write_of_patternfile "${dstfile}"
    redirect_exekutor "${dstfile}" echo "${contents}"
 }
 
@@ -640,6 +763,40 @@ copy_patternfile_main()
 }
 
 
+copy_template_patternfile()
+{
+   log_entry "copy_template_patternfile" "$@"
+
+   local templatefile="$1"
+   local dstfile="$2"
+
+   local srcfile
+   local flags
+
+   srcfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${templatefile}"
+
+   if [ ! -f "${srcfile}" ]
+   then
+      fail "Patternfile \"${templatefile}\" not found"
+   fi
+
+   if [ "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" -a -f "${dstfile}" ]
+   then
+      fail "\"${dstfile}\" already exists. Use -f to clobber"
+   fi
+
+   local flags
+
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      flags="-v"
+   fi
+
+   exekutor cp ${flags} "${srcfile}" "${dstfile}" || exit 1
+   exekutor chmod ug+w "${dstfile}"
+}
+
+
 edit_patternfile_main()
 {
    log_entry "edit_patternfile_main" "$@"
@@ -691,35 +848,124 @@ edit_patternfile_main()
 
    if [ ! -z "${templatefile}" ]
    then
-      local srcfile
-      local flag
-
-      srcfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${templatefile}"
-
-      if [ ! -f "${srcfile}" ]
-      then
-         fail "Patternfile \"${templatefile}\" not found"
-      fi
-
-      if [ "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" -a -f "${dstfile}" ]
-      then
-         fail "\"${dstfile}\" already exists. Use -f to clobber"
-      fi
-
-      local flags
-
-      if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
-      then
-         flags="-v"
-      fi
-
-      exekutor cp ${flags} "${srcfile}" "${dstfile}" || exit 1
-      exekutor chmod ug+w "${dstfile}"
+      copy_template_patternfile "${templatefile}" "${dstfile}"
    fi
+
+   make_file_from_symlinked_patternfile "${dstfile}"
 
    exekutor "${EDITOR:-vi}" "${dstfile}"
 }
 
+
+
+#
+# walk through etc symlinks, cull those that point to knowwhere
+# replace files with symlinks, whose content is identical to share
+#
+repair_patternfile_main()
+{
+   log_entry "repair_patternfile_main" "$@"
+
+   local OPTION_ADD="NO"
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            repair_patternfile_usage
+         ;;
+
+         -a|--add)
+            OPTION_ADD="YES"
+         ;;
+
+         -*)
+            repair_patternfile_usage "unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -ne 0 ] && repair_patternfile_usage
+
+   local srcdir
+   local dstdir
+
+   srcdir="${MULLE_MATCH_DIR}/share/${OPTION_FOLDER_NAME}"
+   dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
+
+   if [ ! -d "${dstdir}" ]
+   then
+      log_verbose "Nothing to do, as etc does not exist yet"#
+      return
+   fi
+
+   local filename
+   local patternfile
+
+   #
+   # go through etc, throw out symlinks that point to nowhere
+   # create symlinks for files that are identical in share and throw old
+   # files away
+   #
+   shopt -s nullglob
+   for filename in "${dstdir}"/*
+   do
+      shopt -u nullglob
+
+      patternfile="`fast_basename "${filename}"`"
+      if [ -L "${filename}" ]
+      then
+         if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
+         then
+            log_verbose "\"${patternfile}\" no longer exists: remove"
+            exekutor rm "${filename}"
+         else
+            log_fluff "\"${patternfile}\" is a healthy symlink: keep"
+         fi
+      else
+         if [ -f "${srcdir}/${patternfile}" ]
+         then
+            if diff -q -b "${filename}" "${srcdir}" > /dev/null
+            then
+               log_verbose "\"${patternfile}\" has no user edits: replace with symlink"
+               exekutor rm "${filename}"
+               symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
+            else
+               log_fluff "\"${patternfile}\" contains edits: keep"
+            fi
+         else
+            log_fluff "\"${patternfile}\" is an addition: keep"
+         fi
+      fi
+   done
+
+   #
+   # go through share, symlink everything that is not in etc
+   #
+   shopt -s nullglob
+   for filename in "${srcdir}"/*
+   do
+      shopt -u nullglob
+      patternfile="`fast_basename "${filename}"`"
+      if [ ! -e "${dstdir}/${patternfile}" ]
+      then
+         if [ "${OPTION_ADD}" = "YES" ]
+         then
+            log_verbose "\"${patternfile}\" is missing: recreate"
+            symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
+         else
+            log_info "\"${patternfile}\" is not used. Use --add to add it."
+         fi
+      fi
+   done
+   shopt -u nullglob
+}
 
 
 ###
@@ -789,7 +1035,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd}" in
-      cat|copy|edit|add|rename|remove)
+      cat|copy|edit|add|rename|repair|remove)
          ${cmd}_patternfile_main "$@"
       ;;
 

@@ -58,8 +58,8 @@ _mulle_match_complete()
       ;;
 
       patternfile)
-         COMPREPLY=( $( compgen -W "cat edit list \
-                        add rename remove" -- $cur ) )
+         COMPREPLY=( $( compgen -W "add cat copy edit list \
+                        remove rename repair" -- $cur ) )
          return 0
       ;;
    esac

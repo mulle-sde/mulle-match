@@ -418,7 +418,12 @@ patternfile_read()
 
    local filename="$1"
 
-   sed -e '/^#/d' -e '/^$/d' "${filename}"
+   if [ ! -e "${filename}" ]
+   then
+      return 1
+   fi
+
+   LC_ALL=C sed -e '/^#/d' -e '/^$/d' "${filename}"
 }
 
 
@@ -483,10 +488,15 @@ _patternfilefunction_create()
       fi
    fi
 
-   contents="`patternfile_read "${patternfile}"`"
+   if ! contents="`patternfile_read "${patternfile}"`"
+   then
+      log_warning "\"${patternfile}\" is broken. Run \`mulle-match patternfile repair\`"
+      return 1
+   fi
+
    if [ -z "${contents}" ]
    then
-      log_debug "\"${patternfile}\" does not exist or is empty"
+      log_fluff "\"${patternfile}\" is empty"
       return 1
    fi
 
@@ -573,8 +583,7 @@ _define_patternfilefunctions()
    log_entry "_define_patternfilefunctions" "$@"
 
    local directory="$1"
-   local filter="$2"
-   local cachedirectory="$3"
+   local cachedirectory="$2"
 
    local patternfile
 
@@ -605,9 +614,12 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
       log_debug "Function \"${varname}\" for \"${patternfile}\""
       if eval [ -z \$\{${varname}+x\} ]
       then
-         _patternfilefunction_create "${patternfile}" \
-                                     "${varname}" \
-                                     "${cachedirectory}" # will add to _cache
+         if ! _patternfilefunction_create "${patternfile}" \
+                                           "${varname}" \
+                                           "${cachedirectory}" # will add to _cache
+         then
+            continue
+         fi
       fi
       _cache="`add_line "${_cache}" "${varname}"`"
 

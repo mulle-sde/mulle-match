@@ -1,3 +1,7 @@
+### 0.0.8
+
+* fix perfomance bug, add repair command
+
 ### 0.0.7
 
 * fix usage ugliness
