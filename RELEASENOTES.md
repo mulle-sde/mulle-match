@@ -1,3 +1,7 @@
+### 0.0.9
+
+* adapt to singular directory name style
+
 ### 0.0.8
 
 * fix perfomance bug, add repair command

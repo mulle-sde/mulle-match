@@ -11,4 +11,4 @@ _Headers.cmake
 _Sources.cmake
 *.sublime-workspace
 *.graffle
-tests/10-run-inotifywait/src/foo.sh
+test/10-run-inotifywait/src/foo.sh

@@ -68,7 +68,7 @@ EOF
    fi
 
    cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching <type> e.g. "source|tests"
+   -mf <filter>   : specify a filter for matching <type> e.g. "source|test"
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
    then
