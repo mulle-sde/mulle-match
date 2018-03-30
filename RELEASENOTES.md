@@ -1,3 +1,7 @@
+### 0.0.10
+
+* fix edit, use `MULLE_UNAME`
+
 ### 0.0.9
 
 * adapt to singular directory name style

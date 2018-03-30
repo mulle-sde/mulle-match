@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.9
+MULLE_EXECUTABLE_VERSION=0.0.10
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -156,6 +156,7 @@ main()
    local MULLE_FLAG_MAGNUM_FORCE="NO"
 
    # technical flags
+   local MULLE_TRACE
    local MULLE_FLAG_EXEKUTOR_DRY_RUN="NO"
    local MULLE_FLAG_LOG_LOCAL="NO"
    local MULLE_FLAG_LOG_DEBUG="NO"
@@ -310,7 +311,7 @@ pass the -e flag"
       ;;
 
       uname)
-         echo "${UNAME}"
+         echo "${MULLE_UNAME}"
       ;;
 
       version)

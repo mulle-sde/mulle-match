@@ -256,13 +256,21 @@ _list_patternfiles()
 
    local directory="$1"
 
-   if [ -d "${directory}" ]
+   if ! [ -d "${directory}" ]
    then
+      return
+   fi
+
+   local outputname
+
+   outputname="`fast_dirname "${directory}"`"
+
+   log_info "`fast_basename "${directory}"` (`fast_basename "${outputname}"`):"
+
    (
       exekutor cd "${directory}"
       exekutor ls -1 | egrep '[0-9]*-.*--.*'
    )
-   fi
 }
 
 
@@ -440,18 +448,29 @@ make_file_from_symlinked_patternfile()
       flags="-v"
    fi
 
+   set -x
    local targetfile
 
    targetfile="`readlink "${dstfile}"`"
    exekutor rm "${dstfile}"
 
-   if [ ! -f "${targetfile}" ]
-   then
-      return 1
-   fi
+   local directory
+   local filename
 
-   exekutor cp ${flags} "${targetfile}" "${dstfile}" || exit 1
-   exekutor chmod ug+w "${dstfile}"
+   directory="`fast_dirname "${dstfile}"`"
+   filename="`fast_basename "${dstfile}"`"
+   (
+      cd "${directory}" || exit 1
+
+      if [ ! -f "${targetfile}" ]
+      then
+         log_fluff "Stale link encountered"
+         return 0
+      fi
+
+      exekutor cp ${flags} "${targetfile}" "${filename}" || exit 1
+      exekutor chmod ug+w "${filename}"
+   ) || fail "Could not copy \"${targetfile}\" to \"${dstfile}\""
 }
 
 
@@ -538,7 +557,7 @@ setup_etc_if_needed()
       shopt -u nullglob
       symlink_or_copy_patternfile "${patternfile}" "${MULLE_MATCH_ETC_DIR}/${folder}"
    done
-   set -u nullglob
+   shopt -u nullglob
 }
 
 
@@ -801,7 +820,7 @@ edit_patternfile_main()
 {
    log_entry "edit_patternfile_main" "$@"
 
-   local templatefile
+   local templatefile=""
 
    while [ "$#" -ne 0 ]
    do
@@ -901,13 +920,15 @@ repair_patternfile_main()
 
    if [ ! -d "${dstdir}" ]
    then
-      log_verbose "Nothing to do, as etc does not exist yet"#
+      log_verbose "Nothing to do, as etc does not exist yet"
       return
    fi
 
    local filename
    local patternfile
+   local can_remove_etc
 
+   can_remove_etc="YES"
    #
    # go through etc, throw out symlinks that point to nowhere
    # create symlinks for files that are identical in share and throw old
@@ -938,9 +959,11 @@ repair_patternfile_main()
                symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
             else
                log_fluff "\"${patternfile}\" contains edits: keep"
+               can_remove_etc="NO"
             fi
          else
             log_fluff "\"${patternfile}\" is an addition: keep"
+            can_remove_etc="NO"
          fi
       fi
    done
@@ -961,10 +984,17 @@ repair_patternfile_main()
             symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
          else
             log_info "\"${patternfile}\" is not used. Use --add to add it."
+            can_remove_etc="NO"
          fi
       fi
    done
    shopt -u nullglob
+
+   if [ "${can_remove_etc}" = "YES" ]
+   then
+      log_info "\"etc/${OPTION_FOLDER_NAME}\" contains no user changes so use \"share\" again"
+      rmdir_safer "${dstdir}"
+   fi
 }
 
 
@@ -1034,7 +1064,7 @@ match_patternfile_main()
 
    [ $# -ne 0 ] && shift
 
-   case "${cmd}" in
+   case "${cmd:-list}" in
       cat|copy|edit|add|rename|repair|remove)
          ${cmd}_patternfile_main "$@"
       ;;
@@ -1042,7 +1072,6 @@ match_patternfile_main()
       list)
          if [ "${ONLY_MATCH}" = "NO" ]
          then
-            log_info "Ignore patternfiles (-i):"
             OPTION_FOLDER_NAME="ignore.d"
             list_patternfile_main "$@"
          fi
@@ -1053,7 +1082,6 @@ match_patternfile_main()
                echo
             fi
 
-            log_info "Match patternfiles:"
             OPTION_FOLDER_NAME="match.d"
             list_patternfile_main "$@"
          fi
