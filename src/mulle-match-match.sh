@@ -852,6 +852,7 @@ _match_print_patternfilename()
       esac
    done
 
+   # don't use exekutor for speediness
    exekutor printf "%s" "${s}"
 }
 

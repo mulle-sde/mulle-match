@@ -1,3 +1,7 @@
+### 0.0.11
+
+* speed up find a lot by using a proper batchsize for parallelism
+
 ### 0.0.10
 
 * fix edit, use `MULLE_UNAME`

@@ -145,7 +145,8 @@ get_core_count()
 
    if [ -z "$count" ]
    then
-      count=2
+      count=4
+      log_verbose "Unknown core count, setting it to 4 as default"
    fi
    echo $count
 }
@@ -181,11 +182,9 @@ _find_toplevel_files()
       # so fall through ignore means 2
       if [ $? -eq 2 ]
       then
-         quoted_filenames="`concat "${quoted_filenames}" "'${filename}'"`"
+         echo "'${filename}'"
       fi
    done
-
-   echo "${quoted_filenames}"
 }
 
 
@@ -204,28 +203,80 @@ _parallel_find_filtered_files()
 
    maxjobs=`get_core_count`
 
-   local filename
+   local filename_0
+   local filename_1
+   local filename_2
+   local filename_3
+   local filename_4
+   local filename_5
+   local filename_6
+   local filename_7
+   local filename_8
+   local filename_9
+   local filename_a
+   local filename_b
+   local filename_c
+   local filename_d
+   local filename_e
+   local filename_f
 
    IFS="
 "
-   for filename in `set -o noglob; eval_exekutor find ${quoted_filenames} -type f -print`
+   while read -r filename_0
    do
+      read -r filename_1
+      read -r filename_2
+      read -r filename_3
+      read -r filename_4
+      read -r filename_5
+      read -r filename_6
+      read -r filename_7
+      read -r filename_8
+      read -r filename_9
+      read -r filename_a
+      read -r filename_b
+      read -r filename_c
+      read -r filename_d
+      read -r filename_e
+      read -r filename_f
+
       IFS="${DEFAULT_IFS}"
 
-      while :
-      do
-         running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
-         if [ "${#running[@]}" -le ${maxjobs} ]
-         then
-            break
-         fi
-         sleep 0.01s # 100Hz
-      done
+     while :
+     do
+        running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
+        if [ "${#running[@]}" -le ${maxjobs} ]
+        then
+           break
+        fi
+        sleep 0.01s # 100Hz
+     done
 
-      match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename}" &
+     (
+         match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_0}"
+
+         [ ! -z "${filename_1}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1}"
+         [ ! -z "${filename_2}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_2}"
+         [ ! -z "${filename_3}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_3}"
+
+         [ ! -z "${filename_4}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_4}"
+         [ ! -z "${filename_5}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_5}"
+         [ ! -z "${filename_6}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_6}"
+         [ ! -z "${filename_7}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_7}"
+
+         [ ! -z "${filename_8}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_8}"
+         [ ! -z "${filename_9}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_9}"
+         [ ! -z "${filename_a}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_a}"
+         [ ! -z "${filename_b}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_b}"
+
+         [ ! -z "${filename_c}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_c}"
+         [ ! -z "${filename_d}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_d}"
+         [ ! -z "${filename_e}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_e}"
+         [ ! -z "${filename_f}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_f}"
+      ) &
 
       shift
-   done
+   done < <( set -o noglob; eval_exekutor find ${quoted_filenames} -type f -print )
    IFS="${DEFAULT_IFS}"
 
    log_verbose "waiting..."
