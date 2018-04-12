@@ -199,7 +199,7 @@ print_case_expression()
       ;;
 
       */)
-         echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
+         echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
       ;;
 
       *\]\)\/*)
@@ -325,6 +325,83 @@ pattern_emit_function()
 }
 
 
+pattern_emit_case()
+{
+   log_entry "pattern_emit_case" "$@"
+
+   local pattern="$1"
+
+   local YES=0
+   local NO=1
+
+   #
+   # simple invert
+   #
+   case "${pattern}" in
+      !!*)
+         # consider that an escape for extglob pattern
+         pattern="${pattern:1}"
+      ;;
+
+      !*)
+         pattern="${pattern:1}"
+         YES=1   # negated
+         NO=     # doesn't match so we dont care
+      ;;
+   esac
+
+   _match_assert_pattern "${pattern}"
+
+   case "${pattern}" in
+      *\**)
+         pattern="`_transform_path_pattern "${pattern}"`"
+      ;;
+   esac
+
+   echo "   case "\$1" in"
+
+   case "${pattern}" in
+      #
+      # experimental code to do test after pattern matching
+      #
+      \[\ -?\ *\ \])
+         local testchar
+
+         testchar="${pattern:3:1}"
+         pattern="${pattern:5}"
+         pattern="${pattern%??}"
+
+         print_case_expression "${pattern}"
+
+         cat <<EOF
+         if [ -${testchar} "\$1" ]
+         then
+            rval=$YES
+         fi
+      ;;
+   esac
+EOF
+   esac
+
+   #
+   # "normal path" outputs something like:
+   # case "$1" in
+   # *([^/]).c|*/*([^/]).c)
+   #      return 0
+   #   ;;
+   #esac
+   #return 1
+
+   print_case_expression "${pattern}"
+
+   cat <<EOF
+         rval=$YES
+      ;;
+   esac
+EOF
+}
+
+
 pattern_unique_functionname()
 {
    log_entry "pattern_unique_functionname" "$@"
@@ -332,12 +409,16 @@ pattern_unique_functionname()
    local identifier
    local functionname
 
+   #
+   # bash uses a hash multiplying every byte, so the longer the
+   # string the longer the lookup, because of it.
+   #
    while :
    do
       identifier="`uuidgen | tr -d '-'`"
-      identifier="${identifier::10}"
+      identifier="${identifier::6}" # so
 
-      functionname="__p__${identifier}"
+      functionname="_m${identifier}"
       if [ "`type -t "${functionname}"`" != "function" ]
       then
          echo "${functionname}"
@@ -520,30 +601,17 @@ _patternfilefunction_create()
    do
       IFS="${DEFAULT_IFS}"; set +o noglob
 
-      # build little functions for each pattern
-      functionname="`pattern_unique_functionname`"
-      functiontext="`pattern_emit_function "${functionname}" "${pattern}"`"
-
-      # collect as all text
-      alltext="${alltext}
-${functiontext}"
+      # build little cases for each pattern
+#      functionname="`pattern_unique_functionname`"
+      casetext="`pattern_emit_case "${pattern}"`"
 
       # construct call of this function in big body
       # need to deal with returnvalue of function here
       # might use ifs if this is faster
       bigbody="${bigbody}
-   ${functionname} \$1
-   case \"\$?\" in
-      0)
-         rval=0
-      ;;
-
-      2)
-         rval=1
-      ;;
-   esac
-"
+${casetext}"
    done
+
    IFS="${DEFAULT_IFS}"; set +o noglob
 
    # finish up the patternfile function
@@ -615,8 +683,8 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
       if eval [ -z \$\{${varname}+x\} ]
       then
          if ! _patternfilefunction_create "${patternfile}" \
-                                           "${varname}" \
-                                           "${cachedirectory}" # will add to _cache
+                                          "${varname}" \
+                                          "${cachedirectory}" # will add to _cache
          then
             continue
          fi
@@ -638,6 +706,8 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 # returns value in _patternfile
 # don't backtick
 #
+# IFS must be set to LF, and noglob must be set
+#
 _patternfilefunctions_match_relative_filename()
 {
    log_entry "_patternfilefunctions_match_relative_filename" "$@"
@@ -645,24 +715,17 @@ _patternfilefunctions_match_relative_filename()
    local patternfilefunctions="$1"
    local filename="$2"
 
-   [ -z "${filename}" ] && internal_fail "filename is empty"
-
    local functionname
 
-   set -o noglob; IFS="
-"
    for functionname in ${patternfilefunctions}
    do
-      IFS="${DEFAULT_IFS}" ; set +o noglob
-
       if "${functionname}" "${filename}"
       then
          eval _patternfile="\${${functionname}_f}"
-         log_verbose "\"${filename}\" did match \"${_patternfile}\""
+         log_fluff "\"${filename}\" did match \"${_patternfile}\""
          return 0
       fi
    done
-   IFS="${DEFAULT_IFS}" ; set +o noglob
 
    _patternfile=""
    return 1
@@ -692,6 +755,12 @@ _match_assert_filename()
 #
 # returns patternfile in global _patternfile
 #
+# MUST BE CALLED WITH:
+#
+#      shopt -s extglob
+#      set -o noglob
+#      IFS="
+#"
 _match_filepath()
 {
    log_entry "_match_filepath" "$@"
@@ -716,54 +785,32 @@ _match_filepath()
       fi
    fi
 
-   if [ ! -z "${match}" ]
-   then
-      if _patternfilefunctions_match_relative_filename "${match}" \
-                                                       "${filename}"
-      then
-         log_debug "\"${filename}\" matched"
-         return 0
-      fi
-      log_debug "\"${filename}\" did not match"
-      return 1
-   fi
-
    #
    # nothing matches if there is no matchdir (but return special code)
    # so we can figure out if it was just ignored
    #
-   return 2
-}
-
-
-match_filepath()
-{
-   log_entry "match_filepath" "$@"
-
-   local _patternfile
-
-   local rval
-
-   shopt -s extglob
-
-   if _match_filepath "$@"
+   if [ -z "${match}" ]
    then
-      echo "${_patternfile##*/}"
+      return 2
+   fi
+
+   if _patternfilefunctions_match_relative_filename "${match}" \
+                                                    "${filename}"
+   then
+      log_debug "\"${filename}\" matched"
       return 0
    fi
 
+   log_debug "\"${filename}\" did not match"
    return 1
 }
 
 
-_match_print_patternfilename()
+matching_filepath_pattern()
 {
-   log_entry "_match_print_patternfilename" "$@"
+   log_entry "matching_filepath_pattern" "$@"
 
-   local format="$1"
-   local patternfile="$2"
-
-   [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
+   local _patternfile
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -775,6 +822,37 @@ _match_print_patternfilename()
       # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
+
+   local rval
+
+   (
+      shopt -s extglob
+      set -o noglob
+
+      IFS="
+"
+      # returns 0,1,2
+      _match_filepath "$@"
+      case $? in
+         0|2)
+            echo "${_patternfile##*/}"
+            exit 0 # subshell
+         ;;
+      esac
+
+      exit 1 # subshell
+   )
+}
+
+
+_match_print_patternfilename()
+{
+   log_entry "_match_print_patternfilename" "$@"
+
+   local format="$1"
+   local patternfile="$2"
+
+   [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
 
    local matchname
 
@@ -857,20 +935,26 @@ _match_print_patternfilename()
 }
 
 
-match_print_filepath()
+# MUST BE CALLED WITH:
+#
+#      shopt -s extglob
+#      set -o noglob
+#      IFS="
+#"
+_match_print_filepath()
 {
-   log_entry "match_print_filepath" "$@"
+   log_entry "_match_print_filepath" "$@"
 
    local format="$1" ; shift
    local filter="$1" ; shift
-   local filename="$3" # sic
+   local filename="$3"
 
    local _patternfile
 
-   local rval
-
    # avoid a backtick subshell here
-   if ! _match_filepath "$@"
+   # returns 0,1,2
+   _match_filepath "$@"
+   if [ $? -eq 1 ]
    then
       return 1
    fi
@@ -897,7 +981,7 @@ match_print_filepath()
 
    if [ -z "${format}" ]
    then
-      echo "${patternfilename}"
+      echo "${filename}"
    else
       _match_print_patternfilename "${format}" "${_patternfile}"
    fi
@@ -1003,13 +1087,19 @@ match_match_main()
                                 "${MULLE_MATCH_DIR}/var/cache"
    match_patterncache="${_cache}"
 
+   local _patternfile
+
+   shopt -s extglob
+   set -o noglob
+   IFS="
+"
    while [ $# -ne 0 ]
    do
-      if match_print_filepath "${OPTION_FORMAT}" \
-                              "${OPTION_MATCH_FILTER}" \
-                              "${ignore_patterncache}" \
-                              "${match_patterncache}" \
-                              "$1"
+      if _match_print_filepath "${OPTION_FORMAT}" \
+                               "${OPTION_MATCH_FILTER}" \
+                               "${ignore_patterncache}" \
+                               "${match_patterncache}" \
+                               "$1"
       then
          if [ $rval -ne 0 ]
          then

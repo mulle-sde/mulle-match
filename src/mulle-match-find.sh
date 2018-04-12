@@ -188,20 +188,20 @@ _find_toplevel_files()
 }
 
 
-_parallel_find_filtered_files()
+parallel_find_filtered_files()
 {
-   log_entry "_parallel_find_filtered_files" "$@"
+   log_entry "parallel_find_filtered_files" "$@"
 
-   local quoted_filenames="$1"
-   local format="$2"
-   local filter="$3"
-   local ignore="$4"
-   local match="$5"
+   local quoted_filenames="$1" ; shift
+   local format="$1" ; shift
+   local filter="$1" ; shift
+   local ignore="$1" ; shift
+   local match="$1" ; shift
 
    local maxjobs
    local running
 
-   maxjobs=`get_core_count`
+   maxjobs="`get_core_count`"
 
    local filename_0
    local filename_1
@@ -219,7 +219,27 @@ _parallel_find_filtered_files()
    local filename_d
    local filename_e
    local filename_f
+   local filename_10
+   local filename_11
+   local filename_12
+   local filename_13
+   local filename_14
+   local filename_15
+   local filename_16
+   local filename_17
+   local filename_18
+   local filename_19
+   local filename_1a
+   local filename_1b
+   local filename_1c
+   local filename_1d
+   local filename_1e
+   local filename_1f
 
+   log_verbose "Find files: ${quoted_filenames}"
+
+   shopt -s extglob
+   set -o noglob
    IFS="
 "
    while read -r filename_0
@@ -239,86 +259,172 @@ _parallel_find_filtered_files()
       read -r filename_d
       read -r filename_e
       read -r filename_f
+      read -r filename_10
+      read -r filename_11
+      read -r filename_12
+      read -r filename_13
+      read -r filename_14
+      read -r filename_15
+      read -r filename_16
+      read -r filename_17
+      read -r filename_18
+      read -r filename_19
+      read -r filename_1a
+      read -r filename_1b
+      read -r filename_1c
+      read -r filename_1d
+      read -r filename_1e
+      read -r filename_1f
 
       IFS="${DEFAULT_IFS}"
 
-     while :
-     do
-        running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
-        if [ "${#running[@]}" -le ${maxjobs} ]
-        then
-           break
-        fi
-        sleep 0.01s # 100Hz
-     done
+      while :
+      do
+         running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
+         if [ "${#running[@]}" -le ${maxjobs} ]
+         then
+            break
+         fi
+         log_debug "Waiting on jobs to finish (${#running[@]})"
+         sleep 0.001s # 1000Hz
+      done
 
-     (
-         match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_0}"
+      (
+         _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_0}"
 
-         [ ! -z "${filename_1}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1}"
-         [ ! -z "${filename_2}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_2}"
-         [ ! -z "${filename_3}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_3}"
+         [ ! -z "${filename_1}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1}"
+         [ ! -z "${filename_2}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_2}"
+         [ ! -z "${filename_3}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_3}"
 
-         [ ! -z "${filename_4}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_4}"
-         [ ! -z "${filename_5}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_5}"
-         [ ! -z "${filename_6}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_6}"
-         [ ! -z "${filename_7}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_7}"
+         [ ! -z "${filename_4}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_4}"
+         [ ! -z "${filename_5}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_5}"
+         [ ! -z "${filename_6}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_6}"
+         [ ! -z "${filename_7}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_7}"
 
-         [ ! -z "${filename_8}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_8}"
-         [ ! -z "${filename_9}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_9}"
-         [ ! -z "${filename_a}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_a}"
-         [ ! -z "${filename_b}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_b}"
+         [ ! -z "${filename_8}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_8}"
+         [ ! -z "${filename_9}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_9}"
+         [ ! -z "${filename_a}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_a}"
+         [ ! -z "${filename_b}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_b}"
 
-         [ ! -z "${filename_c}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_c}"
-         [ ! -z "${filename_d}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_d}"
-         [ ! -z "${filename_e}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_e}"
-         [ ! -z "${filename_f}" ] && match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_f}"
+         [ ! -z "${filename_c}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_c}"
+         [ ! -z "${filename_d}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_d}"
+         [ ! -z "${filename_e}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_e}"
+         [ ! -z "${filename_f}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_f}"
+
+         [ ! -z "${filename_10}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_10}"
+         [ ! -z "${filename_11}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_11}"
+         [ ! -z "${filename_12}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_12}"
+         [ ! -z "${filename_13}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_13}"
+
+         [ ! -z "${filename_14}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_14}"
+         [ ! -z "${filename_15}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_15}"
+         [ ! -z "${filename_16}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_16}"
+         [ ! -z "${filename_17}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_17}"
+
+         [ ! -z "${filename_18}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_18}"
+         [ ! -z "${filename_19}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_19}"
+         [ ! -z "${filename_1a}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1a}"
+         [ ! -z "${filename_1b}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1b}"
+
+         [ ! -z "${filename_1c}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1c}"
+         [ ! -z "${filename_1d}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1d}"
+         [ ! -z "${filename_1e}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1e}"
+         [ ! -z "${filename_1f}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
       shift
-   done < <( set -o noglob; eval_exekutor find ${quoted_filenames} -type f -print )
-   IFS="${DEFAULT_IFS}"
+   done < <( eval_exekutor find ${quoted_filenames} "$@" -print )
 
-   log_verbose "waiting..."
+   IFS="${DEFAULT_IFS}"
+   set +o noglob
+
+   log_fluff "Waiting for jobs to finish..."
    wait
-   log_verbose 'done!'
+   log_fluff 'All jobs finished'
 }
 
 
-_find_filenames()
+find_filenames()
 {
-   log_entry "_find_filenames" "$@"
+   log_entry "find_filenames" "$@"
 
    local format="$1"
    local filter="$2"
    local ignore="$3"
    local match="$4"
 
-   #
-   # now with that out of the way, lets go
-   #
-   local quoted_filenames
+   local name
+   local ignore_dirs
+   local match_files
+   local match_dirs
 
-   quoted_filenames="`_find_toplevel_files "${ignore}"`"
-   if [ -z "${quoted_filenames}" ]
+   IFS=":"
+
+   #
+   # MULLE_MATCH_FIND_LOCATIONS: This is where the find search starts
+   #
+   if [ -z "${MULLE_MATCH_FIND_LOCATIONS}" ]
    then
-      return 1
+      MULLE_MATCH_FIND_LOCATIONS=".mulle-sourcetree/config:\
+src"
    fi
 
-   _parallel_find_filtered_files "${quoted_filenames}" \
-                                 "${format}" \
-                                 "${filter}" \
-                                 "${ignore}" \
-                                 "${match}"
-}
+   for name in ${MULLE_MATCH_FIND_LOCATIONS}
+   do
+      if [ -e "${name}" ]
+      then
+         match_dirs="`concat "${match_dirs}" "'${name}'" `"
+      fi
+   done
 
+   #
+   # MULLE_MATCH_FIND_IGNORE_DIRECTORIES: These are subdirectories that get
+   # ignored. This can be  important for acceptable performance and easier
+   # setup
+   #
+   if [ -z "${MULLE_MATCH_FIND_IGNORE_PATH}" ]
+   then
+      MULLE_MATCH_FIND_IGNORE_PATH="addiction:\
+build:\
+dependency:\
+stash:\
+include:\
+lib:\
+libexec:\
+.git:\
+*.dSYM"
+   fi
 
+   for name in ${MULLE_MATCH_FIND_IGNORE_PATH}
+   do
+      ignore_dirs="`concat "${ignore_dirs}" "-name '$name'" " -o "`"
+   done
 
-find_filenames()
-{
-   log_entry "_find_filenames" "$@"
+   #
+   # MULLE_MATCH_FIND_NAMES: Even more important for acceptable perfomance is
+   # to only match interesting filenames
+   #
+   if [ -z "${MULLE_MATCH_FIND_NAMES}" ]
+   then
+      match_files="-name '*'"
+   else
+      for name in ${MULLE_MATCH_FIND_NAMES}
+      do
+         match_files="`concat "${match_files}" "-name '$name'" " -o "`"
+      done
+   fi
 
-   _find_filenames "$@" | sort
+   IFS="${DEFAULT_IFS}"
+
+   parallel_find_filtered_files "${match_dirs:-.}" \
+                                "${format}" \
+                                "${filter}" \
+                                "${ignore}" \
+                                "${match}" \
+                                "\\(" ${ignore_dirs} "\\)" -prune  \
+                                -o \
+                                -type f \
+                                "\\(" ${match_files} "\\)"
 }
 
 
@@ -341,7 +447,7 @@ match_find_main()
    fi
 
    local OPTION_FORMAT="%f\\n"
-
+   local OPTION_SORTED="YES"
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
 
@@ -365,11 +471,36 @@ match_find_main()
             OPTION_MATCH_FILTER="$1"
          ;;
 
+         --locations)
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_FIND_LOCATIONS="$1"
+         ;;
+
+         --ignore-dirs)
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_FIND_IGNORE_DIRECTORIES="$1"
+         ;;
+
+         --match-names)
+            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_FIND_NAMES="$1"
+         ;;
+
          -f|--format)
             [ $# -eq 1 ] && match_find_usage "missing argument to $1"
             shift
 
             OPTION_FORMAT="$1"
+         ;;
+
+         -u|--unsorted)
+            OPTION_SORTED="NO"
          ;;
 
          -*)
@@ -404,9 +535,16 @@ match_find_main()
                                 "${MULLE_MATCH_DIR}/var/cache/match"
    match_patterncache="${_cache}"
 
-
-   find_filenames "${OPTION_FORMAT}" \
-                  "${OPTION_MATCH_FILTER}" \
-                  "${ignore_patterncache}" \
-                  "${match_patterncache}"
+   if [ "${OPTION_SORTED}" = "YES" ]
+   then
+      find_filenames "${OPTION_FORMAT}" \
+                     "${OPTION_MATCH_FILTER}" \
+                     "${ignore_patterncache}" \
+                     "${match_patterncache}" | sort
+   else
+      find_filenames "${OPTION_FORMAT}" \
+                     "${OPTION_MATCH_FILTER}" \
+                     "${ignore_patterncache}" \
+                     "${match_patterncache}"
+   fi
 }

@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.11
+MULLE_EXECUTABLE_VERSION=0.1.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -76,6 +76,7 @@ print_hidden_flags()
    echo "   -ed <dir>      : set MULLE_MATCH_ETC_DIR"
    echo "   -id <dir>      : set MULLE_MATCH_IGNORE_DIR"
    echo "   -md <dir>      : set MULLE_MATCH_MATCH_DIR"
+   echo "   -pd <dir>      : set MULLE_MATCH_PRUNE_DIR"
 }
 
 
@@ -139,8 +140,6 @@ EOF
 
    Use ${MULLE_USAGE_NAME} <command> -h for topical help.
 EOF
-
-   exit 1
 }
 
 
@@ -208,6 +207,7 @@ main()
 
          -id|--ignore-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            shift
 
             MULLE_MATCH_IGNORE_DIR="$1"
          ;;
@@ -386,8 +386,6 @@ _init()
 
    trap trap_fail INT
    set -o pipefail
-
-   MULLE_ARGUMENTS="$*"
 }
 ###
 ### INIT

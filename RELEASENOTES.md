@@ -1,3 +1,10 @@
+## 0.1.0
+
+* improved the regexp speed once again
+* do not use regexps to prune directories, like before, but just for filenames
+* this greatly improves find speed
+
+
 ### 0.0.11
 
 * speed up find a lot by using a proper batchsize for parallelism

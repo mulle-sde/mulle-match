@@ -3,7 +3,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-expect_match_filepath()
+expect_matching_filepath_pattern()
 {
    log_entry "expect_match_print_filepath" "$@"
 
@@ -14,7 +14,7 @@ expect_match_filepath()
 
    local result
 
-   if ! result="`match_filepath "$@"`"
+   if ! result="`matching_filepath_pattern "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filepath \"${filepath}\""
    fi
@@ -76,10 +76,10 @@ main()
    _patternfilefunctions_passing_filter "match" ""
    match="${_cache}"
 
-   expect_match_filepath "1-a--"  "${ignore}" "${match}" "a"
-   expect_match_filepath "2-b--x" "${ignore}" "${match}" "b"
-   expect_match_filepath "4-aa--" "${ignore}" "${match}" "aa"
-   expect_match_filepath "4-aa--" "${ignore}" "${match}" "aaa"
+   expect_matching_filepath_pattern "1-a--"  "${ignore}" "${match}" "a"
+   expect_matching_filepath_pattern "2-b--x" "${ignore}" "${match}" "b"
+   expect_matching_filepath_pattern "4-aa--" "${ignore}" "${match}" "aa"
+   expect_matching_filepath_pattern "4-aa--" "${ignore}" "${match}" "aaa"
 
    log_verbose "----- #1 PASSED -----"
 
