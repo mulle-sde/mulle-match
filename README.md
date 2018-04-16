@@ -2,8 +2,6 @@
 
 ... for Linux, OS X, FreeBSD, Windows
 
-![](mulle-match.png)
-
 **mulle-match** matches filenames against a set of .gitignore like patternfiles
 to categorize files according to their filenames and location.
 
@@ -49,11 +47,11 @@ Example:
 ```
 
 A *patternfile* resides in either the `ignore.d` folder or the
-`match.d` folder. It's filename is composed of three segements. 
+`match.d` folder. It's filename is composed of three segements.
 The first digit segment is there to proritize patternfiles. Lower
 numbers are matched before higher numbers (`ls` sorting)
 . The second segment gives the type of the file. And the last segment
-the category of the file. A type is required, a category is optional. 
+the category of the file. A type is required, a category is optional.
 
 ![](dox/mulle-match-match.png)
 

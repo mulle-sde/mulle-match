@@ -127,14 +127,14 @@ _transform_path_pattern()
 
    case "${pattern}" in
       */\*\*/*)
-         prefix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\1|' <<< "${pattern}"`"
-         suffix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\2|' <<< "${pattern}"`"
+         prefix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\1|' <<< "${pattern}"`"
+         suffix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\2|' <<< "${pattern}"`"
          prefix="`_transform_path_pattern "${prefix}"`"
          suffix="`_transform_path_pattern "${suffix}"`"
 
          log_debug "prefix: $prefix"
          log_debug "suffix: $suffix"
-         echo "${prefix}*${suffix}"
+         echo "${prefix}?(/*/|/)${suffix}"
          return
       ;;
 

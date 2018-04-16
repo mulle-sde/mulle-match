@@ -1,3 +1,7 @@
+### 0.1.1
+
+* fix bug with build CMakeLists.txt CMakePackage.cmake dox install.sh LICENSE mulle-match mulle-match.png mulle-match.sublime-project mulle-match.sublime-workspace mulle-project README.md RELEASENOTES.md src tests tmp.m7MMdQ8d tmp.te71S9hn tmp.TE7jOCXo tmp.VAjnUgZa pattern
+
 ## 0.1.0
 
 * improved the regexp speed once again
