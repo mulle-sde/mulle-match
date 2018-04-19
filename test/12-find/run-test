@@ -49,6 +49,8 @@ main()
 
    _options_mini_main "$@"
 
+   MULLE_MATCH_FIND_LOCATIONS="a:b:z"
+   export MULLE_MATCH_FIND_LOCATIONS
    #-----------
 
    local expected

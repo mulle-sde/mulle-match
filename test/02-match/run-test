@@ -31,22 +31,28 @@ expect_match_print_filepath()
    log_entry "expect_match_print_filepath" "$@"
 
    local expected="$1"; shift
-   local format="$1"
-   local ignore_patterncaches="$2"
-   local match_patterncaches="$3"
-   local filepath="$4"
+   local format="$1" ; shift
+   local ignore_patterncaches="$1"
+   local match_patterncaches="$2"
+   local filename="$3"
 
    local result
 
-   if ! result="`match_print_filepath "$@"`"
+   set -o noglob
+   IFS="
+"
+
+   if ! result="`_match_print_filepath "${format}" "" "$@"`"
    then
-      fail "Pattern \"${pattern}\" did not match filepath \"${filepath}\""
+      fail "Pattern \"${pattern}\" did not match filename \"${filename}\""
    fi
 
    if [ "${result}" != "${expected}" ]
    then
-      fail "Result \"${result}\" was expected to be \"${expected}\""
+      fail "Result \"${result}\" was expected to be \"${filename}\""
    fi
+
+   IFS="${DEFAULT_IFS}"
 }
 
 
@@ -57,7 +63,6 @@ main()
    _options_mini_main "$@"
 
    shopt -s extglob
-
    #
    # memo: remember we only deal with relative paths w/o leading /!
    # for simplicity it's also assumed that no relative path contain a
@@ -69,11 +74,11 @@ main()
    local _cache
 
    _cache=
-   _patternfilefunctions_passing_filter "ignore" ""
+   _define_patternfilefunctions "ignore" ""
    ignore="${_cache}"
 
    _cache=
-   _patternfilefunctions_passing_filter "match" ""
+   _define_patternfilefunctions "match" ""
    match="${_cache}"
 
    expect_matching_filepath_pattern "1-a--"  "${ignore}" "${match}" "a"

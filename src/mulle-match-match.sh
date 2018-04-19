@@ -134,7 +134,7 @@ _transform_path_pattern()
 
          log_debug "prefix: $prefix"
          log_debug "suffix: $suffix"
-         echo "${prefix}?(/*/|/)${suffix}"
+         echo "${prefix}@(/*/|/)${suffix}"
          return
       ;;
 
@@ -199,7 +199,8 @@ print_case_expression()
       ;;
 
       */)
-         echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
+         # echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
+         echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
       ;;
 
       *\]\)\/*)

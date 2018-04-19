@@ -38,35 +38,32 @@ main()
    local match
    local _cache
 
-   _patternfilefunctions_passing_filter "ignore.d" ""
+   _define_patternfilefunctions "ignore.d"
    ignore="${_cache}"
 
-   _patternfilefunctions_passing_filter "match.d" "source"
+   _define_patternfilefunctions "match.d"
    match="${_cache}"
 
    #-----------
    expected="src/foo.c
 src/main.c"
 
-   expect_find_filenames "${expected}" "%f\\n" "${ignore}" "${match}"
+   MULLE_MATCH_FIND_LOCATIONS="src:foo"
+   export MULLE_MATCH_FIND_LOCATIONS
+
+   expect_find_filenames "${expected}" "%f\\n" "source" "${ignore}" "${match}"
    log_verbose "----- #1 PASSED -----"
 
    #-----------
-   _patternfilefunctions_passing_filter "match.d" "header"
-   match="${_cache}"
-
    expected="src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "${ignore}" "${match}"
+   expect_find_filenames "${expected}" "%f\\n" "header" "${ignore}" "${match}"
 
    log_verbose "----- #2 PASSED -----"
 
    #-----------
-   _patternfilefunctions_passing_filter "match.d" "header"
-   match="${_cache}"
-
    expected="foo/wrong.h
 src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "" "${match}"
+   expect_find_filenames "${expected}" "%f\\n" "header" "" "${match}"
 
    log_verbose "----- #3 PASSED -----"
 
