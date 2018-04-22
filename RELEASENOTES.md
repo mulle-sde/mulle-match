@@ -1,3 +1,7 @@
+### 0.1.3
+
+* small code improvement
+
 ### 0.1.2
 
 * update and fix test

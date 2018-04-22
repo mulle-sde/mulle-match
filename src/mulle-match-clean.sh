@@ -96,7 +96,6 @@ match_clean_main()
    # because MULLE_MATCH_DIR could be shared with other MULLE tools
    # like mulle-sde and we don't want to wipe their stuff
    #
-   rmdir_safer "${MULLE_MATCH_DIR}/var/run/match"
    rmdir_safer "${MULLE_MATCH_DIR}/var/cache/match"
 }
 
