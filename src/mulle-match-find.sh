@@ -369,6 +369,7 @@ find_filenames()
 src"
    fi
 
+   set -f
    for name in ${MULLE_MATCH_FIND_LOCATIONS}
    do
       if [ -e "${name}" ]
@@ -376,6 +377,7 @@ src"
          match_dirs="`concat "${match_dirs}" "'${name}'" `"
       fi
    done
+   set +f
 
    #
    # MULLE_MATCH_FIND_IGNORE_DIRECTORIES: These are subdirectories that get
@@ -395,10 +397,12 @@ libexec:\
 *.dSYM"
    fi
 
+   set -f
    for name in ${MULLE_MATCH_FIND_IGNORE_PATH}
    do
       ignore_dirs="`concat "${ignore_dirs}" "-name '$name'" " -o "`"
    done
+   set +f
 
    #
    # MULLE_MATCH_FIND_NAMES: Even more important for acceptable perfomance is
@@ -408,10 +412,12 @@ libexec:\
    then
       match_files="-name '*'"
    else
+      set -f
       for name in ${MULLE_MATCH_FIND_NAMES}
       do
          match_files="`concat "${match_files}" "-name '$name'" " -o "`"
       done
+      set +f
    fi
 
    IFS="${DEFAULT_IFS}"

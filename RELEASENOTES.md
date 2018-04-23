@@ -1,3 +1,7 @@
+### 0.1.4
+
+* fix some bugs
+
 ### 0.1.3
 
 * small code improvement
