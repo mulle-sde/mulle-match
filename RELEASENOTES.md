@@ -1,3 +1,7 @@
+### 0.1.5
+
+* fix an ugly warning
+
 ### 0.1.4
 
 * fix some bugs

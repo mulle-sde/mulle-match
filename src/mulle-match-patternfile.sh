@@ -771,6 +771,7 @@ rename_patternfile_main()
    [ ! -f "${srcfile}" ] && fail "\"${patternfile}\" not found (at ${srcfile})"
 
    exekutor ${operation} "${srcfile}" "${dstfile}"
+   exekutor chmod ug+w "${dstfile}"
 }
 
 
@@ -983,7 +984,7 @@ repair_patternfile_main()
             log_verbose "\"${patternfile}\" is missing: recreate"
             symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
          else
-            log_info "\"${patternfile}\" is not used. Use --add to add it."
+            log_info "\"${patternfile}\" is not used. Use \`repair --add\` to add it."
             can_remove_etc="NO"
          fi
       fi
