@@ -16,12 +16,8 @@ set( SCRIPTS
 mulle-match
 )
 
-set( LIBRARY_SCRIPTS
-src/mulle-match-clean.sh
-src/mulle-match-find.sh
-src/mulle-match-match.sh
-src/mulle-match-patternfile.sh
-src/mulle-match-bash-completion.sh
+file( GLOB LIBRARY_SCRIPTS
+   "src/*.sh"
 )
 
 

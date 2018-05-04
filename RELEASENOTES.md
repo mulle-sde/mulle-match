@@ -1,3 +1,7 @@
+### 0.1.6
+
+* CMakeLists.txt CMakePackage.cmake LICENSE README.md RELEASENOTES.md build dox install.sh mulle-match mulle-match.png mulle-match.sublime-project mulle-match.sublime-workspace mulle-project src test tmp.jbgUmYFd simplified CMakeLists.txt
+
 ### 0.1.5
 
 * fix an ugly warning
