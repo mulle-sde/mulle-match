@@ -1,3 +1,7 @@
+### 0.1.9
+
+* rename install to installer, because of name conflict
+
 ### 0.1.8
 
 * better usage info
