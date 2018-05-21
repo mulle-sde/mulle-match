@@ -43,12 +43,23 @@ match_find_usage()
 Usage:
    ${MULLE_USAGE_NAME} find [options]
 
-   Find files matching the patternfiles in the project directory.
+   Find files matching the patternfiles in the project directory. For good
+   performance it is important to restrict the searched items as much as
+   possible using the environment variables.
+
+   You can further restrict the output, by only matching certian patternfile
+   types.
+
+   The following example searches for C source files in 'src' and 'foo/src':
+
+      MULLE_MATCH_FIND_NAMES="*.c:*.h" \\
+      MULLE_MATCH_FIND_LOCATIONS="src:foo/src" \\
+         ${MULLE_USAGE_NAME} find --mf source
 
 Options:
    -f <format>    : specify output values
 EOF
-   if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" = "YES" ]
    then
      cat <<EOF >&2
                     This is like a simplified C printf format:
@@ -59,14 +70,14 @@ EOF
                         %t : type of match file
                         %I : category of match file as an uppercase identifier
                         \\n : a linefeed
-                     (e.g. "category=%c,type=%t\\n)"
+                     (e.g. "category=%c,type=%t\\n")
 EOF
    fi
 
    cat <<EOF >&2
    -mf <filter>   : specify a filter for matching <type>
 EOF
-   if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" = "YES" ]
    then
      cat <<EOF >&2
                     A filter is a comma separated list of type expressions.
@@ -75,7 +86,17 @@ EOF
                     negated by being prefixed with !.
                     Example: filter is "header*,!header_private"
 EOF
+   else
+      echo "      (${MULLE_USAGE_NAME} -v find help for more)"
    fi
+
+     cat <<EOF >&2
+
+Environment:
+   MULLE_MATCH_FIND_NAMES     : filename wildcards, separated by ':'   (*)
+   MULLE_MATCH_FIND_LOCATIONS : paths to search for, separated by ':'' (src)
+
+EOF
    exit 1
 }
 
@@ -236,7 +257,7 @@ parallel_find_filtered_files()
    local filename_1e
    local filename_1f
 
-   log_verbose "Find files: ${quoted_filenames}"
+   log_verbose "Search locations: ${quoted_filenames}"
 
    shopt -s extglob
    set -o noglob

@@ -1,3 +1,7 @@
+### 0.1.8
+
+* better usage info
+
 ### 0.1.7
 
 * rename install.sh to install
