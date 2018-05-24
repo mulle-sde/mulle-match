@@ -1,3 +1,7 @@
+### 0.1.11
+
+* fix homebrew install ruby script
+
 ### 0.1.10
 
 * catch renumbered patternfiles in upgrade
