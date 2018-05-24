@@ -1,3 +1,7 @@
+### 0.1.10
+
+* catch renumbered patternfiles in upgrade
+
 ### 0.1.9
 
 * rename install to installer, because of name conflict

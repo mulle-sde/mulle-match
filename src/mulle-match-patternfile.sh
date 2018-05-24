@@ -930,13 +930,14 @@ repair_patternfile_main()
    local can_remove_etc
 
    can_remove_etc="YES"
+
    #
    # go through etc, throw out symlinks that point to nowhere
    # create symlinks for files that are identical in share and throw old
    # files away
    #
    shopt -s nullglob
-   for filename in "${dstdir}"/*
+   for filename in "${dstdir}"/* # dstdir is etc
    do
       shopt -u nullglob
 
@@ -945,8 +946,18 @@ repair_patternfile_main()
       then
          if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
          then
-            log_verbose "\"${patternfile}\" no longer exists: remove"
-            exekutor rm "${filename}"
+            local globtest
+
+            globtest="*-${patternfile#*-}"
+            if [ -f "${srcdir}"/${globtest} ]
+            then
+               log_verbose "\"${patternfile}\" moved to ${globtest}: relink"
+               exekutor rm "${filename}"
+               symlink_or_copy_patternfile "${srcdir}/"${globtest} "${dstdir}"
+            else
+               log_verbose "\"${patternfile}\" no longer exists: remove"
+               exekutor rm "${filename}"
+            fi
          else
             log_fluff "\"${patternfile}\" is a healthy symlink: keep"
          fi

@@ -555,11 +555,11 @@ match_find_main()
    local match_patterncache
 
    _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/cache/match"
+                                "${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}/cache/match"
    ignore_patterncache="${_cache}"
 
    _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/cache/match"
+                                "${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}/cache/match"
    match_patterncache="${_cache}"
 
    if [ "${OPTION_SORTED}" = "YES" ]
