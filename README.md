@@ -9,20 +9,15 @@ to categorize files according to their filenames and location.
 ![](dox/mulle-sde-overview.png)
 
 
-## Install
-
-
-OS          | Command
-------------|------------------------------------
-macos       | `brew install mulle-kybernetik/software/mulle-match`
-other       | Install prerequisite [mulle-bashfunctions](//github.com/mulle-nat/mulle-bashfunctions) first. Then `./install.sh`
-
-
-
 Executable      | Description
 ----------------|--------------------------------
 `mulle-match`   | Match filename according to .gitignore like patternfiles
 
+
+## Install
+
+See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how
+to install mulle-sde.
 
 
 ## Commands

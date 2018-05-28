@@ -1,3 +1,7 @@
+### 0.1.13
+
+* simplify README
+
 ### 0.1.12
 
 * fix package dependencies more
