@@ -115,7 +115,7 @@ find_emit_common_directories()
 
    local collection
 
-   collection="`sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | sort -u`"
+   collection="`sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | LC_ALL=C sort -u`"
 
    if [ ! -z "${collection}" ]
    then
@@ -567,7 +567,7 @@ match_find_main()
       find_filenames "${OPTION_FORMAT}" \
                      "${OPTION_MATCH_FILTER}" \
                      "${ignore_patterncache}" \
-                     "${match_patterncache}" | sort
+                     "${match_patterncache}" | LC_ALL=C sort
    else
       find_filenames "${OPTION_FORMAT}" \
                      "${OPTION_MATCH_FILTER}" \

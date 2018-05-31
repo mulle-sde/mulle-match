@@ -1,3 +1,7 @@
+### 0.1.14
+
+* use `LC_ALL=C` for sort
+
 ### 0.1.13
 
 * simplify README

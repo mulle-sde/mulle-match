@@ -11,7 +11,7 @@ expect_find_filenames()
 
    local result
 
-   result="`find_filenames "$@" | sort`"
+   result="`find_filenames "$@" | LC_ALL=C sort`"
 
    if [ "${result}" != "${expected}" ]
    then
