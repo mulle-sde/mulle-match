@@ -1,3 +1,7 @@
+### 0.1.16
+
+* dont crash if not match.d is present
+
 ### 0.1.15
 
 * extglob protect case globs

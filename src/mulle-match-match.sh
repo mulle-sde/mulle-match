@@ -980,7 +980,7 @@ _match_print_filepath()
       esac
    fi
 
-   if [ -z "${format}" ]
+   if [ -z "${format}" -o -z "${_patternfile}" ]
    then
       echo "${filename}"
    else
