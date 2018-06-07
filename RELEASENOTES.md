@@ -1,3 +1,7 @@
+### 0.1.15
+
+* extglob protect case globs
+
 ### 0.1.14
 
 * use `LC_ALL=C` for sort

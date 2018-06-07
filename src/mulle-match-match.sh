@@ -102,7 +102,7 @@ _match_assert_pattern()
          internal_fail "Empty pattern is illegal"
       ;;
 
-      *//*)
+      *"//"*)
          internal_fail "Pattern \"${pattern}\" is illegal. It must not contain  \"//\""
       ;;
    esac
@@ -126,7 +126,7 @@ _transform_path_pattern()
    local suffix
 
    case "${pattern}" in
-      */\*\*/*)
+      *"/**/"*)
          prefix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\1|' <<< "${pattern}"`"
          suffix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\2|' <<< "${pattern}"`"
          prefix="`_transform_path_pattern "${prefix}"`"
@@ -138,7 +138,7 @@ _transform_path_pattern()
          return
       ;;
 
-      \*\*/*)
+      "**/"*)
          suffix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\2|' <<< "${pattern}"`"
          suffix="`_transform_path_pattern "${suffix}"`"
 
@@ -147,21 +147,21 @@ _transform_path_pattern()
          return
       ;;
 
-      *\*\**)
+      *"**"*)
          fail "Invalid pattern. ** must be followed by /"
       ;;
 
-      *\*\(*)
+      *"*("*)
          # do nothing for *()
       ;;
 
-      */\*)
+      *"/*")
          prefix="`_transform_path_pattern "${prefix%?}"`"
          echo "${prefix}*([^/])"
          return
       ;;
 
-      *\**)
+      *"*"*)
          prefix="`sed -e s'|\(.*\)\*\(.*\)|\1|' <<< "${pattern}"`"
          suffix="`sed -e s'|\(.*\)\*\(.*\)|\2|' <<< "${pattern}"`"
          prefix="`_transform_path_pattern "${prefix}"`"
@@ -184,7 +184,7 @@ print_case_expression()
    local pattern="$1"
 
    case "${pattern}" in
-      /*/)
+      "/"*"/")
          # support older bashes
          local snip
 
@@ -194,16 +194,16 @@ print_case_expression()
          echo "      ${snip}|${pattern:1}*)"
       ;;
 
-      /*)
+      "/"*)
          echo "      ${pattern:1})"
       ;;
 
-      */)
+      *"/")
          # echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
          echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
       ;;
 
-      *\]\)\/*)
+      *"])/"*)
          echo "      ${pattern})"
       ;;
 
@@ -230,12 +230,12 @@ pattern_emit_matchcode()
    # simple invert
    #
    case "${pattern}" in
-      !!*)
+      "!!"*)
          # consider that an escape for extglob pattern
          pattern="${pattern:1}"
       ;;
 
-      !*)
+      "!"*)
          pattern="${pattern:1}"
          YES=2   # negated
          NO=1    # doesn't match so we dont care
@@ -245,7 +245,7 @@ pattern_emit_matchcode()
    _match_assert_pattern "${pattern}"
 
    case "${pattern}" in
-      *\**)
+      *"*"*)
          pattern="`_transform_path_pattern "${pattern}"`"
       ;;
    esac
@@ -339,12 +339,12 @@ pattern_emit_case()
    # simple invert
    #
    case "${pattern}" in
-      !!*)
+      "!!"*)
          # consider that an escape for extglob pattern
          pattern="${pattern:1}"
       ;;
 
-      !*)
+      "!"*)
          pattern="${pattern:1}"
          YES=1   # negated
          NO=     # doesn't match so we dont care
@@ -354,7 +354,7 @@ pattern_emit_case()
    _match_assert_pattern "${pattern}"
 
    case "${pattern}" in
-      *\**)
+      *"*"*)
          pattern="`_transform_path_pattern "${pattern}"`"
       ;;
    esac
@@ -531,9 +531,9 @@ patternfile_identifier()
 
    local filename="$1"
 
-   sed -e 's|.*ignore.d/\(.*\)|i_\1|' \
+   LC_ALL=C sed -e 's|.*ignore.d/\(.*\)|i_\1|' \
        -e 's|.*match.d/\(.*\)|m_\1|' <<< "${filename}" |
-      tr -c '[a-zA-Z0-9_\n]' '_'
+      LC_ALL=C tr -c '[a-zA-Z0-9_\n]' '_'
 }
 
 #
