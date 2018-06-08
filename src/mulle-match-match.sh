@@ -952,6 +952,8 @@ _match_print_filepath()
 
    local _patternfile
 
+   filename="${filename#./}"
+   
    # avoid a backtick subshell here
    # returns 0,1,2
    _match_filepath "$@"

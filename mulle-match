@@ -32,7 +32,7 @@
 [ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.1.16
+MULLE_EXECUTABLE_VERSION=0.1.17
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -184,7 +184,7 @@ main()
          ;;
 
          -cd|--config-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
             MULLE_MATCH_DIR="$1"
@@ -195,7 +195,7 @@ main()
          ;;
 
          -ed|--etc-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
             MULLE_MATCH_ETC_DIR="$1"
@@ -206,14 +206,14 @@ main()
          ;;
 
          -id|--ignore-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
             MULLE_MATCH_IGNORE_DIR="$1"
          ;;
 
          -md|--match-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "missing argument to \"$1\""
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
             MULLE_MATCH_MATCH_DIR="$1"

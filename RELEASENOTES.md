@@ -1,3 +1,7 @@
+### 0.1.17
+
+* fix for `PROJECT_SOURCE_DIR` being . and duplicate finds
+
 ### 0.1.16
 
 * dont crash if not match.d is present

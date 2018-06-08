@@ -354,7 +354,7 @@ parallel_find_filtered_files()
       ) &
 
       shift
-   done < <( eval_exekutor find ${quoted_filenames} "$@" -print )
+   done < <( eval_exekutor find ${quoted_filenames} "$@" -print | rexekutor sed -e 's|^./||g' | rexekutor sort -u )
 
    IFS="${DEFAULT_IFS}"
    set +o noglob
