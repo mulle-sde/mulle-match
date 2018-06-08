@@ -448,7 +448,6 @@ make_file_from_symlinked_patternfile()
       flags="-v"
    fi
 
-   set -x
    local targetfile
 
    targetfile="`readlink "${dstfile}"`"

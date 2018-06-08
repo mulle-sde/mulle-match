@@ -1,3 +1,7 @@
+### 0.1.18
+
+* add new -pf option to test singular patternfiles
+
 ### 0.1.17
 
 * fix for `PROJECT_SOURCE_DIR` being . and duplicate finds

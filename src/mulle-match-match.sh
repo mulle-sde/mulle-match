@@ -80,7 +80,8 @@ EOF
                     Example: "header*,!header_private"
 EOF
    cat <<EOF >&2
-   -p <pattern>   : match a single pattern against a single filename
+   -pf <patfile>  : match the filename against the specified patternfile
+   -p <pattern>   : match the filename against the specified pattern against
 EOF
    fi
    exit 1
@@ -306,7 +307,7 @@ _pattern_function_header()
 
    echo "${functionname}()
 {"
-   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" -a "${MULLE_FLAG_LOG_SETTINGS}" != "YES" ]
    then
       echo "   log_entry ${functionname} \"\$@\""
    fi
@@ -449,7 +450,11 @@ pattern_matches_relative_filename()
    functionname="`pattern_unique_functionname`"
 
    declaration="`pattern_emit_function "${functionname}" "${pattern}"`"
-   log_debug "define: ${declaration}"
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = "YES" ]
+   then
+      log_trace2 "${declaration}"
+   fi
+
    eval "${declaration}"
 
    "${functionname}" "${filename}"  # just leak
@@ -500,8 +505,9 @@ patternfile_read()
 
    local filename="$1"
 
-   if [ ! -e "${filename}" ]
+   if [ ! -f "${filename}" ]
    then
+      log_debug "\"${filename}\" does not exist"
       return 1
    fi
 
@@ -629,6 +635,11 @@ ${functiontext}"
    #
    # we use the patternfile as the identifier, so we can cache it in memory
    #
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = "YES" ]
+   then
+      log_trace2 "${alltext}"
+   fi
+
    eval "${alltext}" || internal_fail "failed to produce functions"
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
@@ -647,6 +658,38 @@ ${functiontext}"
 # TODO: cache functions in filesystem
 #
 # !!! Don't backtick this !!!
+_define_patternfilefunction()
+{
+   log_entry "_define_patternfilefunction" "$@"
+
+   local patternfile="$1"
+   local cachedirectory="$2"
+
+   local varname
+
+   varname="__p__`patternfile_identifier "${patternfile}"`"
+   log_debug "Function \"${varname}\" for \"${patternfile}\""
+   if eval [ -z \$\{${varname}+x\} ]
+   then
+      if ! _patternfilefunction_create "${patternfile}" \
+                                       "${varname}" \
+                                       "${cachedirectory}" # will add to _cache
+      then
+         return 1
+      fi
+   fi
+
+   _cache="`add_line "${_cache}" "${varname}"`"
+
+   local varname_f
+
+   varname_f="`fast_basename "${patternfile}"`"
+   eval "${varname}_f='${varname_f}'"
+
+   return 0
+}
+
+
 _define_patternfilefunctions()
 {
    log_entry "_define_patternfilefunctions" "$@"
@@ -677,25 +720,7 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
          ;;
       esac
 
-      local varname
-
-      varname="__p__`patternfile_identifier "${patternfile}"`"
-      log_debug "Function \"${varname}\" for \"${patternfile}\""
-      if eval [ -z \$\{${varname}+x\} ]
-      then
-         if ! _patternfilefunction_create "${patternfile}" \
-                                          "${varname}" \
-                                          "${cachedirectory}" # will add to _cache
-         then
-            continue
-         fi
-      fi
-      _cache="`add_line "${_cache}" "${varname}"`"
-
-      local varname_f
-
-      varname_f="`fast_basename "${patternfile}"`"
-      eval "${varname}_f='${varname_f}'"
+      _define_patternfilefunction "${patternfile}" "${cachedirectory}"
    done
 
    shopt -u nullglob
@@ -953,7 +978,7 @@ _match_print_filepath()
    local _patternfile
 
    filename="${filename#./}"
-   
+
    # avoid a backtick subshell here
    # returns 0,1,2
    _match_filepath "$@"
@@ -1003,6 +1028,7 @@ match_match_main()
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
    local OPTION_PATTERN
+   local OPTION_PATTERN_FILE
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -1046,6 +1072,13 @@ match_match_main()
             OPTION_PATTERN="$1"
          ;;
 
+         -pf|--pattern-file)
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+            shift
+
+            OPTION_PATTERN_FILE="$1"
+         ;;
+
          -*)
             match_match_usage "unknown option \"$1\""
             ;;
@@ -1082,13 +1115,33 @@ match_match_main()
 
    local _cache
 
-   _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/cache"
-   ignore_patterncache="${_cache}"
+   if [ ! -z "${OPTION_PATTERN_FILE}" ]
+   then
+      if [ ! -f "${OPTION_PATTERN_FILE}" ]
+      then
+         if [ -f "${MULLE_MATCH_MATCH_DIR}/${OPTION_PATTERN_FILE}" ]
+         then
+            OPTION_PATTERN_FILE="${MULLE_MATCH_MATCH_DIR}/${OPTION_PATTERN_FILE}"
+         else
+            if [ -f "${MULLE_MATCH_IGNORE_DIR}/${OPTION_PATTERN_FILE}" ]
+            then
+               OPTION_PATTERN_FILE="${MULLE_MATCH_IGNORE_DIR}/${OPTION_PATTERN_FILE}"
+            fi
+         fi
+      fi
 
-   _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/cache"
-   match_patterncache="${_cache}"
+      ignore_patterncache=""
+      _define_patternfilefunction "${OPTION_PATTERN_FILE}"
+      match_patterncache="${_cache}"
+   else
+      _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
+                                   "${MULLE_MATCH_DIR}/var/cache"
+      ignore_patterncache="${_cache}"
+
+      _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
+                                   "${MULLE_MATCH_DIR}/var/cache"
+      match_patterncache="${_cache}"
+   fi
 
    local _patternfile
 
