@@ -261,12 +261,6 @@ _list_patternfiles()
       return
    fi
 
-   local outputname
-
-   outputname="`fast_dirname "${directory}"`"
-
-   log_info "`fast_basename "${directory}"` (`fast_basename "${outputname}"`):"
-
    (
       exekutor cd "${directory}"
       exekutor ls -1 | egrep '[0-9]*-.*--.*'
@@ -312,8 +306,26 @@ list_patternfile_main()
       ;;
    esac
 
+
+   local outputname
+   local where
+   local foldername
+
+   outputname="`fast_dirname "${directory}" `"
+   where="`fast_basename "${outputname}" `"
+   foldername="${OPTION_FOLDER_NAME}"
+
+   if [ "${where}" = "etc" ]
+   then
+      where="${C_MAGENTA}${BOLD}${where}${C_INFO}"
+      foldername="${C_MAGENTA}${BOLD}etc${C_INFO}/${foldername}"
+   fi
+
+
    if [ "${OPTION_DUMP}" != "YES" ]
    then
+      log_info "${outputname} (${where}):"
+
       _list_patternfiles "${directory}"
       return $?
    fi
@@ -326,7 +338,7 @@ list_patternfile_main()
    do
       IFS="${DEFAULT_IFS}"
       log_info "-----------------------------------------"
-      log_info "${OPTION_FOLDER_NAME}/${patternfile}"
+      log_info "${foldername}/${patternfile}"
       log_info "-----------------------------------------"
       cat "${directory}/${patternfile}"
       echo
@@ -1005,6 +1017,7 @@ repair_patternfile_main()
    then
       log_info "\"etc/${OPTION_FOLDER_NAME}\" contains no user changes so use \"share\" again"
       rmdir_safer "${dstdir}"
+      rmdir_if_empty "${MULLE_SDE_ETC_DIR}"
    fi
 }
 

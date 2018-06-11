@@ -1,3 +1,7 @@
+### 0.1.19
+
+* make user defined patternfiles more detectable, be more verbose in match
+
 ### 0.1.18
 
 * add new -pf option to test singular patternfiles

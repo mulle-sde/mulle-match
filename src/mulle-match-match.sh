@@ -1099,10 +1099,10 @@ match_match_main()
    then
       if pattern_matches_relative_filename "${OPTION_PATTERN}" "$1"
       then
-         echo "match"
+         log_verbose "match"
          return 0
       fi
-      echo "no match"
+      log_verbose "no match"
       return 1
    fi
 
@@ -1168,5 +1168,11 @@ match_match_main()
       shift
    done
 
+   if [ "${rval}" -eq 0 ]
+   then
+      log_verbose "match"
+   else
+      log_verbose "no match"
+   fi
    return $rval
 }
