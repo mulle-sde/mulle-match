@@ -286,7 +286,7 @@ list_patternfile_main()
          ;;
 
          -*)
-            list_patternfile_usage "unknown option \"$1\""
+            list_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)
@@ -360,7 +360,7 @@ cat_patternfile_main()
          ;;
 
          -*)
-            cat_patternfile_usage "unknown option \"$1\""
+            cat_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)
@@ -607,7 +607,7 @@ add_patternfile_main()
          ;;
 
          -*)
-            add_patternfile_usage "unknown option \"$1\""
+            add_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)
@@ -707,7 +707,7 @@ rename_patternfile_main()
          ;;
 
          -*)
-             ${usage} "unknown option \"$1\""
+             ${usage} "Unknown option \"$1\""
          ;;
 
          *)
@@ -856,7 +856,7 @@ edit_patternfile_main()
          ;;
 
          -*)
-            edit_patternfile_usage "unknown option \"$1\""
+            edit_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)
@@ -911,7 +911,7 @@ repair_patternfile_main()
          ;;
 
          -*)
-            repair_patternfile_usage "unknown option \"$1\""
+            repair_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)
@@ -1073,7 +1073,7 @@ match_patternfile_main()
          ;;
 
          -*)
-            match_patternfile_usage "unknown option \"$1\""
+            match_patternfile_usage "Unknown option \"$1\""
          ;;
 
          *)

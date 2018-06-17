@@ -1,3 +1,7 @@
+### 0.1.20
+
+* capitalize error message
+
 ### 0.1.19
 
 * make user defined patternfiles more detectable, be more verbose in match

@@ -78,7 +78,7 @@ match_clean_main()
          ;;
 
          -*)
-            match_clean_usage "unknown option \"$1\""
+            match_clean_usage "Unknown option \"$1\""
          ;;
 
          *)

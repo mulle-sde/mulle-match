@@ -1080,7 +1080,7 @@ match_match_main()
          ;;
 
          -*)
-            match_match_usage "unknown option \"$1\""
+            match_match_usage "Unknown option \"$1\""
             ;;
 
          *)

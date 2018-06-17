@@ -527,7 +527,7 @@ match_find_main()
          ;;
 
          -*)
-            match_find_usage "unknown option \"$1\""
+            match_find_usage "Unknown option \"$1\""
             ;;
 
          *)
