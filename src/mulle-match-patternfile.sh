@@ -105,16 +105,18 @@ add_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile add [options] <type> <filename>
 
-   Add a patternfile for a specific type.
+   Add a patternfile for a specific type. The filename of a patternfile is
+   of the form <digits>-<type>--<category>.
+
 
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
 
-      ( echo '*.h' ; echo '*.c' ) | ${MULLE_USAGE_NAME} patternfile set c_files -
+      (echo '*.h'; echo '*.c') | ${MULLE_USAGE_NAME} patternfile add c_files -
 
 Options:
-   -c <name>    : give this patternfile category. The defaults are
-                  "all"/"none" for match.d/ignore.d respectively.
+   -c <name>    : give this patternfile category. The defaults are "all" or
+                  "none" for match.d/ignore.d patternfiles respectively.
    -p <digits>  : position, the default is 50. Patternfiles with lower numbers
                   are matched first. (shell sort order)
 EOF

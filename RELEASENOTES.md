@@ -1,3 +1,7 @@
+### 0.1.21
+
+* improve usage information
+
 ### 0.1.20
 
 * capitalize error message
