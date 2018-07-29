@@ -1,3 +1,7 @@
+### 0.1.22
+
+* add missing test files
+
 ### 0.1.21
 
 * improve usage information
