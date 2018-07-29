@@ -973,6 +973,8 @@ _match_print_filepath()
 
    local format="$1" ; shift
    local filter="$1" ; shift
+#   local ignore="$1"
+#   local match="$2"
    local filename="$3"
 
    local _patternfile

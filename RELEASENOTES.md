@@ -1,3 +1,7 @@
+### 0.1.23
+
+* fix bug that surfaced on mingw
+
 ### 0.1.22
 
 * add missing test files
