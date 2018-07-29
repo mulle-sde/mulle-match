@@ -353,8 +353,9 @@ parallel_find_filtered_files()
          [ ! -z "${filename_1f}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
-      shift
-   done < <( eval_exekutor find ${quoted_filenames} "$@" -print | rexekutor sed -e 's|^./||g' | rexekutor sort -u )
+   done < <( eval_exekutor find ${quoted_filenames} "$@" -print \
+               | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
+               | LC_ALL="C" rexekutor sort -u )
 
    IFS="${DEFAULT_IFS}"
    set +o noglob
