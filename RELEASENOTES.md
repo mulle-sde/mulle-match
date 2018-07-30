@@ -1,3 +1,7 @@
+### 0.1.24
+
+* small test improvement
+
 ### 0.1.23
 
 * fix bug that surfaced on mingw
