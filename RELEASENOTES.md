@@ -1,3 +1,7 @@
+### 0.2.1
+
+* fixes for mulle-monitor
+
 ## 0.2.0
 
 * use `r_` functions of mulle-bashfunctions 1.8.0

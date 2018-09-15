@@ -729,14 +729,14 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 
 
 #
-# returns value in _patternfile
+# returns value in RVAL
 # don't backtick
 #
 # IFS must be set to LF, and noglob must be set
 #
-_patternfilefunctions_match_relative_filename()
+r_patternfilefunctions_match_relative_filename()
 {
-   log_entry "_patternfilefunctions_match_relative_filename" "$@"
+   log_entry "r_patternfilefunctions_match_relative_filename" "$@"
 
    local patternfilefunctions="$1"
    local filename="$2"
@@ -747,13 +747,13 @@ _patternfilefunctions_match_relative_filename()
    do
       if "${functionname}" "${filename}"
       then
-         eval _patternfile="\${${functionname}_f}"
-         log_fluff "\"${filename}\" did match \"${_patternfile}\""
+         eval RVAL="\${${functionname}_f}"
+         log_fluff "\"${filename}\" did match \"${RVAL}\""
          return 0
       fi
    done
 
-   _patternfile=""
+   RVAL=""
    return 1
 }
 
@@ -779,7 +779,7 @@ _match_assert_filename()
 
 
 #
-# returns patternfile in global _patternfile
+# returns patternfile in global RVAL
 #
 # MUST BE CALLED WITH:
 #
@@ -787,13 +787,15 @@ _match_assert_filename()
 #      set -o noglob
 #      IFS="
 #"
-_match_filepath()
+r_match_filepath()
 {
-   log_entry "_match_filepath" "$@"
+   log_entry "r_match_filepath" "$@"
 
    local ignore="$1"
    local match="$2"
    local filename="$3"
+
+   RVAL=""
 
    #
    # if we are strict on text input, we can simplify pattern handling
@@ -803,8 +805,7 @@ _match_filepath()
 
    if [ ! -z "${ignore}" ]
    then
-      if _patternfilefunctions_match_relative_filename "${ignore}" \
-                                                       "${filename}"
+      if r_patternfilefunctions_match_relative_filename "${ignore}" "${filename}"
       then
          log_debug "\"${filename}\" ignored"
          return 1
@@ -820,8 +821,7 @@ _match_filepath()
       return 2
    fi
 
-   if _patternfilefunctions_match_relative_filename "${match}" \
-                                                    "${filename}"
+   if r_patternfilefunctions_match_relative_filename "${match}" "${filename}"
    then
       log_debug "\"${filename}\" matched"
       return 0
@@ -849,19 +849,19 @@ matching_filepath_pattern()
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
 
-   local rval
-
    (
+      local RVAL
+
       shopt -s extglob
       set -o noglob
 
       IFS="
 "
       # returns 0,1,2
-      _match_filepath "$@"
+      r_match_filepath "$@"
       case $? in
          0|2)
-            echo "${_patternfile##*/}"
+            echo "${RVAL##*/}"
             exit 0 # subshell
          ;;
       esac
@@ -977,21 +977,21 @@ _match_print_filepath()
 #   local match="$2"
    local filename="$3"
 
-   local _patternfile
-
    filename="${filename#./}"
 
    # avoid a backtick subshell here
    # returns 0,1,2
-   _match_filepath "$@"
+   r_match_filepath "$@"
    if [ $? -eq 1 ]
    then
       return 1
    fi
 
    local patternfilename
+   local patternfile
 
-   patternfilename="${_patternfile##*/}"
+   patternfile="${RVAL}"
+   patternfilename="${patternfile##*/}"
    if [ ! -z "${filter}" ]
    then
       local matchtype
@@ -1009,11 +1009,11 @@ _match_print_filepath()
       esac
    fi
 
-   if [ -z "${format}" -o -z "${_patternfile}" ]
+   if [ -z "${format}" -o -z "${patternfile}" ]
    then
       echo "${filename}"
    else
-      _match_print_patternfilename "${format}" "${_patternfile}"
+      _match_print_patternfilename "${format}" "${patternfile}"
    fi
 }
 
