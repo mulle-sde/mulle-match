@@ -1,3 +1,8 @@
+## 0.2.0
+
+* use `r_` functions of mulle-bashfunctions 1.8.0
+
+
 ### 0.1.24
 
 * small test improvement

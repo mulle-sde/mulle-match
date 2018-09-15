@@ -312,21 +312,26 @@ list_patternfile_main()
    local outputname
    local where
    local foldername
+   local parentdir
 
-   outputname="`fast_dirname "${directory}" `"
-   where="`fast_basename "${outputname}" `"
+   r_fast_basename "${directory}"
+   outputname="${RVAL}"
+   r_fast_dirname "${directory}"
+   parentdir="${RVAL}"
+   r_fast_basename "${parentdir}"
+   where="${RVAL}"
    foldername="${OPTION_FOLDER_NAME}"
 
    if [ "${where}" = "etc" ]
    then
-      where="${C_MAGENTA}${BOLD}${where}${C_INFO}"
-      foldername="${C_MAGENTA}${BOLD}etc${C_INFO}/${foldername}"
+      where="${C_MAGENTA}${C_BOLD}${where}${C_INFO}"
+      foldername="${C_MAGENTA}${C_BOLD}etc${C_INFO}/${foldername}"
    fi
 
 
    if [ "${OPTION_DUMP}" != "YES" ]
    then
-      log_info "${outputname} (${where}):"
+      log_info "${outputname%%.d} (${where}):"
 
       _list_patternfiles "${directory}"
       return $?
@@ -470,8 +475,10 @@ make_file_from_symlinked_patternfile()
    local directory
    local filename
 
-   directory="`fast_dirname "${dstfile}"`"
-   filename="`fast_basename "${dstfile}"`"
+   r_fast_dirname "${dstfile}"
+   directory="${RVAL}"
+   r_fast_basename "${dstfile}"
+   filename="${RVAL}"
    (
       cd "${directory}" || exit 1
 
@@ -504,7 +511,8 @@ symlink_or_copy_patternfile()
    then
       dstfile="${dstdir}/"
    else
-      dstfile="`filepath_concat "${dstdir}" "${patternfile}"`"
+      r_filepath_concat "${dstdir}" "${patternfile}"
+      dstfile="${RVAL}"
 
       if [ -e "${dstfile}" ]
       then
@@ -529,7 +537,8 @@ symlink_or_copy_patternfile()
 
    local linkrel
 
-   linkrel="`relative_path_between "${srcfile}" "${dstdir}"`"
+   r_relative_path_between "${srcfile}" "${dstdir}"
+   linkrel="${RVAL}"
 
    exekutor ln -s ${flags} "${linkrel}" "${dstfile}"
 }

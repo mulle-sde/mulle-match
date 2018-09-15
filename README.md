@@ -110,16 +110,17 @@ mulle-match -e match --pattern '*.png' pix/foo.png
 ```
 
 
-### mulle-match find
+### mulle-match show
 
-This is a facility to retrieve all filenames that match any *patternfile*. You can
-decide which *patternfile* should be used by supplying an optional filter.
+This is a facility to retrieve all filenames that match any *patternfile*.
+You can decide which *patternfile* should be used by supplying an optional
+filter.
 
 This example lists all the files, that pass through *patternfiles* of type
 "hello":
 
 ```
-mulle-match -e find --match-filter "hello"
+mulle-match -e show --match-filter "hello"
 ```
 
 

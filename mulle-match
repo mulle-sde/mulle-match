@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-[ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
+[ "${TRACE}" = "YES" -o "${MULLE_MATCH_TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.1.24
+MULLE_EXECUTABLE_VERSION=0.2.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -52,7 +52,7 @@ print_commands()
 
    SHOWN_COMMANDS="\
    clean          : remove cached patternfiles
-   find           : find files that match patternfiles
+   show           : show files that match patternfiles
    match          : match filenames against patternfiles
    patternfile    : manage patternfiles"
 
@@ -115,7 +115,7 @@ Usage:
    ${MULLE_USAGE_NAME} [flags] [command]
 
    Match filenames to a user-definable set of patternfiles.
-   Also: find alls files matching those patternfiles.
+   Also: shows all files matching those patternfiles.
 
 Flags:
 EOF
@@ -257,7 +257,7 @@ main()
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
       case "${cmd}" in
-         find|match)
+         show|find|match)
             fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, \
 pass the -e flag"
          ;;
@@ -294,7 +294,7 @@ pass the -e flag"
          match_match_main "$@"
       ;;
 
-      find)
+      find|show)
          # shellcheck source=src/mulle-match-run.sh
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-find.sh"
 
