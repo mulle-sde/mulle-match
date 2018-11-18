@@ -54,15 +54,15 @@ digraph G {
     node[ shape=record, color="#2d98da", fontcolor="#2d98da"];
     edge[ arrowhead="", color="#2d98da", fontcolor="#2d98da", style="dotted", label=" reference" ];
 
-    { rank = "same"; "MULLE_MATCH_ETC_DIR", "MULLE_MATCH_MATCH_DIR", "MULLE_MATCH_DIR", "MULLE_MATCH_IGNORE_DIR" };
+    { rank = "same"; "MULLE_MATCH_ETC_DIR", "MULLE_MATCH_USE_DIR", "MULLE_MATCH_DIR", "MULLE_MATCH_SKIP_DIR" };
 
     "s_source" -> "MULLE_MATCH_DIR"        [ style="invis" ]
     "s_source" -> "MULLE_MATCH_ETC_DIR"    [ style="invis" ]
-    "s_source" -> "MULLE_MATCH_MATCH_DIR"  [ style="invis" ]
+    "s_source" -> "MULLE_MATCH_USE_DIR"  [ style="invis" ]
 
 
-    "MULLE_MATCH_MATCH_DIR"  -> "match.d"
+    "MULLE_MATCH_USE_DIR"  -> "match.d"
     "MULLE_MATCH_DIR"        -> ".mulle-match"
     "MULLE_MATCH_ETC_DIR"    -> "etc"
-    "MULLE_MATCH_IGNORE_DIR" -> "ignore2"
+    "MULLE_MATCH_SKIP_DIR" -> "ignore2"
 }

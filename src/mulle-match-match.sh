@@ -307,7 +307,7 @@ _pattern_function_header()
 
    echo "${functionname}()
 {"
-   if [ "${MULLE_FLAG_LOG_DEBUG}" = "YES" -a "${MULLE_FLAG_LOG_SETTINGS}" != "YES" ]
+   if [ "${MULLE_FLAG_LOG_DEBUG}" = 'YES' -a "${MULLE_FLAG_LOG_SETTINGS}" != 'YES' ]
    then
       echo "   log_entry ${functionname} \"\$@\""
    fi
@@ -450,7 +450,7 @@ pattern_matches_relative_filename()
    functionname="`pattern_unique_functionname`"
 
    declaration="`pattern_emit_function "${functionname}" "${pattern}"`"
-   if [ "${MULLE_FLAG_LOG_SETTINGS}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
    then
       log_trace2 "${declaration}"
    fi
@@ -635,7 +635,7 @@ ${functiontext}"
    #
    # we use the patternfile as the identifier, so we can cache it in memory
    #
-   if [ "${MULLE_FLAG_LOG_SETTINGS}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
    then
       log_trace2 "${alltext}"
    fi
@@ -1121,13 +1121,13 @@ match_match_main()
    then
       if [ ! -f "${OPTION_PATTERN_FILE}" ]
       then
-         if [ -f "${MULLE_MATCH_MATCH_DIR}/${OPTION_PATTERN_FILE}" ]
+         if [ -f "${MULLE_MATCH_USE_DIR}/${OPTION_PATTERN_FILE}" ]
          then
-            OPTION_PATTERN_FILE="${MULLE_MATCH_MATCH_DIR}/${OPTION_PATTERN_FILE}"
+            OPTION_PATTERN_FILE="${MULLE_MATCH_USE_DIR}/${OPTION_PATTERN_FILE}"
          else
-            if [ -f "${MULLE_MATCH_IGNORE_DIR}/${OPTION_PATTERN_FILE}" ]
+            if [ -f "${MULLE_MATCH_SKIP_DIR}/${OPTION_PATTERN_FILE}" ]
             then
-               OPTION_PATTERN_FILE="${MULLE_MATCH_IGNORE_DIR}/${OPTION_PATTERN_FILE}"
+               OPTION_PATTERN_FILE="${MULLE_MATCH_SKIP_DIR}/${OPTION_PATTERN_FILE}"
             fi
          fi
       fi
@@ -1136,12 +1136,14 @@ match_match_main()
       _define_patternfilefunction "${OPTION_PATTERN_FILE}"
       match_patterncache="${_cache}"
    else
-      _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
-                                   "${MULLE_MATCH_DIR}/var/cache"
+      [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "MULLE_MATCH_VAR_DIR not set"
+
+      _define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+                                   "${MULLE_MATCH_VAR_DIR}/cache"
       ignore_patterncache="${_cache}"
 
-      _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
-                                   "${MULLE_MATCH_DIR}/var/cache"
+      _define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+                                   "${MULLE_MATCH_VAR_DIR}/cache"
       match_patterncache="${_cache}"
    fi
 

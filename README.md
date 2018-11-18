@@ -41,9 +41,9 @@ Example:
 !*~.*
 ```
 
-A *patternfile* resides in either the `ignore.d` folder or the
-`match.d` folder. It's filename is composed of three segements.
-The first digit segment is there to proritize patternfiles. Lower
+A *patternfile* resides in either the `skip.d` folder or the
+`match.d` folder. It's filename is composed of three segments.
+The first digits-only segment is there to proritize patternfiles. Lower
 numbers are matched before higher numbers (`ls` sorting)
 . The second segment gives the type of the file. And the last segment
 the category of the file. A type is required, a category is optional.
@@ -84,7 +84,7 @@ mulle-match -e patternfile install -i folders pattern.txt
 Remove a *patternfile*:
 
 ```
-mulle-match -e patternfile uninstall hello
+mulle-match -e patternfile remove hello
 ```
 
 List all *patternfiles*:
@@ -110,9 +110,9 @@ mulle-match -e match --pattern '*.png' pix/foo.png
 ```
 
 
-### mulle-match show
+### mulle-match list
 
-This is a facility to retrieve all filenames that match any *patternfile*.
+This command lists the filenames that match *patternfiles*.
 You can decide which *patternfile* should be used by supplying an optional
 filter.
 
@@ -120,7 +120,7 @@ This example lists all the files, that pass through *patternfiles* of type
 "hello":
 
 ```
-mulle-match -e show --match-filter "hello"
+mulle-match -e list --match-filter "hello"
 ```
 
 

@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-[ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
 run_mulle_match()
@@ -49,8 +49,8 @@ main()
 
    _options_mini_main "$@"
 
-   MULLE_MATCH_FIND_LOCATIONS="a:b:z"
-   export MULLE_MATCH_FIND_LOCATIONS
+   MULLE_MATCH_PATH="a:b:z"
+   export MULLE_MATCH_PATH
    #-----------
 
    local expected

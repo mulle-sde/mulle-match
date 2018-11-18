@@ -274,7 +274,7 @@ list_patternfile_main()
 {
    log_entry "list_patternfile_main" "$@"
 
-   local OPTION_DUMP="NO"
+   local OPTION_DUMP='NO'
 
    while [ "$#" -ne 0 ]
    do
@@ -284,7 +284,7 @@ list_patternfile_main()
          ;;
 
          -c|--cat)
-            OPTION_DUMP="YES"
+            OPTION_DUMP='YES'
          ;;
 
          -*)
@@ -299,15 +299,17 @@ list_patternfile_main()
       shift
    done
 
+   [ -z "${MULLE_MATCH_USE_DIR}" ] && internal_fail "MULLE_MATCH_USE_DIR is undefined"
+   [ -z "${MULLE_MATCH_SKIP_DIR}" ] && internal_fail "MULLE_MATCH_SKIP_DIR is undefined"
+
    local directory
 
-   directory="${MULLE_MATCH_MATCH_DIR}"
+   directory="${MULLE_MATCH_USE_DIR}"
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         directory="${MULLE_MATCH_IGNORE_DIR}"
+         directory="${MULLE_MATCH_SKIP_DIR}"
       ;;
    esac
-
 
    local outputname
    local where
@@ -329,7 +331,7 @@ list_patternfile_main()
    fi
 
 
-   if [ "${OPTION_DUMP}" != "YES" ]
+   if [ "${OPTION_DUMP}" != 'YES' ]
    then
       log_info "${outputname%%.d} (${where}):"
 
@@ -384,11 +386,11 @@ cat_patternfile_main()
 
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         exekutor cat "${MULLE_MATCH_IGNORE_DIR}/${filename}"
+         exekutor cat "${MULLE_MATCH_SKIP_DIR}/${filename}"
       ;;
 
       *)
-         exekutor cat "${MULLE_MATCH_MATCH_DIR}/${filename}"
+         exekutor cat "${MULLE_MATCH_USE_DIR}/${filename}"
       ;;
    esac
 }
@@ -462,7 +464,7 @@ make_file_from_symlinked_patternfile()
 
    local flags
 
-   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
       flags="-v"
    fi
@@ -522,7 +524,7 @@ symlink_or_copy_patternfile()
 
    local flags
 
-   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
       flags="-v"
    fi
@@ -561,7 +563,7 @@ setup_etc_if_needed()
 
    local flags
 
-   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
       flags="-v"
    fi
@@ -646,7 +648,7 @@ add_patternfile_main()
    patternfile="${OPTION_POSITION}-${typename}--${OPTION_CATEGORY}"
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
 
-   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
+   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = 'NO' ] \
       && fail "\"${dstfile}\" already exists. Use -f to clobber"
 
    if [ "${filename}" = "-" ]
@@ -773,7 +775,7 @@ rename_patternfile_main()
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${dstpatternfile}"
 
-   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = "NO" ] \
+   [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = 'NO' ] \
       && fail "\"${dstfile}\" already exists. Use -f to clobber"
 
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
@@ -782,11 +784,11 @@ rename_patternfile_main()
 
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
-         srcfile="${MULLE_MATCH_IGNORE_DIR}/${patternfile}"
+         srcfile="${MULLE_MATCH_SKIP_DIR}/${patternfile}"
       ;;
 
       *)
-         srcfile="${MULLE_MATCH_MATCH_DIR}/${patternfile}"
+         srcfile="${MULLE_MATCH_USE_DIR}/${patternfile}"
       ;;
    esac
 
@@ -822,14 +824,14 @@ copy_template_patternfile()
       fail "Patternfile \"${templatefile}\" not found"
    fi
 
-   if [ "${MULLE_FLAG_MAGNUM_FORCE}" != "YES" -a -f "${dstfile}" ]
+   if [ "${MULLE_FLAG_MAGNUM_FORCE}" != 'YES' -a -f "${dstfile}" ]
    then
       fail "\"${dstfile}\" already exists. Use -f to clobber"
    fi
 
    local flags
 
-   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
       flags="-v"
    fi
@@ -908,7 +910,7 @@ repair_patternfile_main()
 {
    log_entry "repair_patternfile_main" "$@"
 
-   local OPTION_ADD="NO"
+   local OPTION_ADD='NO'
 
    while [ "$#" -ne 0 ]
    do
@@ -918,7 +920,7 @@ repair_patternfile_main()
          ;;
 
          -a|--add)
-            OPTION_ADD="YES"
+            OPTION_ADD='YES'
          ;;
 
          -*)
@@ -951,7 +953,7 @@ repair_patternfile_main()
    local patternfile
    local can_remove_etc
 
-   can_remove_etc="YES"
+   can_remove_etc='YES'
 
    #
    # go through etc, throw out symlinks that point to nowhere
@@ -993,11 +995,11 @@ repair_patternfile_main()
                symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
             else
                log_fluff "\"${patternfile}\" contains edits: keep"
-               can_remove_etc="NO"
+               can_remove_etc='NO'
             fi
          else
             log_fluff "\"${patternfile}\" is an addition: keep"
-            can_remove_etc="NO"
+            can_remove_etc='NO'
          fi
       fi
    done
@@ -1012,23 +1014,23 @@ repair_patternfile_main()
       patternfile="`fast_basename "${filename}"`"
       if [ ! -e "${dstdir}/${patternfile}" ]
       then
-         if [ "${OPTION_ADD}" = "YES" ]
+         if [ "${OPTION_ADD}" = 'YES' ]
          then
             log_verbose "\"${patternfile}\" is missing: recreate"
             symlink_or_copy_patternfile "${srcdir}/${patternfile}" "${dstdir}"
          else
             log_info "\"${patternfile}\" is not used. Use \`repair --add\` to add it."
-            can_remove_etc="NO"
+            can_remove_etc='NO'
          fi
       fi
    done
    shopt -u nullglob
 
-   if [ "${can_remove_etc}" = "YES" ]
+   if [ "${can_remove_etc}" = 'YES' ]
    then
       log_info "\"etc/${OPTION_FOLDER_NAME}\" contains no user changes so use \"share\" again"
       rmdir_safer "${dstdir}"
-      rmdir_if_empty "${MULLE_SDE_ETC_DIR}"
+      rmdir_if_empty "${MULLE_MATCH_ETC_DIR}"
    fi
 }
 
@@ -1052,8 +1054,8 @@ match_patternfile_main()
    fi
 
    local OPTION_FOLDER_NAME="match.d"
-   local ONLY_IGNORE="NO"
-   local ONLY_MATCH="NO"
+   local ONLY_IGNORE='NO'
+   local ONLY_MATCH='NO'
    local OPTION_CATEGORY="all"
 
    while :
@@ -1064,8 +1066,8 @@ match_patternfile_main()
          ;;
 
          -i|--ignore-only)
-            ONLY_IGNORE="YES"
-            ONLY_MATCH="NO"
+            ONLY_IGNORE='YES'
+            ONLY_MATCH='NO'
             OPTION_FOLDER_NAME="ignore.d"
             if [ "${OPTION_CATEGORY}" = "all" ]
             then
@@ -1074,8 +1076,8 @@ match_patternfile_main()
          ;;
 
          -m|--match-only)
-            ONLY_IGNORE="NO"
-            ONLY_MATCH="YES"
+            ONLY_IGNORE='NO'
+            ONLY_MATCH='YES'
             OPTION_FOLDER_NAME="match.d"
             if [ "${OPTION_CATEGORY}" = "none" ]
             then
@@ -1105,14 +1107,14 @@ match_patternfile_main()
       ;;
 
       list)
-         if [ "${ONLY_MATCH}" = "NO" ]
+         if [ "${ONLY_MATCH}" = 'NO' ]
          then
             OPTION_FOLDER_NAME="ignore.d"
             list_patternfile_main "$@"
          fi
-         if [ "${ONLY_IGNORE}" = "NO" ]
+         if [ "${ONLY_IGNORE}" = 'NO' ]
          then
-            if [ "${ONLY_MATCH}" = "NO" ]
+            if [ "${ONLY_MATCH}" = 'NO' ]
             then
                echo
             fi

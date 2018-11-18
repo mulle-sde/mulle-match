@@ -29,10 +29,10 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_MATCH_FIND_SH="included"
+MULLE_MATCH_LIST_SH="included"
 
 
-match_find_usage()
+match_list_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -41,9 +41,9 @@ match_find_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} find [options]
+   ${MULLE_USAGE_NAME} list [options]
 
-   Find files matching the patternfiles in the project directory. For good
+   List files matching the patternfiles in the project directory. For good
    performance it is important to restrict the searched items as much as
    possible using the environment variables.
 
@@ -52,14 +52,14 @@ Usage:
 
    The following example searches for C source files in 'src' and 'foo/src':
 
-      MULLE_MATCH_FIND_NAMES="*.c:*.h" \\
-      MULLE_MATCH_FIND_LOCATIONS="src:foo/src" \\
-         ${MULLE_USAGE_NAME} find --mf source
+      MULLE_MATCH_FILENAMES="*.c:*.h" \\
+      MULLE_MATCH_PATH="src:foo/src" \\
+         ${MULLE_USAGE_NAME} list --mf source
 
 Options:
    -f <format>    : specify output values
 EOF
-   if [ "${MULLE_FLAG_LOG_VERBOSE}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
                     This is like a simplified C printf format:
@@ -77,7 +77,7 @@ EOF
    cat <<EOF >&2
    -mf <filter>   : specify a filter for matching <type>
 EOF
-   if [ "${MULLE_FLAG_LOG_VERBOSE}" = "YES" ]
+   if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
                     A filter is a comma separated list of type expressions.
@@ -87,14 +87,15 @@ EOF
                     Example: filter is "header*,!header_private"
 EOF
    else
-      echo "      (${MULLE_USAGE_NAME} -v find help for more)"
+      echo "      (${MULLE_USAGE_NAME} -v show help for more)"
    fi
 
      cat <<EOF >&2
 
 Environment:
-   MULLE_MATCH_FIND_NAMES     : filename wildcards, separated by ':'   (*)
-   MULLE_MATCH_FIND_LOCATIONS : paths to search for, separated by ':'' (src)
+   MULLE_MATCH_FILENAMES   : filename wildcards, separated by ':'   (*)
+   MULLE_MATCH_IGNORE_PATH : locations to ignore
+   MULLE_MATCH_PATH        : locations to search for, separated by ':'' (src)
 
 EOF
    exit 1
@@ -103,9 +104,9 @@ EOF
 
 
 # this is a nicety for scripts that run find
-find_emit_common_directories()
+list_emit_common_directories()
 {
-   log_entry "find_emit_common_directories" "$@"
+   log_entry "list_emit_common_directories" "$@"
 
    local items="$1"
    local emitter="$2"
@@ -125,9 +126,9 @@ find_emit_common_directories()
 
 
 # this is a nicety for scripts that run find
-find_emit_by_category()
+list_emit_by_category()
 {
-   log_entry "find_emit_by_category" "$@"
+   log_entry "list_emit_by_category" "$@"
 
    local items="$1"
    local emitter="$2"
@@ -173,9 +174,9 @@ get_core_count()
 }
 
 
-_find_toplevel_files()
+_list_toplevel_files()
 {
-   log_entry "_find_toplevel_files" "$@"
+   log_entry "_list_toplevel_files" "$@"
 
    local ignore="$1"
 
@@ -209,9 +210,9 @@ _find_toplevel_files()
 }
 
 
-parallel_find_filtered_files()
+parallel_list_filtered_files()
 {
-   log_entry "parallel_find_filtered_files" "$@"
+   log_entry "parallel_list_filtered_files" "$@"
 
    local quoted_filenames="$1" ; shift
    local format="$1" ; shift
@@ -366,9 +367,9 @@ parallel_find_filtered_files()
 }
 
 
-find_filenames()
+list_filenames()
 {
-   log_entry "find_filenames" "$@"
+   log_entry "list_filenames" "$@"
 
    local format="$1"
    local filter="$2"
@@ -379,35 +380,38 @@ find_filenames()
    local ignore_dirs
    local match_files
    local match_dirs
+   local RVAL
 
    IFS=":"
    set -o noglob # turn off globbing temporarily
 
    #
-   # MULLE_MATCH_FIND_LOCATIONS: This is where the find search starts
+   # MULLE_MATCH_PATH: This is where the find search starts
    #
-   if [ -z "${MULLE_MATCH_FIND_LOCATIONS}" ]
+   if [ -z "${MULLE_MATCH_PATH}" ]
    then
-      MULLE_MATCH_FIND_LOCATIONS=".mulle-sourcetree/config:\
+      MULLE_MATCH_PATH=".mulle-sourcetree/config:\
 src"
+      log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 
-   for name in ${MULLE_MATCH_FIND_LOCATIONS}
+   for name in ${MULLE_MATCH_PATH}
    do
       if [ -e "${name}" ]
       then
-         match_dirs="`concat "${match_dirs}" "'${name}'" `"
+         r_concat "${match_dirs}" "'${name}'"
+         match_dirs="${RVAL}"
       fi
    done
 
    #
-   # MULLE_MATCH_FIND_IGNORE_DIRECTORIES: These are subdirectories that get
+   # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
    # ignored. This can be  important for acceptable performance and easier
    # setup
    #
-   if [ -z "${MULLE_MATCH_FIND_IGNORE_PATH}" ]
+   if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
    then
-      MULLE_MATCH_FIND_IGNORE_PATH="addiction:\
+      MULLE_MATCH_IGNORE_PATH="addiction:\
 build:\
 dependency:\
 stash:\
@@ -416,31 +420,35 @@ lib:\
 libexec:\
 .git:\
 *.dSYM"
+      log_verbose "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
    fi
 
-   for name in ${MULLE_MATCH_FIND_IGNORE_PATH}
+   for name in ${MULLE_MATCH_IGNORE_PATH}
    do
-      ignore_dirs="`concat "${ignore_dirs}" "-name '$name'" " -o "`"
+      r_concat "${ignore_dirs}" "-path '${name}'" " -o "
+      ignore_dirs="${RVAL}"
    done
 
    #
-   # MULLE_MATCH_FIND_NAMES: Even more important for acceptable perfomance is
+   # MULLE_MATCH_FILENAMES: Even more important for acceptable perfomance is
    # to only match interesting filenames
    #
-   if [ -z "${MULLE_MATCH_FIND_NAMES}" ]
+   if [ -z "${MULLE_MATCH_FILENAMES}" ]
    then
       match_files="-name '*'"
+      log_verbose "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
    else
-      for name in ${MULLE_MATCH_FIND_NAMES}
+      for name in ${MULLE_MATCH_FILENAMES}
       do
-         match_files="`concat "${match_files}" "-name '$name'" " -o "`"
+         r_concat "${match_files}" "-name '$name'" " -o "
+         match_files="${RVAL}"
       done
    fi
 
    set -o noglob
    IFS="${DEFAULT_IFS}"
 
-   parallel_find_filtered_files "${match_dirs:-.}" \
+   parallel_list_filtered_files "${match_dirs:-.}" \
                                 "${format}" \
                                 "${filter}" \
                                 "${ignore}" \
@@ -455,9 +463,9 @@ libexec:\
 ###
 ###  MAIN
 ###
-match_find_main()
+match_list_main()
 {
-   log_entry "match_find_main" "$@"
+   log_entry "match_list_main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -471,12 +479,18 @@ match_find_main()
    fi
 
    local OPTION_FORMAT="%f\\n"
-   local OPTION_SORTED="YES"
+   local OPTION_SORTED='YES'
    local OPTION_MATCH_FILTER
    local OPTION_IGNORE_FILTER
 
    local MATCH_DIR
    local IGNORE_DIR
+
+   # backwards compatibility
+
+   MULLE_MATCH_PATH="${MULLE_MATCH_PATH:-${MULLE_MATCH_FIND_LOCATIONS}}"
+   MULLE_MATCH_IGNORE_PATH="${MULLE_MATCH_IGNORE_PATH:-${MULLE_MATCH_FIND_IGNORE_PATH}}"
+   MULLE_MATCH_FILENAMES="${MULLE_MATCH_FILENAMES:-${MULLE_MATCH_FILENAMES}}"
 
    #
    # handle options
@@ -485,50 +499,50 @@ match_find_main()
    do
       case "$1" in
          -h*|--help|help)
-            match_find_usage
+            match_list_usage
          ;;
 
          -mf|--match-filter)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
             shift
 
             OPTION_MATCH_FILTER="$1"
          ;;
 
          --locations)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_FIND_LOCATIONS="$1"
+            MULLE_MATCH_PATH="$1"
          ;;
 
-         --ignore-dirs)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+         --ignore-path)
+            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_FIND_IGNORE_DIRECTORIES="$1"
+            MULLE_MATCH_IGNORE_PATH="$1"
          ;;
 
          --match-names)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_FIND_NAMES="$1"
+            MULLE_MATCH_FILENAMES="$1"
          ;;
 
          -f|--format)
-            [ $# -eq 1 ] && match_find_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
             shift
 
             OPTION_FORMAT="$1"
          ;;
 
          -u|--unsorted)
-            OPTION_SORTED="NO"
+            OPTION_SORTED='NO'
          ;;
 
          -*)
-            match_find_usage "Unknown option \"$1\""
+            match_list_usage "Unknown option \"$1\""
             ;;
 
          *)
@@ -539,7 +553,7 @@ match_find_main()
       shift
    done
 
-   [ "$#" -ne 0 ] && match_find_usage "superflous arguments \"$*\""
+   [ "$#" -ne 0 ] && match_list_usage "superflous arguments \"$*\""
 
    if [ -z "${MULLE_MATCH_MATCH_SH}" ]
    then
@@ -548,27 +562,29 @@ match_find_main()
    fi
 
    local _cache
-   local ignore_patterncache
-   local match_patterncache
+   local skip_patterncache
+   local use_patterncache
 
-   _define_patternfilefunctions "${MULLE_MATCH_IGNORE_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}/cache/match"
-   ignore_patterncache="${_cache}"
+   [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "MULLE_MATCH_VAR_DIR not set"
 
-   _define_patternfilefunctions "${MULLE_MATCH_MATCH_DIR}" \
-                                "${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}/cache/match"
-   match_patterncache="${_cache}"
+   _define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+                                "${MULLE_MATCH_VAR_DIR}/cache/match"
+   skip_patterncache="${_cache}"
 
-   if [ "${OPTION_SORTED}" = "YES" ]
+   _define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+                                "${MULLE_MATCH_VAR_DIR}/cache/match"
+   use_patterncache="${_cache}"
+
+   if [ "${OPTION_SORTED}" = 'YES' ]
    then
-      find_filenames "${OPTION_FORMAT}" \
+      list_filenames "${OPTION_FORMAT}" \
                      "${OPTION_MATCH_FILTER}" \
-                     "${ignore_patterncache}" \
-                     "${match_patterncache}" | LC_ALL=C sort
+                     "${skip_patterncache}" \
+                     "${use_patterncache}" | LC_ALL=C sort
    else
-      find_filenames "${OPTION_FORMAT}" \
+      list_filenames "${OPTION_FORMAT}" \
                      "${OPTION_MATCH_FILTER}" \
-                     "${ignore_patterncache}" \
-                     "${match_patterncache}"
+                     "${skip_patterncache}" \
+                     "${use_patterncache}"
    fi
 }

@@ -89,7 +89,7 @@ match_clean_main()
       shift
    done
 
-   [ -z "${MULLE_MATCH_DIR}" ] && internal_fail "empty MULLE_MATCH_DIR"
+   [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "empty MULLE_MATCH_VAR_DIR"
 
    #
    # why another /match ?
@@ -97,6 +97,6 @@ match_clean_main()
    # like mulle-sde and we don't want to wipe their stuff
    #
    log_verbose "Cleaning match cache"
-   rmdir_safer "${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}/cache/match"
+   rmdir_safer "${MULLE_MATCH_VAR_DIR}/cache/match"
 }
 

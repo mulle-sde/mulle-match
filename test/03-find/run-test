@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-[ "${TRACE}" = "YES" ] && set -x && : "$0" "$@"
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
 expect_find_filenames()
@@ -11,7 +11,7 @@ expect_find_filenames()
 
    local result
 
-   result="`find_filenames "$@" | LC_ALL=C sort`"
+   result="`list_filenames "$@" | LC_ALL=C sort`"
 
    if [ "${result}" != "${expected}" ]
    then
@@ -48,8 +48,8 @@ main()
    expected="src/foo.c
 src/main.c"
 
-   MULLE_MATCH_FIND_LOCATIONS="src:foo"
-   export MULLE_MATCH_FIND_LOCATIONS
+   MULLE_MATCH_PATH="src:foo"
+   export MULLE_MATCH_PATH
 
    expect_find_filenames "${expected}" "%f\\n" "source" "${ignore}" "${match}"
    log_verbose "----- #1 PASSED -----"
@@ -85,7 +85,7 @@ init()
    MULLE_MATCH_LIBEXEC_DIR="`"${MULLE_MATCH}" "libexec-dir"`" || exit 1
 
    . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
-   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-find.sh" || exit 1
+   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh" || exit 1
 }
 
 

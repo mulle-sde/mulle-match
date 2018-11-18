@@ -29,7 +29,7 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-[ "${TRACE}" = "YES" -o "${MULLE_MATCH_TRACE}" = "YES" ] && set -x && : "$0" "$@"
+[ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
 MULLE_EXECUTABLE_VERSION=0.2.1
@@ -52,7 +52,7 @@ print_commands()
 
    SHOWN_COMMANDS="\
    clean          : remove cached patternfiles
-   show           : show files that match patternfiles
+   list           : list files that match patternfiles
    match          : match filenames against patternfiles
    patternfile    : manage patternfiles"
 
@@ -63,7 +63,7 @@ print_commands()
 
    echo "${SHOWN_COMMANDS}"
 
-   if [ "${show_all}" != "NO" ]
+   if [ "${show_all}" != 'NO' ]
    then
       echo "${HIDDEN_COMMANDS}"
    fi
@@ -74,8 +74,8 @@ print_hidden_flags()
 {
    echo "   -cd <dir>      : set MULLE_MATCH_DIR"
    echo "   -ed <dir>      : set MULLE_MATCH_ETC_DIR"
-   echo "   -id <dir>      : set MULLE_MATCH_IGNORE_DIR"
-   echo "   -md <dir>      : set MULLE_MATCH_MATCH_DIR"
+   echo "   -id <dir>      : set MULLE_MATCH_SKIP_DIR"
+   echo "   -md <dir>      : set MULLE_MATCH_USE_DIR"
    echo "   -pd <dir>      : set MULLE_MATCH_PRUNE_DIR"
 }
 
@@ -88,7 +88,7 @@ print_flags()
 
    delimiter="          : "
 
-   if [ "${show_all}" != "NO" ]
+   if [ "${show_all}" != 'NO' ]
    then
       print_hidden_flags
    fi
@@ -115,7 +115,7 @@ Usage:
    ${MULLE_USAGE_NAME} [flags] [command]
 
    Match filenames to a user-definable set of patternfiles.
-   Also: shows all files matching those patternfiles.
+   Also: lists all files matching those patternfiles.
 
 Flags:
 EOF
@@ -129,7 +129,7 @@ EOF
 
    print_commands "${verbose}" | LC_ALL=C sort
 
-   if [ "${verbose}" = "NO" ]
+   if [ "${verbose}" = 'NO' ]
    then
       cat <<EOF
       (use mulle-match -v help to show more commands)
@@ -152,20 +152,20 @@ usage()
 
 main()
 {
-   local MULLE_FLAG_MAGNUM_FORCE="NO"
+   local MULLE_FLAG_MAGNUM_FORCE='NO'
 
    # technical flags
    local MULLE_TRACE
-   local MULLE_FLAG_EXEKUTOR_DRY_RUN="NO"
-   local MULLE_FLAG_LOG_LOCAL="NO"
-   local MULLE_FLAG_LOG_DEBUG="NO"
-   local MULLE_FLAG_LOG_EXEKUTOR="NO"
-   local MULLE_FLAG_LOG_FLUFF="NO"
-   local MULLE_FLAG_LOG_SCRIPTS="NO"
-   local MULLE_FLAG_LOG_SETTINGS="NO"
-   local MULLE_FLAG_LOG_VERBOSE="NO"
-   local MULLE_FLAG_LOG_MERGE="NO"
-   local MULLE_TRACE_POSTPONE="NO"
+   local MULLE_FLAG_EXEKUTOR_DRY_RUN='NO'
+   local MULLE_FLAG_LOG_LOCAL='NO'
+   local MULLE_FLAG_LOG_DEBUG='NO'
+   local MULLE_FLAG_LOG_EXEKUTOR='NO'
+   local MULLE_FLAG_LOG_FLUFF='NO'
+   local MULLE_FLAG_LOG_SCRIPTS='NO'
+   local MULLE_FLAG_LOG_SETTINGS='NO'
+   local MULLE_FLAG_LOG_VERBOSE='NO'
+   local MULLE_FLAG_LOG_MERGE='NO'
+   local MULLE_TRACE_POSTPONE='NO'
 
    #
    # simple option handling
@@ -191,7 +191,7 @@ main()
          ;;
 
          -e)
-            FLAG_OUTSIDE_ENV="YES"
+            FLAG_OUTSIDE_ENV='YES'
          ;;
 
          -ed|--etc-dir)
@@ -202,21 +202,28 @@ main()
          ;;
 
          -f)
-            MULLE_FLAG_MAGNUM_FORCE="YES"
+            MULLE_FLAG_MAGNUM_FORCE='YES'
          ;;
 
          -id|--ignore-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
-            MULLE_MATCH_IGNORE_DIR="$1"
+            MULLE_MATCH_SKIP_DIR="$1"
          ;;
 
          -md|--match-dir)
             [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
             shift
 
-            MULLE_MATCH_MATCH_DIR="$1"
+            MULLE_MATCH_USE_DIR="$1"
+         ;;
+
+         -vd|--var-dir)
+            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
+            shift
+
+            MULLE_MATCH_VAR_DIR="$1"
          ;;
 
          --version)
@@ -247,7 +254,7 @@ main()
    local physdir
 
    physdir="`pwd -P`"
-   if [ "${FLAG_OUTSIDE_ENV}" = "YES" ]
+   if [ "${FLAG_OUTSIDE_ENV}" = 'YES' ]
    then
       [ "${physdir}" = "/" ] && fail "Can't run with root as virtual root"
       MULLE_VIRTUAL_ROOT="${physdir}"
@@ -257,7 +264,7 @@ main()
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
       case "${cmd}" in
-         show|find|match)
+         list|show|find|match)
             fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, \
 pass the -e flag"
          ;;
@@ -294,11 +301,11 @@ pass the -e flag"
          match_match_main "$@"
       ;;
 
-      find|show)
-         # shellcheck source=src/mulle-match-run.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-find.sh"
+      find|list|show)
+         # shellcheck source=src/mulle-match-list.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh"
 
-         match_find_main "$@"
+         match_list_main "$@"
       ;;
 
       patternfile)

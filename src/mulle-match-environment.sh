@@ -49,52 +49,59 @@ match_environment()
    then
       if [ -d ".mulle-sde" ]
       then
-         log_fluff "MULLE_MATCH_DIR default is .mulle-sde"
+         log_fluff "MULLE_MATCH_DIR default is \".mulle-sde\""
          MULLE_MATCH_DIR=".mulle-sde"
       else
-         log_fluff "MULLE_MATCH_DIR default is .mulle-match"
+         log_fluff "MULLE_MATCH_DIR default is \".mulle-match\""
          MULLE_MATCH_DIR=".mulle-match"
       fi
    fi
 
-   MULLE_MATCH_ETC_DIR="${MULLE_MATCH_ETC_DIR:-${MULLE_MATCH_DIR}/etc}"
+   [ -z "${MULLE_PATH_SH}" ] && \
+   	. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh"
 
-   case "${MULLE_MATCH_MATCH_DIR}" in
+   r_absolutepath "${MULLE_MATCH_DIR}"
+   MULLE_MATCH_DIR="${RVAL}"
+
+   MULLE_MATCH_ETC_DIR="${MULLE_MATCH_ETC_DIR:-${MULLE_MATCH_DIR}/etc}"
+   MULLE_MATCH_VAR_DIR="${MULLE_MATCH_VAR_DIR:-${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}}"
+
+   case "${MULLE_MATCH_USE_DIR}" in
       NO)
-         MULLE_MATCH_MATCH_DIR=""
-         log_fluff "Not using \"MULLE_MATCH_MATCH_DIR\""
+         MULLE_MATCH_USE_DIR=""
+         log_fluff "Not using \"MULLE_MATCH_USE_DIR\""
       ;;
 
       "")
-         MULLE_MATCH_MATCH_DIR="${MULLE_MATCH_ETC_DIR}/match.d"
-         if [ ! -d "${MULLE_MATCH_MATCH_DIR}" ]
+         MULLE_MATCH_USE_DIR="${MULLE_MATCH_ETC_DIR}/match.d"
+         if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
          then
-            MULLE_MATCH_MATCH_DIR="${MULLE_MATCH_DIR}/share/match.d"
+            MULLE_MATCH_USE_DIR="${MULLE_MATCH_DIR}/share/match.d"
          fi
-         if [ ! -d "${MULLE_MATCH_MATCH_DIR}" ]
+         if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
          then
-            log_warning "There is no directory \"${MULLE_MATCH_MATCH_DIR}\" set up"
-            MULLE_MATCH_MATCH_DIR=""
+            log_warning "There is no directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
+            MULLE_MATCH_USE_DIR=""
          fi
       ;;
    esac
 
-   case "${MULLE_MATCH_IGNORE_DIR}" in
+   case "${MULLE_MATCH_SKIP_DIR}" in
       NO)
-         MULLE_MATCH_IGNORE_DIR=""
-         log_fluff "Not using \"MULLE_MATCH_IGNORE_DIR\""
+         MULLE_MATCH_SKIP_DIR=""
+         log_fluff "Not using \"MULLE_MATCH_SKIP_DIR\""
       ;;
 
       "")
-         MULLE_MATCH_IGNORE_DIR="${MULLE_MATCH_ETC_DIR}/ignore.d"
-         if [ ! -d "${MULLE_MATCH_IGNORE_DIR}" ]
+         MULLE_MATCH_SKIP_DIR="${MULLE_MATCH_ETC_DIR}/ignore.d"
+         if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
          then
-            MULLE_MATCH_IGNORE_DIR="${MULLE_MATCH_DIR}/share/ignore.d"
+            MULLE_MATCH_SKIP_DIR="${MULLE_MATCH_DIR}/share/ignore.d"
          fi
-         if [ ! -d "${MULLE_MATCH_IGNORE_DIR}" ]
+         if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
          then
-            log_fluff "There is no directory \"${MULLE_MATCH_IGNORE_DIR}\" set up"
-            MULLE_MATCH_IGNORE_DIR=""
+            log_fluff "There is no directory \"${MULLE_MATCH_SKIP_DIR#${PWD}/}\" set up"
+            MULLE_MATCH_SKIP_DIR=""
          fi
       ;;
    esac
