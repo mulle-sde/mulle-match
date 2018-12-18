@@ -1,3 +1,7 @@
+### 0.3.1
+
+* suppress boring warning when cleaning
+
 ## 0.3.0
 
 * support show command

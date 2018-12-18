@@ -38,7 +38,8 @@ match_environment()
    log_entry "match_environment" "$@"
 
    local directory="$1"
-
+   local cmd="$2"
+   
    if [ ! -z "${directory}" ]
    then
       MULLE_MATCH_DIR="${directory}"
@@ -80,7 +81,10 @@ match_environment()
          fi
          if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
          then
-            log_warning "There is no directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
+         	if [ "${cmd}" != "clean" ]
+         	then
+	            log_warning "There is no directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
+	         fi
             MULLE_MATCH_USE_DIR=""
          fi
       ;;

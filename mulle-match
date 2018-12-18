@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.3.0
+MULLE_EXECUTABLE_VERSION=0.3.1
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -276,7 +276,7 @@ pass the -e flag"
 
    . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-environment.sh" || exit 1
 
-   match_environment
+   match_environment "" "${cmd}"
 
    case "${cmd}" in
       help)
