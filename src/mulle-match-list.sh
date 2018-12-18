@@ -155,24 +155,6 @@ list_emit_by_category()
 }
 
 
-get_core_count()
-{
-   local count
-
-   count="`nproc 2> /dev/null`"
-   if [ -z "$count" ]
-   then
-      count="`sysctl -n hw.ncpu 2> /dev/null`"
-   fi
-
-   if [ -z "$count" ]
-   then
-      count=4
-      log_verbose "Unknown core count, setting it to 4 as default"
-   fi
-   echo $count
-}
-
 
 _list_toplevel_files()
 {
@@ -220,10 +202,14 @@ parallel_list_filtered_files()
    local ignore="$1" ; shift
    local match="$1" ; shift
 
+   [ -z "${MULLE_PARALLEL_SH}" ] && \
+      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-parallel.sh"
+
    local maxjobs
    local running
 
-   maxjobs="`get_core_count`"
+   r_get_core_count
+   maxjobs="${RVAL}"
 
    local filename_0
    local filename_1
@@ -300,16 +286,7 @@ parallel_list_filtered_files()
 
       IFS="${DEFAULT_IFS}"
 
-      while :
-      do
-         running=($(jobs -pr))  #  http://mywiki.wooledge.org/BashFAQ/004
-         if [ "${#running[@]}" -le ${maxjobs} ]
-         then
-            break
-         fi
-         log_debug "Waiting on jobs to finish (${#running[@]})"
-         sleep 0.001s # 1000Hz
-      done
+      wait_for_available_job "${maxjobs}"
 
       (
          _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_0}"
@@ -390,8 +367,7 @@ list_filenames()
    #
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
-      MULLE_MATCH_PATH=".mulle-sourcetree/config:\
-src"
+      MULLE_MATCH_PATH=".mulle-sourcetree/config:src"
       log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 

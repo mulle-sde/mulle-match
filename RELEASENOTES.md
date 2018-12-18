@@ -1,3 +1,9 @@
+## 0.3.0
+
+* support show command
+* rename find to list
+
+
 ### 0.2.1
 
 * fixes for mulle-monitor

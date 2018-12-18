@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.2.1
+MULLE_EXECUTABLE_VERSION=0.3.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -301,7 +301,7 @@ pass the -e flag"
          match_match_main "$@"
       ;;
 
-      find|list|show)
+      find|list)
          # shellcheck source=src/mulle-match-list.sh
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh"
 
