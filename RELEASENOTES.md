@@ -1,3 +1,7 @@
+### 0.3.2
+
+* improve README.md
+
 ### 0.3.1
 
 * suppress boring warning when cleaning

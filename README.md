@@ -1,4 +1,8 @@
-🕵🏻‍ Extensible filesystem observation with callbacks
+# mulle-match
+
+💕 Match filenames against a set of .gitignore like patternfiles
+
+![Last version](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg)
 
 ... for Linux, OS X, FreeBSD, Windows
 
