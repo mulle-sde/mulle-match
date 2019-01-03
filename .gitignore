@@ -3,10 +3,8 @@
 tmp.*
 build/
 build-*.d/
-.mulle-env/
-.mulle-sde/
-.mulle-match/
-mulle-project/publisher-info.sh
+var/
+publisher-info.sh
 _Headers.cmake
 _Sources.cmake
 *.sublime-workspace

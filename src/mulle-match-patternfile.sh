@@ -274,6 +274,9 @@ list_patternfile_main()
 {
    log_entry "list_patternfile_main" "$@"
 
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+
    local OPTION_DUMP='NO'
 
    while [ "$#" -ne 0 ]
@@ -299,8 +302,6 @@ list_patternfile_main()
       shift
    done
 
-   [ -z "${MULLE_MATCH_USE_DIR}" ] && internal_fail "MULLE_MATCH_USE_DIR is undefined"
-   [ -z "${MULLE_MATCH_SKIP_DIR}" ] && internal_fail "MULLE_MATCH_SKIP_DIR is undefined"
 
    local directory
 
@@ -310,6 +311,12 @@ list_patternfile_main()
          directory="${MULLE_MATCH_SKIP_DIR}"
       ;;
    esac
+
+   if [ -z "${directory}" ]
+   then
+      log_verbose "There is no \"${OPTION_FOLDER_NAME}\" patternfile folder setup yet"
+      return 1
+   fi
 
    local outputname
    local where
@@ -361,6 +368,9 @@ cat_patternfile_main()
 {
    log_entry "cat_patternfile_main" "$@"
 
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+
    while [ "$#" -ne 0 ]
    do
       case "$1" in
@@ -399,6 +409,9 @@ cat_patternfile_main()
 remove_patternfile_main()
 {
    log_entry "remove_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
 
    [ "$#" -ne 1 ] && remove_patternfile_usage
 
@@ -576,7 +589,7 @@ setup_etc_if_needed()
    # easier to upgrade unedited files
    #
    shopt -s nullglob
-   for patternfile in "${MULLE_MATCH_DIR}/share/${folder}"/*
+   for patternfile in "${MULLE_MATCH_SHARE_DIR}/${folder}"/*
    do
       shopt -u nullglob
       symlink_or_copy_patternfile "${patternfile}" "${MULLE_MATCH_ETC_DIR}/${folder}"
@@ -588,6 +601,9 @@ setup_etc_if_needed()
 add_patternfile_main()
 {
    log_entry "add_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
 
    local OPTION_POSITION="50"
 
@@ -669,7 +685,9 @@ rename_patternfile_main()
 {
    log_entry "rename_patternfile_main" "$@"
 
-   local OPTION_CATEGORY
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+
    local OPTION_POSITION
    local OPTION_TYPE
    local operation
@@ -803,6 +821,9 @@ copy_patternfile_main()
 {
    log_entry "copy_patternfile_main" "$@"
 
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+
    rename_patternfile_main --copy "$@"
 }
 
@@ -845,6 +866,9 @@ edit_patternfile_main()
 {
    log_entry "edit_patternfile_main" "$@"
 
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+
    local templatefile=""
 
    while [ "$#" -ne 0 ]
@@ -886,6 +910,8 @@ edit_patternfile_main()
 
    local dstfile
 
+   OPTION_FOLDER_NAME="${OPTION_FOLDER_NAME:-match.d}"
+
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
@@ -909,6 +935,9 @@ edit_patternfile_main()
 repair_patternfile_main()
 {
    log_entry "repair_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
 
    local OPTION_ADD='NO'
 
@@ -940,7 +969,7 @@ repair_patternfile_main()
    local srcdir
    local dstdir
 
-   srcdir="${MULLE_MATCH_DIR}/share/${OPTION_FOLDER_NAME}"
+   srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
 
    if [ ! -d "${dstdir}" ]
@@ -965,7 +994,8 @@ repair_patternfile_main()
    do
       shopt -u nullglob
 
-      patternfile="`fast_basename "${filename}"`"
+      r_fast_basename "${filename}"
+      patternfile="${RVAL}"
       if [ -L "${filename}" ]
       then
          if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
@@ -1011,7 +1041,8 @@ repair_patternfile_main()
    for filename in "${srcdir}"/*
    do
       shopt -u nullglob
-      patternfile="`fast_basename "${filename}"`"
+      r_fast_basename "${filename}"
+      patternfile="${RVAL}"
       if [ ! -e "${dstdir}/${patternfile}" ]
       then
          if [ "${OPTION_ADD}" = 'YES' ]
@@ -1053,10 +1084,10 @@ match_patternfile_main()
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
 
+   local OPTION_CATEGORY="all"
    local OPTION_FOLDER_NAME="match.d"
    local ONLY_IGNORE='NO'
    local ONLY_MATCH='NO'
-   local OPTION_CATEGORY="all"
 
    while :
    do
@@ -1103,24 +1134,36 @@ match_patternfile_main()
 
    case "${cmd:-list}" in
       cat|copy|edit|add|rename|repair|remove)
-         ${cmd}_patternfile_main "$@"
+         ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
+                                 "${OPTION_CATEGORY}" \
+                                 "$@"
       ;;
 
       list)
+         local delimit_cmd
+
+         delimit_cmd="echo"
          if [ "${ONLY_MATCH}" = 'NO' ]
          then
             OPTION_FOLDER_NAME="ignore.d"
-            list_patternfile_main "$@"
+            if ! list_patternfile_main "${OPTION_FOLDER_NAME}" \
+                                       "${OPTION_CATEGORY}" \
+                                       "$@"
+            then
+               delimit_cmd=":"
+            fi
          fi
          if [ "${ONLY_IGNORE}" = 'NO' ]
          then
             if [ "${ONLY_MATCH}" = 'NO' ]
             then
-               echo
+               ${delimit_cmd}
             fi
 
             OPTION_FOLDER_NAME="match.d"
-            list_patternfile_main "$@"
+            list_patternfile_main "${OPTION_FOLDER_NAME}" \
+                                  "${OPTION_CATEGORY}" \
+                                  "$@"
          fi
       ;;
 

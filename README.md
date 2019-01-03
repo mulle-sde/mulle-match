@@ -13,18 +13,36 @@ to categorize files according to their filenames and location.
 ![](dox/mulle-sde-overview.png)
 
 
-Executable      | Description
-----------------|--------------------------------
-`mulle-match`   | Match filename according to .gitignore like patternfiles
+Executable                   | Description
+-----------------------------|--------------------------------
+`mulle-match`                | Match filename according to .gitignore like patternfiles
+`mulle-match-to-cmake`  | Use **mulle-match** to create cmake files
+
 
 
 ## Install
 
 See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how
-to install mulle-sde.
+to install mulle-sde, this will also install mulle-bashfunctions and
+mulle-match.
+
+Otherwise install
+[mulle-bashfunctions](//github.com/mulle-sde/mulle-sde-developer)
+first and then use the provided `bin/installer --prefix`.
 
 
 ## Commands
+
+
+### mulle-match init
+
+Initialize the current directory with some patternfiles to match C/ObjC files
+for demo purposed:
+
+```
+mulle-match init
+```
+
 
 
 ### mulle-match patternfile
@@ -45,7 +63,7 @@ Example:
 !*~.*
 ```
 
-A *patternfile* resides in either the `skip.d` folder or the
+A *patternfile* resides in either the `ignore.d` folder or the
 `match.d` folder. It's filename is composed of three segments.
 The first digits-only segment is there to proritize patternfiles. Lower
 numbers are matched before higher numbers (`ls` sorting)
@@ -66,13 +84,13 @@ Add a *patternfile* to select PNG files. We give it a type "hello":
 
 ```
 echo "*.png" > pattern.txt
-mulle-match -e patternfile install hello pattern.txt
+mulle-match patternfile install hello pattern.txt
 ```
 
 You can optionally specify a *category* for the patternfile:
 
 ```
-mulle-match -e patternfile install --category special hello pattern.txt
+mulle-match patternfile install --category special hello pattern.txt
 ```
 
 It may be useful, especially in conjunction with `mulle-match find`,
@@ -81,20 +99,20 @@ that large and changing folders like `.git` and `build` are ignored. Install the
 ```
 echo ".git/" > pattern.txt
 echo "build/" >> pattern.txt
-mulle-match -e patternfile install -i folders pattern.txt
+mulle-match patternfile install -i folders pattern.txt
 ```
 
 
 Remove a *patternfile*:
 
 ```
-mulle-match -e patternfile remove hello
+mulle-match patternfile remove hello
 ```
 
 List all *patternfiles*:
 
 ```
-mulle-match -e patternfile list
+mulle-match patternfile list
 ```
 
 
@@ -104,13 +122,13 @@ To test your installed *patternfile* you can use `mulle-match match`. It
 will output the patternfile name if one matches.
 
 ```
-mulle-match -e match pix/foo.png
+mulle-match match pix/foo.png
 ```
 
 You can also test individual *patterns* using the `--pattern` option:
 
 ```
-mulle-match -e match --pattern '*.png' pix/foo.png
+mulle-match match --pattern '*.png' pix/foo.png
 ```
 
 
@@ -124,7 +142,5 @@ This example lists all the files, that pass through *patternfiles* of type
 "hello":
 
 ```
-mulle-match -e list --match-filter "hello"
+mulle-match list --match-filter "hello"
 ```
-
-

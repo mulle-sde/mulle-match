@@ -39,33 +39,30 @@ match_environment()
 
    local directory="$1"
    local cmd="$2"
-   
-   if [ ! -z "${directory}" ]
+
+   if [ -z "${directory}" ]
    then
-      MULLE_MATCH_DIR="${directory}"
+      directory="${MULLE_VIRTUAL_ROOT}"
+   fi
+   if [ -z "${directory}" ]
+   then
+      directory="`pwd -P`"
    fi
 
-   # lame but practical
-   if [ -z "${MULLE_MATCH_DIR}" ]
+   if [ -z "${MULLE_HOSTNAME}" ]
    then
-      if [ -d ".mulle-sde" ]
-      then
-         log_fluff "MULLE_MATCH_DIR default is \".mulle-sde\""
-         MULLE_MATCH_DIR=".mulle-sde"
-      else
-         log_fluff "MULLE_MATCH_DIR default is \".mulle-match\""
-         MULLE_MATCH_DIR=".mulle-match"
-      fi
+      MULLE_HOSTNAME="`hostname -s`"
    fi
 
    [ -z "${MULLE_PATH_SH}" ] && \
    	. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh"
 
-   r_absolutepath "${MULLE_MATCH_DIR}"
-   MULLE_MATCH_DIR="${RVAL}"
+   r_absolutepath "${directory}"
 
-   MULLE_MATCH_ETC_DIR="${MULLE_MATCH_ETC_DIR:-${MULLE_MATCH_DIR}/etc}"
-   MULLE_MATCH_VAR_DIR="${MULLE_MATCH_VAR_DIR:-${MULLE_MATCH_DIR}/var/${MULLE_HOSTNAME}}"
+   MULLE_MATCH_PROJECT_DIR="${RVAL}"
+   MULLE_MATCH_SHARE_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/share/match"
+   MULLE_MATCH_ETC_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/etc/match"
+   MULLE_MATCH_VAR_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/var/${MULLE_HOSTNAME}/match"
 
    case "${MULLE_MATCH_USE_DIR}" in
       NO)
@@ -77,11 +74,11 @@ match_environment()
          MULLE_MATCH_USE_DIR="${MULLE_MATCH_ETC_DIR}/match.d"
          if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
          then
-            MULLE_MATCH_USE_DIR="${MULLE_MATCH_DIR}/share/match.d"
+            MULLE_MATCH_USE_DIR="${MULLE_MATCH_SHARE_DIR}/match.d"
          fi
          if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
          then
-         	if [ "${cmd}" != "clean" ]
+         	if [ "${cmd}" != "clean" -a "${cmd}" != "init" ]
          	then
 	            log_warning "There is no directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
 	         fi
@@ -100,7 +97,7 @@ match_environment()
          MULLE_MATCH_SKIP_DIR="${MULLE_MATCH_ETC_DIR}/ignore.d"
          if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
          then
-            MULLE_MATCH_SKIP_DIR="${MULLE_MATCH_DIR}/share/ignore.d"
+            MULLE_MATCH_SKIP_DIR="${MULLE_MATCH_SHARE_DIR}/ignore.d"
          fi
          if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
          then
@@ -109,6 +106,16 @@ match_environment()
          fi
       ;;
    esac
+
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+   then
+      log_trace2 "MULLE_MATCH_ETC_DIR     : \"${MULLE_MATCH_ETC_DIR}\""
+      log_trace2 "MULLE_MATCH_PROJECT_DIR : \"${MULLE_MATCH_PROJECT_DIR}\""
+      log_trace2 "MULLE_MATCH_SHARE_DIR   : \"${MULLE_MATCH_SHARE_DIR}\""
+      log_trace2 "MULLE_MATCH_SKIP_DIR    : \"${MULLE_MATCH_SKIP_DIR}\""
+      log_trace2 "MULLE_MATCH_USE_DIR     : \"${MULLE_MATCH_USE_DIR}\""
+      log_trace2 "MULLE_MATCH_VAR_DIR     : \"${MULLE_MATCH_VAR_DIR}\""
+   fi
 
    # required!
    shopt -s extglob || internal_fail "Can't extglob"

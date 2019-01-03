@@ -51,15 +51,15 @@ main()
 
    #-----------
 
-   expect_mulle_match "00-vfl--none" -e patternfile -i list
-   expect_mulle_match "00-bochum--all" -e patternfile -m list
+   expect_mulle_match "00-vfl--none" patternfile -i list
+   expect_mulle_match "00-bochum--all" patternfile -m list
 
    log_verbose "----- #1 PASSED -----"
 
    #-----------
 
-   expect_mulle_match "vfl" -e patternfile -i cat "00-vfl--none"
-   expect_mulle_match "bochum" -e patternfile cat "00-bochum--all"
+   expect_mulle_match "vfl" patternfile -i cat "00-vfl--none"
+   expect_mulle_match "bochum" patternfile cat "00-bochum--all"
 
    log_verbose "----- #2 PASSED -----"
 

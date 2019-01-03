@@ -1,3 +1,9 @@
+## 0.4.0
+
+* use own .mulle folder now instead of .mulle-match
+* add init command
+
+
 ### 0.3.2
 
 * improve README.md

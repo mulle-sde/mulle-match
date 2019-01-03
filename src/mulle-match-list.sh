@@ -357,8 +357,6 @@ list_filenames()
    local ignore_dirs
    local match_files
    local match_dirs
-   local RVAL
-
    IFS=":"
    set -o noglob # turn off globbing temporarily
 
@@ -367,7 +365,7 @@ list_filenames()
    #
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
-      MULLE_MATCH_PATH=".mulle-sourcetree/config:src"
+      MULLE_MATCH_PATH=".mulle/etc/sourcetree/config:src"
       log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 

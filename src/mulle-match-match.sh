@@ -679,11 +679,13 @@ _define_patternfilefunction()
       fi
    fi
 
-   _cache="`add_line "${_cache}" "${varname}"`"
+   r_add_line "${_cache}" "${varname}"
+   _cache="${RVAL}"
 
    local varname_f
 
-   varname_f="`fast_basename "${patternfile}"`"
+   r_fast_basename "${patternfile}"
+   varname_f="${RVAL}"
    eval "${varname}_f='${varname_f}'"
 
    return 0
@@ -736,7 +738,7 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 #
 r_patternfilefunctions_match_relative_filename()
 {
-   log_entry "r_patternfilefunctions_match_relative_filename" "$@"
+   log_entry "r_patternfilefunctions_match_relative_filename" "${1:0:30}..." "$2"
 
    local patternfilefunctions="$1"
    local filename="$2"
@@ -789,7 +791,7 @@ _match_assert_filename()
 #"
 r_match_filepath()
 {
-   log_entry "r_match_filepath" "$@"
+   log_entry "r_match_filepath" "${1:0:30}..." "${2:0:30}..." "$3"
 
    local ignore="$1"
    local match="$2"
@@ -850,9 +852,7 @@ matching_filepath_pattern()
    fi
 
    (
-      local RVAL
-
-      shopt -s extglob
+         shopt -s extglob
       set -o noglob
 
       IFS="

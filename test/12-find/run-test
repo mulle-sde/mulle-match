@@ -57,7 +57,7 @@ main()
 
    expected="a;red
 z/a;red"
-   expect_mulle_match "${expected}" -e -md "match.d" find -f "%f;%c\\n"  -mf type0negative
+   expect_mulle_match "${expected}" find -f "%f;%c\\n"  -mf type0negative
 
    log_verbose "----- #1 PASSED -----"
 
@@ -66,7 +66,7 @@ b;blue
 z/a;red
 z/b;blue"
 
-   expect_mulle_match "${expected}" -e -md "match.d" find -f "%f;%c\\n"
+   expect_mulle_match "${expected}" find -f "%f;%c\\n"
    log_verbose "----- #2 PASSED -----"
 
    log_info "----- ALL PASSED -----"

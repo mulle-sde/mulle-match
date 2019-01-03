@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.3.2
+MULLE_EXECUTABLE_VERSION=0.4.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -51,14 +51,15 @@ print_commands()
    local show_all="${1:-NO}"
 
    SHOWN_COMMANDS="\
-   clean          : remove cached patternfiles
-   list           : list files that match patternfiles
-   match          : match filenames against patternfiles
-   patternfile    : manage patternfiles"
+   init        : setup some initial patternfiles
+   clean       : remove cached patternfiles
+   list        : list files that match patternfiles
+   match       : match filenames against patternfiles
+   patternfile : manage patternfiles"
 
    HIDDEN_COMMANDS="\
-   libexec-dir    : print path to mulle-match libexec
-   uname          : mulle-matchs simplified uname(1)"
+   libexec-dir : print path to mulle-match libexec
+   uname       : mulle-match's simplified uname(1)"
 
 
    echo "${SHOWN_COMMANDS}"
@@ -70,31 +71,19 @@ print_commands()
 }
 
 
-print_hidden_flags()
-{
-   echo "   -cd <dir>      : set MULLE_MATCH_DIR"
-   echo "   -ed <dir>      : set MULLE_MATCH_ETC_DIR"
-   echo "   -id <dir>      : set MULLE_MATCH_SKIP_DIR"
-   echo "   -md <dir>      : set MULLE_MATCH_USE_DIR"
-   echo "   -pd <dir>      : set MULLE_MATCH_PRUNE_DIR"
-}
-
-
 print_flags()
 {
    local show_all="${1:-NO}"
 
    local delimiter
 
-   delimiter="          : "
-
-   if [ "${show_all}" != 'NO' ]
-   then
-      print_hidden_flags
-   fi
+   delimiter="       : "
 
    echo "   -e   ${delimiter}bypass mulle-env check"
    echo "   -f   ${delimiter}force operation"
+   echo "   -P   ${delimiter}specify search start points (separator :)"
+   echo "   -I   ${delimiter}specify files and folders to ignore (separator :)"
+   echo "   -F   ${delimiter}specify file pattern to match (separator :)"
 
    options_technical_flags_usage "${delimiter}"
 }
@@ -183,47 +172,29 @@ main()
             usage "${MULLE_TRACE}"
          ;;
 
-         -cd|--config-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
-            shift
-
-            MULLE_MATCH_DIR="$1"
-         ;;
-
-         -e)
-            FLAG_OUTSIDE_ENV='YES'
-         ;;
-
-         -ed|--etc-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
-            shift
-
-            MULLE_MATCH_ETC_DIR="$1"
-         ;;
-
          -f)
             MULLE_FLAG_MAGNUM_FORCE='YES'
          ;;
 
-         -id|--ignore-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
+         -F|--filename-patterns)
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_SKIP_DIR="$1"
+            MULLE_MATCH_FILENAMES="$1"
          ;;
 
-         -md|--match-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
+         -I|--ignore-path)
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_USE_DIR="$1"
+            MULLE_MATCH_FILENAMES="$1"
          ;;
 
-         -vd|--var-dir)
-            [ $# -eq 1 ] && usage "${MULLE_TRACE}" "Missing argument to \"$1\""
+         -P|--path)
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_VAR_DIR="$1"
+            MULLE_MATCH_PATH="$1"
          ;;
 
          --version)
@@ -251,28 +222,13 @@ main()
    cmd="$1"
    [ $# -ne 0 ] && shift
 
-   local physdir
-
-   physdir="`pwd -P`"
-   if [ "${FLAG_OUTSIDE_ENV}" = 'YES' ]
-   then
-      [ "${physdir}" = "/" ] && fail "Can't run with root as virtual root"
-      MULLE_VIRTUAL_ROOT="${physdir}"
-      export MULLE_VIRTUAL_ROOT
-   fi
-
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
-      case "${cmd}" in
-         list|show|find|match)
-            fail "To run ${MULLE_EXECUTABLE_NAME} outside of mulle-env, \
-pass the -e flag"
-         ;;
-      esac
+      MULLE_VIRTUAL_ROOT="`pwd -P`"
+      [ "${MULLE_VIRTUAL_ROOT}" = "/" ] && fail "Can't run with root folder as starting place"
+   else
+      rexekutor cd "${MULLE_VIRTUAL_ROOT}" || fail "Could not cd to \"${MULLE_VIRTUAL_ROOT}\""
    fi
-
-   [ -d "${physdir}" ]      || fail "Working directory \"${PWD}\" does not exist"
-   exekutor cd "${physdir}" || fail "Could not cd to physical directory \"${physdir}\""
 
    . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-environment.sh" || exit 1
 
@@ -290,8 +246,22 @@ pass the -e flag"
          match_clean_main "$@"
       ;;
 
+      init)
+         # shellcheck source=src/mulle-match-list.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-init.sh"
+
+         match_init_main "$@"
+      ;;
+
       libexec-dir|library-path)
          echo "${MULLE_MATCH_LIBEXEC_DIR}"
+      ;;
+
+      list|find)
+         # shellcheck source=src/mulle-match-list.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh"
+
+         match_list_main "$@"
       ;;
 
       match)
@@ -299,13 +269,6 @@ pass the -e flag"
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh"
 
          match_match_main "$@"
-      ;;
-
-      find|list)
-         # shellcheck source=src/mulle-match-list.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh"
-
-         match_list_main "$@"
       ;;
 
       patternfile)

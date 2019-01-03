@@ -53,9 +53,9 @@ main()
 
    #-----------
 
-   expect_mulle_match "01-type0negative--all" -e -md "match.d" match "a"
-   expect_mulle_match "02-type0positive--all" -e -md "match.d" match "b"
-   expect_failure_mulle_match -e -md "match.d" match "c"
+   expect_mulle_match "01-type0negative--all" match "a"
+   expect_mulle_match "02-type0positive--all" match "b"
+   expect_failure_mulle_match match "c"
 
    log_verbose "----- #1 PASSED -----"
 

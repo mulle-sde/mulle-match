@@ -183,8 +183,11 @@ main()
       mkdir -p "${libexec}" || installer_fail "could not create ${libexec}"
    fi
 
-   install -m "${mode}" "mulle-match" "${bin}/mulle-match" || exit 1
-   printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/mulle-match" >&2
+   for i in mulle-match mulle-match-to-cmake
+   do
+      install -m "${mode}" "$i" "${bin}/$i" || exit 1
+      printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/$i" >&2
+   done
 
    for i in src/mulle*
    do
