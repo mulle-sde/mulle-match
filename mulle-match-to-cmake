@@ -57,7 +57,7 @@ Usage:
 
    A test run that writes to stdout and does not create files can be
    accomplished with:
-      ${MULLE_USAGE_NAME} --serial -H - -S -
+      ${MULLE_USAGE_NAME} --stdout
 
 Options:
    --filter-type  : the patternfile to use (source)
@@ -378,6 +378,12 @@ main()
             shift
 
             MULLE_MATCH_TO_CMAKE_PATTERNFILETYPE="$1"
+         ;;
+
+         --stdout)
+            OPTION_PARALLEL='NO'
+            MULLE_MATCH_TO_CMAKE_SOURCES_FILE="-"
+            MULLE_MATCH_TO_CMAKE_HEADERS_FILE="-"
          ;;
 
          --version)
