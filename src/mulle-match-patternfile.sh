@@ -932,12 +932,11 @@ edit_patternfile_main()
 # walk through etc symlinks, cull those that point to knowwhere
 # replace files with symlinks, whose content is identical to share
 #
-repair_patternfile_main()
+_repair_patternfile_main()
 {
-   log_entry "repair_patternfile_main" "$@"
+   log_entry "_repair_patternfile_main" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_CATEGORY="${1:-all}"; shift
 
    local OPTION_ADD='NO'
 
@@ -1063,6 +1062,16 @@ repair_patternfile_main()
       rmdir_safer "${dstdir}"
       rmdir_if_empty "${MULLE_MATCH_ETC_DIR}"
    fi
+}
+
+
+repair_patternfile_main()
+{
+   shift
+   shift
+
+   _repair_patternfile_main "match.d" "$@" &&
+   _repair_patternfile_main "ignore.d" "$@"
 }
 
 

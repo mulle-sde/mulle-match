@@ -1,3 +1,7 @@
+### 0.4.1
+
+* repair also ignorefiles
+
 ## 0.4.0
 
 * use own .mulle folder now instead of .mulle-match
