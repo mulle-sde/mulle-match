@@ -133,7 +133,7 @@ copy_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile rename [options] <srcfilename> [dstfilename]
+   ${MULLE_USAGE_NAME} patternfile copy [options] <srcfilename> [dstfilename]
 
    Copy an existing patternfile. You can also set portions of the patternfile
    with options, instead of providing a full destination patternfile name.
@@ -686,7 +686,7 @@ rename_patternfile_main()
    log_entry "rename_patternfile_main" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_CATEGORY="${1:-all}"; shift
+   local OPTION_CATEGORY="$1"; shift
 
    local OPTION_POSITION
    local OPTION_TYPE
@@ -821,10 +821,10 @@ copy_patternfile_main()
 {
    log_entry "copy_patternfile_main" "$@"
 
-   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_CATEGORY="${1:-all}"; shift
+   local OPTION_FOLDER_NAME="$1"; shift
+   local OPTION_CATEGORY="$1"; shift
 
-   rename_patternfile_main --copy "$@"
+   rename_patternfile_main "${OPTION_FOLDER_NAME}" "${OPTION_CATEGORY}" --copy "$@"
 }
 
 
@@ -842,12 +842,12 @@ copy_template_patternfile()
 
    if [ ! -f "${srcfile}" ]
    then
-      fail "Patternfile \"${templatefile}\" not found"
+      fail "Source patternfile \"${srcfile}\" not found"
    fi
 
    if [ "${MULLE_FLAG_MAGNUM_FORCE}" != 'YES' -a -f "${dstfile}" ]
    then
-      fail "\"${dstfile}\" already exists. Use -f to clobber"
+      fail "Patternfile \"${dstfile}\" already exists. Use -f to clobber"
    fi
 
    local flags
@@ -1142,9 +1142,15 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd:-list}" in
-      cat|copy|edit|add|rename|repair|remove)
+      cat|edit|add|repair|remove)
          ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
                                  "${OPTION_CATEGORY}" \
+                                 "$@"
+      ;;
+
+      copy|rename)
+         ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
+                                 "" \
                                  "$@"
       ;;
 
@@ -1184,4 +1190,21 @@ match_patternfile_main()
          match_patternfile_usage "unknown command \"${cmd}\""
       ;;
    esac
+
+
+   #
+   # always clean after patternfile changes
+   #
+   [ $? -ne 0 ] && return 1
+
+   case "${cmd:-list}" in
+      list)
+         return 0
+      ;;
+   esac
+
+   [ -z "${MULLE_MATCH_CLEAN_SH}" ] && \
+      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-clean.sh"
+
+   match_clean_main
 }

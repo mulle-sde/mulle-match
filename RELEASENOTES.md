@@ -1,3 +1,7 @@
+### 0.4.2
+
+* fix copy and rename command, clean var after changes
+
 ### 0.4.1
 
 * repair also ignorefiles

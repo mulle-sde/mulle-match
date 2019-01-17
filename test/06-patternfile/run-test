@@ -64,6 +64,16 @@ main()
    log_verbose "----- #2 PASSED -----"
 
 
+   run_mulle_match patternfile copy "00-bochum--all" "02-bochum--some"
+   run_mulle_match patternfile rename "02-bochum--some" "02-bochum--more"
+   expect_mulle_match "bochum" patternfile cat "00-bochum--all"
+   if ! run_mulle_match patternfile remove "02-bochum--more"
+   then
+      fail "failed to remove"
+   fi
+
+   log_verbose "----- #4 PASSED -----"
+
    log_info "----- ALL PASSED -----"
 }
 
