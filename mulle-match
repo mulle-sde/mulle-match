@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.4.2
+MULLE_EXECUTABLE_VERSION=0.4.3
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -187,7 +187,7 @@ main()
             [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_FILENAMES="$1"
+            MULLE_MATCH_IGNORE_PATH="$1"
          ;;
 
          -P|--path)

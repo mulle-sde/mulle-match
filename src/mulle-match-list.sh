@@ -392,8 +392,7 @@ stash:\
 include:\
 lib:\
 libexec:\
-.git:\
-*.dSYM"
+.git"
       log_verbose "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
    fi
 

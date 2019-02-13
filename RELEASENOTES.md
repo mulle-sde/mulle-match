@@ -1,3 +1,7 @@
+### 0.4.3
+
+* remove *.dSYM from `MULLE_MATCH_IGNORE_PATH` default list, fix -I setting wrong variable, improve dox
+
 ### 0.4.2
 
 * fix copy and rename command, clean var after changes
