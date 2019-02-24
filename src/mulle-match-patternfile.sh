@@ -348,8 +348,7 @@ list_patternfile_main()
 
    local patternfile
 
-   IFS="
-"
+   IFS=$'\n'
    for patternfile in `_list_patternfiles "${directory}"`
    do
       IFS="${DEFAULT_IFS}"

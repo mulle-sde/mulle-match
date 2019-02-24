@@ -473,8 +473,7 @@ patternlines_match_relative_filename()
 
    rval=1
 
-   IFS="
-"
+   IFS=$'\n'
    set -o noglob
    for pattern in ${patterns}
    do
@@ -602,8 +601,7 @@ _patternfilefunction_create()
    bigbody="
    local rval=1
 "
-   set -o noglob ; IFS="
-"
+   set -o noglob ; IFS=$'\n'
    for pattern in ${contents}
    do
       IFS="${DEFAULT_IFS}"; set +o noglob
@@ -855,8 +853,7 @@ matching_filepath_pattern()
          shopt -s extglob
       set -o noglob
 
-      IFS="
-"
+      IFS=$'\n'
       # returns 0,1,2
       r_match_filepath "$@"
       case $? in
@@ -1151,8 +1148,7 @@ match_match_main()
 
    shopt -s extglob
    set -o noglob
-   IFS="
-"
+   IFS=$'\n'
    while [ $# -ne 0 ]
    do
       if _match_print_filepath "${OPTION_FORMAT}" \

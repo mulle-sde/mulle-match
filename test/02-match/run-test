@@ -39,8 +39,7 @@ expect_match_print_filepath()
    local result
 
    set -o noglob
-   IFS="
-"
+   IFS=$'\n'
 
    if ! result="`_match_print_filepath "${format}" "" "$@"`"
    then

@@ -248,8 +248,7 @@ parallel_list_filtered_files()
 
    shopt -s extglob
    set -o noglob
-   IFS="
-"
+   IFS=$'\n'
    while read -r filename_0
    do
       read -r filename_1
