@@ -248,8 +248,8 @@ parallel_list_filtered_files()
 
    shopt -s extglob
    set -o noglob
-   IFS=$'\n'
-   while read -r filename_0
+
+   while IFS=$'\n' read -r filename_0
    do
       read -r filename_1
       read -r filename_2
@@ -282,8 +282,6 @@ parallel_list_filtered_files()
       read -r filename_1d
       read -r filename_1e
       read -r filename_1f
-
-      IFS="${DEFAULT_IFS}"
 
       wait_for_available_job "${maxjobs}"
 
@@ -334,7 +332,6 @@ parallel_list_filtered_files()
                | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
                | LC_ALL="C" rexekutor sort -u )
 
-   IFS="${DEFAULT_IFS}"
    set +o noglob
 
    log_fluff "Waiting for jobs to finish..."
@@ -356,8 +353,7 @@ list_filenames()
    local ignore_dirs
    local match_files
    local match_dirs
-   IFS=":"
-   set -o noglob # turn off globbing temporarily
+
 
    #
    # MULLE_MATCH_PATH: This is where the find search starts
@@ -367,6 +363,9 @@ list_filenames()
       MULLE_MATCH_PATH=".mulle/etc/sourcetree/config:src"
       log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
+
+   IFS=":"
+   set -o noglob # turn off globbing temporarily
 
    for name in ${MULLE_MATCH_PATH}
    do

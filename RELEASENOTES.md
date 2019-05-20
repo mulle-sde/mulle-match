@@ -1,3 +1,8 @@
+### 0.4.4
+
+* bug fix
+* small beauty fixes in output and code
+
 ### 0.4.3
 
 * remove *.dSYM from `MULLE_MATCH_IGNORE_PATH` default list, fix -I setting wrong variable, improve dox

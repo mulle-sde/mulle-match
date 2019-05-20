@@ -978,6 +978,9 @@ _match_print_filepath()
 
    # avoid a backtick subshell here
    # returns 0,1,2
+   #
+   # 2 means, no patternfiles set up
+   #
    r_match_filepath "$@"
    if [ $? -eq 1 ]
    then
@@ -1006,11 +1009,14 @@ _match_print_filepath()
       esac
    fi
 
-   if [ -z "${format}" -o -z "${patternfile}" ]
+   if [ -z "${format}" ]
    then
       echo "${filename}"
    else
-      _match_print_patternfilename "${format}" "${patternfile}"
+      if [ ! -z "${patternfile}" ]
+      then
+         _match_print_patternfilename "${format}" "${patternfile}"
+      fi
    fi
 }
 
