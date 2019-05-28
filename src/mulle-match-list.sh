@@ -385,11 +385,13 @@ list_filenames()
    then
       MULLE_MATCH_IGNORE_PATH="addiction:\
 build:\
+kitchen:\
 dependency:\
 stash:\
 include:\
 lib:\
 libexec:\
+.mulle:\
 .git"
       log_verbose "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
    fi

@@ -1,3 +1,7 @@
+### 0.4.5
+
+* place kitchen into default `MULLE_MATCH_IGNORE_PATH`
+
 ### 0.4.4
 
 * bug fix
