@@ -108,6 +108,10 @@ Usage:
    Add a patternfile for a specific type. The filename of a patternfile is
    of the form <digits>-<type>--<category>.
 
+   Example. Create a patternfile named 80-source--fooblet:
+
+       echo "*.fooblet" | \
+         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
 
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -676,7 +680,7 @@ add_patternfile_main()
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
    prepare_for_write_of_patternfile "${dstfile}"
-   redirect_exekutor "${dstfile}" echo "${contents}"
+   redirect_exekutor "${dstfile}" printf "%s\n" "${contents}"
 }
 
 

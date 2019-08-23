@@ -205,7 +205,7 @@ ${text_hdr2}"
    if [ "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}" = '-' ]
    then
    	log_info "Headers"
-   	echo "${text_hdr}"
+   	printf "%s\n" "${text_hdr}"
    	return 0
    fi
 
@@ -228,7 +228,7 @@ ${text_hdr}
    exekutor mkdir -p "${RVAL}"
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
-   redirect_exekutor "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}" echo "${text_hdr}"
+   redirect_exekutor "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}" printf "%s\n" "${text_hdr}"
    exekutor chmod a-w "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
 }
 
@@ -274,7 +274,7 @@ if this is intentional\")"
    if [ "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" = '-' ]
    then
    	log_info "Sources"
-   	echo "${text_src}"
+   	printf "%s\n" "${text_src}"
    	return 0
    fi
 
@@ -294,7 +294,7 @@ ${text_src}"
    exekutor mkdir -p  "${RVAL}" 2> /dev/null
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
-   redirect_exekutor "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" echo "${text_src}"
+   redirect_exekutor "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" printf "%s\n" "${text_src}"
    exekutor chmod a-w "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
 }
 
@@ -387,7 +387,7 @@ main()
          ;;
 
          --version)
-            echo "${MULLE_EXECUTABLE_VERSION}"
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
             return 0
          ;;
 

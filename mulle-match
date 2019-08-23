@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.4.5
+MULLE_EXECUTABLE_VERSION=0.4.6
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -62,11 +62,11 @@ print_commands()
    uname       : mulle-match's simplified uname(1)"
 
 
-   echo "${SHOWN_COMMANDS}"
+   printf "%s\n" "${SHOWN_COMMANDS}"
 
    if [ "${show_all}" != 'NO' ]
    then
-      echo "${HIDDEN_COMMANDS}"
+      printf "%s\n" "${HIDDEN_COMMANDS}"
    fi
 }
 
@@ -198,7 +198,7 @@ main()
          ;;
 
          --version)
-            echo "${MULLE_EXECUTABLE_VERSION}"
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
             exit 0
          ;;
 
@@ -254,7 +254,7 @@ main()
       ;;
 
       libexec-dir|library-path)
-         echo "${MULLE_MATCH_LIBEXEC_DIR}"
+         printf "%s\n" "${MULLE_MATCH_LIBEXEC_DIR}"
       ;;
 
       list|find)
@@ -279,11 +279,11 @@ main()
       ;;
 
       uname)
-         echo "${MULLE_UNAME}"
+         printf "%s\n" "${MULLE_UNAME}"
       ;;
 
       version)
-         echo "${MULLE_EXECUTABLE_VERSION}"
+         printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
          return 0
       ;;
 
@@ -310,7 +310,7 @@ _init()
    #
    if [ "$1" = "version" ]
    then
-      echo "${MULLE_EXECUTABLE_VERSION}"
+      printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
       exit 0
    fi
 
@@ -344,7 +344,7 @@ _init()
    #
    case "$1" in
       "libexec-dir"|"library-path")
-         echo "${MULLE_MATCH_LIBEXEC_DIR}"
+         printf "%s\n" "${MULLE_MATCH_LIBEXEC_DIR}"
          exit 0
       ;;
    esac

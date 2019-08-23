@@ -43,12 +43,12 @@ match_list_usage()
 Usage:
    ${MULLE_USAGE_NAME} list [options]
 
-   List files matching the patternfiles in the project directory. For good
-   performance it is important to restrict the searched items as much as
-   possible using the environment variables.
+   List files that match the rules contained in the patternfiles of the project
+   directory.
 
-   You can further restrict the output, by only matching certian patternfile
-   types.
+   For good performance it is important to restrict the searched items as much
+   as possible using the environment variables. You can further restrict the
+   output, by only matching certian patternfile types.
 
    The following example searches for C source files in 'src' and 'foo/src':
 
@@ -57,11 +57,11 @@ Usage:
          ${MULLE_USAGE_NAME} list --mf source
 
 Options:
-   -f <format>    : specify output values
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
+   -f <format>    : specify output values
                     This is like a simplified C printf format:
                         %c : category of match file (can be empty)
                         %e : executable name of callback
@@ -72,14 +72,18 @@ EOF
                         \\n : a linefeed
                      (e.g. "category=%c,type=%t\\n")
 EOF
+   else
+     cat <<EOF >&2
+   -f <format>    : specify output values (-v for detailed help)
+EOF
    fi
 
    cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching <type>
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
+   -mf <filter>   : specify a filter for matching <type>
                     A filter is a comma separated list of type expressions.
                     A type expression is either a type name with wildcard
                     characters or a negated type expression. An expression is
@@ -87,7 +91,9 @@ EOF
                     Example: filter is "header*,!header_private"
 EOF
    else
-      echo "      (${MULLE_USAGE_NAME} -v show help for more)"
+     cat <<EOF >&2
+   -mf <filter>   : specify a filter for matching <type> (-v for detailed help)
+EOF
    fi
 
      cat <<EOF >&2
@@ -354,7 +360,6 @@ list_filenames()
    local match_files
    local match_dirs
 
-
    #
    # MULLE_MATCH_PATH: This is where the find search starts
    #
@@ -362,6 +367,8 @@ list_filenames()
    then
       MULLE_MATCH_PATH=".mulle/etc/sourcetree/config:src"
       log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+   else
+      log_verbose "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 
    IFS=":"
@@ -394,6 +401,8 @@ libexec:\
 .mulle:\
 .git"
       log_verbose "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+   else
+      log_verbose "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
    fi
 
    for name in ${MULLE_MATCH_IGNORE_PATH}
@@ -416,6 +425,7 @@ libexec:\
          r_concat "${match_files}" "-name '$name'" " -o "
          match_files="${RVAL}"
       done
+      log_verbose "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
    fi
 
    set -o noglob
