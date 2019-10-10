@@ -60,9 +60,8 @@ match_environment()
    r_absolutepath "${directory}"
 
    MULLE_MATCH_PROJECT_DIR="${RVAL}"
-   MULLE_MATCH_SHARE_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/share/match"
-   MULLE_MATCH_ETC_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/etc/match"
-   MULLE_MATCH_VAR_DIR="${MULLE_MATCH_PROJECT_DIR}/.mulle/var/${MULLE_HOSTNAME}/match"
+
+   eval `( cd "${MULLE_MATCH_PROJECT_DIR} ; mulle-env mulle-tool-env match }`
 
    case "${MULLE_MATCH_USE_DIR}" in
       NO)
