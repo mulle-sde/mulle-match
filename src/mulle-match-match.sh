@@ -135,7 +135,7 @@ _transform_path_pattern()
 
          log_debug "prefix: $prefix"
          log_debug "suffix: $suffix"
-         echo "${prefix}@(/*/|/)${suffix}"
+         printf "%s\n" "${prefix}@(/*/|/)${suffix}"
          return
       ;;
 
@@ -144,7 +144,7 @@ _transform_path_pattern()
          suffix="`_transform_path_pattern "${suffix}"`"
 
          log_debug "suffix: $suffix"
-         echo "${suffix}"
+         printf "%s\n" "${suffix}"
          return
       ;;
 
@@ -158,7 +158,7 @@ _transform_path_pattern()
 
       *"/*")
          prefix="`_transform_path_pattern "${prefix%?}"`"
-         echo "${prefix}*([^/])"
+         printf "%s\n" "${prefix}*([^/])"
          return
       ;;
 
@@ -168,12 +168,12 @@ _transform_path_pattern()
          prefix="`_transform_path_pattern "${prefix}"`"
          suffix="`_transform_path_pattern "${suffix}"`"
 
-         echo "${prefix}*([^/])${suffix}"
+         printf "%s\n" "${prefix}*([^/])${suffix}"
          return
       ;;
    esac
 
-   echo "${pattern}"
+   printf "%s\n" "${pattern}"
 }
 
 
@@ -305,7 +305,7 @@ _pattern_function_header()
 
    local functionname="$1"
 
-   echo "${functionname}()
+   printf "%s\n" "${functionname}()
 {"
    if [ "${MULLE_FLAG_LOG_DEBUG}" = 'YES' -a "${MULLE_FLAG_LOG_SETTINGS}" != 'YES' ]
    then
@@ -423,7 +423,7 @@ pattern_unique_functionname()
       functionname="_m${identifier}"
       if [ "`type -t "${functionname}"`" != "function" ]
       then
-         echo "${functionname}"
+         printf "%s\n" "${functionname}"
          return
       fi
    done
@@ -570,6 +570,8 @@ _patternfilefunction_create()
       cachefile="${cachedirectory}/${varname}"
       if [ "${cachefile}" -nt "${patternfile}" ]
       then
+         log_verbose "Use cached \"${cachefile#${MULLE_USER_PWD}/}\" for \"${patternfile#${MULLE_USER_PWD}/}\""
+
          . "${cachefile}" || internal_fail "corrupted file \"${cachefile}\""
          return 0
       fi
@@ -639,11 +641,14 @@ ${functiontext}"
    fi
 
    eval "${alltext}" || internal_fail "failed to produce functions"
+
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
    then
+      log_verbose "Cached \"${patternfile#${MULLE_USER_PWD}/}\" in \"${cachefile#${MULLE_USER_PWD}/}\""
+
       mkdir_if_missing "${cachedirectory}"
-      redirect_exekutor "${cachefile}" echo "${alltext}"
+      redirect_exekutor "${cachefile}" printf "%s\n" "${alltext}"
    fi
 }
 
@@ -858,7 +863,7 @@ matching_filepath_pattern()
       r_match_filepath "$@"
       case $? in
          0|2)
-            echo "${RVAL##*/}"
+            printf "%s\n" "${RVAL##*/}"
             exit 0 # subshell
          ;;
       esac
@@ -1011,7 +1016,7 @@ _match_print_filepath()
 
    if [ -z "${format}" ]
    then
-      echo "${filename}"
+      printf "%s\n" "${filename}"
    else
       if [ ! -z "${patternfile}" ]
       then

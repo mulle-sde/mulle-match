@@ -45,13 +45,17 @@ Usage:
 
    Operations on patternfiles. A patternfile is a list of patterns. Each
    pattern is on its own line. A pattern behaves similiar to a line in
-   .gitignore.
+   .gitignore. To show all currently installed patternfiles with their
+   contents use
 
-   Use the -i flag to choose "ignore" patternfiles instead of the default
-   "match" patternfiles.
+      mulle-sde patternfile list --cat
 
-   This example matches all JPG and all PNG files, except those starting with an
-   underscore:
+   There are various commands to manipulate patternfiles. By default match
+   patternfiles will be used. Utilize the -i flag to choose "ignore"
+   patternfiles instead.
+
+   This example patternfile matches all JPG and all PNG files, except those
+   starting with an underscore:
 
    pix/**/*.png
    *.jpg
@@ -108,6 +112,10 @@ Usage:
    Add a patternfile for a specific type. The filename of a patternfile is
    of the form <digits>-<type>--<category>.
 
+   Example. Create a patternfile named 80-source--fooblet:
+
+       echo "*.fooblet" | \
+         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
 
    Example. Create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -422,7 +430,12 @@ remove_patternfile_main()
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
 
-   remove_file_if_present "${dstfile}"
+   if [ -e "${dstfile}" ]
+   then
+      remove_file_if_present "${dstfile}"
+   else
+      fail "\"${dstfile}\" does not exist"
+   fi
 }
 
 
@@ -676,7 +689,7 @@ add_patternfile_main()
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
    prepare_for_write_of_patternfile "${dstfile}"
-   redirect_exekutor "${dstfile}" echo "${contents}"
+   redirect_exekutor "${dstfile}" printf "%s\n" "${contents}"
 }
 
 
