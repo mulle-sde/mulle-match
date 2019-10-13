@@ -371,7 +371,7 @@ list_filenames()
       log_verbose "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 
-   IFS=":"
+   IFS=':'
    set -o noglob # turn off globbing temporarily
 
    for name in ${MULLE_MATCH_PATH}
