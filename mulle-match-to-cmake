@@ -224,7 +224,7 @@ ${text_hdr}
    log_fluff "Create cmake header files (${PWD})"
 
    log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
-   r_fast_dirname "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
+   r_dirname "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
    exekutor mkdir -p "${RVAL}"
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
@@ -290,7 +290,7 @@ endif()
 ${text_src}"
 
    log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
-   r_fast_dirname "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
+   r_dirname "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
    exekutor mkdir -p  "${RVAL}" 2> /dev/null
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"

@@ -333,11 +333,8 @@ _init()
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "minimal" || \
       fail "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
 
-   local _libexec_dir
-
-   _get_libexec_dir "$0" "mulle-match" "mulle-match-match.sh"
-
-   MULLE_MATCH_LIBEXEC_DIR="${_libexec_dir}"
+   r_get_libexec_dir "$0" "mulle-match" "mulle-match-match.sh"
+   MULLE_MATCH_LIBEXEC_DIR="${RVAL}"
 
    #
    # minimal setup exit

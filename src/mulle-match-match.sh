@@ -687,7 +687,7 @@ _define_patternfilefunction()
 
    local varname_f
 
-   r_fast_basename "${patternfile}"
+   r_basename "${patternfile}"
    varname_f="${RVAL}"
    eval "${varname}_f='${varname_f}'"
 

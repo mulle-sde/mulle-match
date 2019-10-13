@@ -331,11 +331,11 @@ list_patternfile_main()
    local foldername
    local parentdir
 
-   r_fast_basename "${directory}"
+   r_basename "${directory}"
    outputname="${RVAL}"
-   r_fast_dirname "${directory}"
+   r_dirname "${directory}"
    parentdir="${RVAL}"
-   r_fast_basename "${parentdir}"
+   r_basename "${parentdir}"
    where="${RVAL}"
    foldername="${OPTION_FOLDER_NAME}"
 
@@ -502,9 +502,9 @@ make_file_from_symlinked_patternfile()
    local directory
    local filename
 
-   r_fast_dirname "${dstfile}"
+   r_dirname "${dstfile}"
    directory="${RVAL}"
-   r_fast_basename "${dstfile}"
+   r_basename "${dstfile}"
    filename="${RVAL}"
    (
       cd "${directory}" || exit 1
@@ -1005,7 +1005,7 @@ _repair_patternfile_main()
    do
       shopt -u nullglob
 
-      r_fast_basename "${filename}"
+      r_basename "${filename}"
       patternfile="${RVAL}"
       if [ -L "${filename}" ]
       then
@@ -1052,7 +1052,7 @@ _repair_patternfile_main()
    for filename in "${srcdir}"/*
    do
       shopt -u nullglob
-      r_fast_basename "${filename}"
+      r_basename "${filename}"
       patternfile="${RVAL}"
       if [ ! -e "${dstdir}/${patternfile}" ]
       then
