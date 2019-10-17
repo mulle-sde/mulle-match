@@ -61,7 +61,7 @@ match_environment()
 
    MULLE_MATCH_PROJECT_DIR="${RVAL}"
 
-   eval `( cd "${MULLE_MATCH_PROJECT_DIR}" ; mulle-env mulle-tool-env match )` || exit 1
+   eval `( cd "${MULLE_MATCH_PROJECT_DIR}" ; mulle-env -N mulle-tool-env match )` || exit 1
 
    case "${MULLE_MATCH_USE_DIR}" in
       NO)

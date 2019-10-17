@@ -1,3 +1,10 @@
+## 0.5.0
+
+* changed to mulle-bashfunctions 2 call convention
+* moved to mulle-bashfunctions v2
+* ask mulle-env for the location of ETC SHARE and VAR directories
+
+
 ### 0.4.5
 
 * place kitchen into default `MULLE_MATCH_IGNORE_PATH`
