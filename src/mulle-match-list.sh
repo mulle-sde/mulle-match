@@ -431,6 +431,7 @@ libexec:\
    set -o noglob
    IFS="${DEFAULT_IFS}"
 
+   # use xtype to also catch symlinks to files
    parallel_list_filtered_files "${match_dirs:-.}" \
                                 "${format}" \
                                 "${filter}" \
@@ -438,7 +439,7 @@ libexec:\
                                 "${match}" \
                                 "\\(" ${ignore_dirs} "\\)" -prune  \
                                 -o \
-                                -type f \
+                                -xtype f \
                                 "\\(" ${match_files} "\\)"
 }
 

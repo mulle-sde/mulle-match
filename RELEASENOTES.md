@@ -1,3 +1,7 @@
+### 0.5.1
+
+* do not ignore symbolic links anymore when listing files
+
 ## 0.5.0
 
 * changed to mulle-bashfunctions 2 call convention
