@@ -1,3 +1,7 @@
+### 0.5.3
+
+* distributed too soon... now fix symlinks on darwin/freebsd for real
+
 ### 0.5.2
 
 * fix -xtype for darwin

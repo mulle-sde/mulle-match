@@ -440,8 +440,7 @@ libexec:\
    query="-xtype f"
    case "${MULLE_UNAME}" in
       darwin|freebsd)
-         flags="-H"
-         query='-type f'
+         query='\( -type f -o -type l \)'
       ;;
    esac
 
