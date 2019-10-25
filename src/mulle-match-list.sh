@@ -207,6 +207,7 @@ parallel_list_filtered_files()
    local filter="$1" ; shift
    local ignore="$1" ; shift
    local match="$1" ; shift
+   local flags="$1" ; shift
 
    [ -z "${MULLE_PARALLEL_SH}" ] && \
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-parallel.sh"
@@ -334,7 +335,7 @@ parallel_list_filtered_files()
          [ ! -z "${filename_1f}" ] && _match_print_filepath "${format}" "${filter}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
-   done < <( eval_exekutor find ${quoted_filenames} "$@" -print \
+   done < <( eval_exekutor find ${flags} ${quoted_filenames} "$@" -print \
                | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
                | LC_ALL="C" rexekutor sort -u )
 
@@ -428,18 +429,31 @@ libexec:\
       log_verbose "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
    fi
 
-   set -o noglob
+   set +o noglob
    IFS="${DEFAULT_IFS}"
 
    # use xtype to also catch symlinks to files
+
+   local flags
+   local query
+
+   query="-xtype f"
+   case "${MULLE_UNAME}" in
+      darwin|freebsd)
+         flags="-H"
+         query='-type f'
+      ;;
+   esac
+
    parallel_list_filtered_files "${match_dirs:-.}" \
                                 "${format}" \
                                 "${filter}" \
                                 "${ignore}" \
                                 "${match}" \
+                                "${flags}" \
                                 "\\(" ${ignore_dirs} "\\)" -prune  \
                                 -o \
-                                -xtype f \
+                                ${query} \
                                 "\\(" ${match_files} "\\)"
 }
 

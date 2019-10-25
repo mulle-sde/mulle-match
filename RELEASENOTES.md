@@ -1,3 +1,7 @@
+### 0.5.2
+
+* fix -xtype for darwin
+
 ### 0.5.1
 
 * do not ignore symbolic links anymore when listing files
