@@ -310,7 +310,6 @@ list_patternfile_main()
       shift
    done
 
-
    local directory
 
    directory="${MULLE_MATCH_USE_DIR}"
@@ -333,10 +332,14 @@ list_patternfile_main()
 
    r_basename "${directory}"
    outputname="${RVAL}"
+
    r_dirname "${directory}"
+   r_dirname "${RVAL}"
    parentdir="${RVAL}"
+
    r_basename "${parentdir}"
    where="${RVAL}"
+
    foldername="${OPTION_FOLDER_NAME}"
 
    if [ "${where}" = "etc" ]
@@ -353,6 +356,7 @@ list_patternfile_main()
       _list_patternfiles "${directory}"
       return $?
    fi
+
 
    local patternfile
 
