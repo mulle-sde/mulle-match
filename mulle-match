@@ -226,6 +226,7 @@ main()
    then
       MULLE_VIRTUAL_ROOT="`pwd -P`"
       [ "${MULLE_VIRTUAL_ROOT}" = "/" ] && fail "Can't run with root folder as starting place"
+      log_fluff "mulle-fetch sets MULLE_VIRTUAL_ROOT to \"${MULLE_VIRTUAL_ROOT}\""
    else
       rexekutor cd "${MULLE_VIRTUAL_ROOT}" || fail "Could not cd to \"${MULLE_VIRTUAL_ROOT}\""
    fi

@@ -189,8 +189,8 @@ _list_toplevel_files()
       _match_filepath "${ignore}" "" "${filename}"
 
       # 0 would be matched, but we have no match_dir
-      # so fall through ignore means 2
-      if [ $? -eq 2 ]
+      # so fall through ignore means 4
+      if [ $? -eq 4 ]
       then
          echo "'${filename}'"
       fi
@@ -251,7 +251,7 @@ parallel_list_filtered_files()
    local filename_1e
    local filename_1f
 
-   log_verbose "Search locations: ${quoted_filenames}"
+   log_debug "Search locations: ${quoted_filenames}"
 
    shopt -s extglob
    set -o noglob
@@ -367,9 +367,15 @@ list_filenames()
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
       MULLE_MATCH_PATH=".mulle/etc/sourcetree/config:src"
-      log_verbose "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      fi
    else
-      log_verbose "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      fi
    fi
 
    IFS=':'
@@ -401,9 +407,15 @@ lib:\
 libexec:\
 .mulle:\
 .git"
-      log_verbose "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
    else
-      log_verbose "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
    fi
 
    for name in ${MULLE_MATCH_IGNORE_PATH}
@@ -419,14 +431,21 @@ libexec:\
    if [ -z "${MULLE_MATCH_FILENAMES}" ]
    then
       match_files="-name '*'"
-      log_verbose "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+      fi
    else
       for name in ${MULLE_MATCH_FILENAMES}
       do
          r_concat "${match_files}" "-name '$name'" " -o "
          match_files="${RVAL}"
       done
-      log_verbose "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+      fi
    fi
 
    set +o noglob
@@ -457,13 +476,8 @@ libexec:\
 }
 
 
-###
-###  MAIN
-###
-match_list_main()
+match_list_include()
 {
-   log_entry "match_list_main" "$@"
-
    if [ -z "${MULLE_PATH_SH}" ]
    then
       # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
@@ -474,6 +488,22 @@ match_list_main()
       # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
+
+   if [ -z "${MULLE_MATCH_MATCH_SH}" ]
+   then
+      # shellcheck source=src/mulle-match-match.sh
+      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
+   fi
+}
+
+
+###
+###  MAIN
+###
+match_list_main()
+{
+   log_entry "match_list_main" "$@"
+
 
    local OPTION_FORMAT="%f\\n"
    local OPTION_SORTED='YES'
@@ -488,6 +518,9 @@ match_list_main()
    MULLE_MATCH_PATH="${MULLE_MATCH_PATH:-${MULLE_MATCH_FIND_LOCATIONS}}"
    MULLE_MATCH_IGNORE_PATH="${MULLE_MATCH_IGNORE_PATH:-${MULLE_MATCH_FIND_IGNORE_PATH}}"
    MULLE_MATCH_FILENAMES="${MULLE_MATCH_FILENAMES:-${MULLE_MATCH_FILENAMES}}"
+
+
+   match_list_include
 
    #
    # handle options
@@ -552,11 +585,6 @@ match_list_main()
 
    [ "$#" -ne 0 ] && match_list_usage "superflous arguments \"$*\""
 
-   if [ -z "${MULLE_MATCH_MATCH_SH}" ]
-   then
-      # shellcheck source=src/mulle-match-match.sh
-      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
-   fi
 
    local _cache
    local skip_patterncache

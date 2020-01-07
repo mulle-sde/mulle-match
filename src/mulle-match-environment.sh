@@ -79,7 +79,7 @@ match_environment()
          then
          	if [ "${cmd}" != "clean" -a "${cmd}" != "init" ]
          	then
-	            log_warning "There is no directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
+	            log_warning "There is no use directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
 	         fi
             MULLE_MATCH_USE_DIR=""
          fi
@@ -100,7 +100,7 @@ match_environment()
          fi
          if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
          then
-            log_fluff "There is no directory \"${MULLE_MATCH_SKIP_DIR#${PWD}/}\" set up"
+            log_fluff "There is no skip directory \"${MULLE_MATCH_SKIP_DIR#${PWD}/}\" set up"
             MULLE_MATCH_SKIP_DIR=""
          fi
       ;;

@@ -43,16 +43,14 @@ match_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile [options] <command>
 
-   Operations on patternfiles. A patternfile is a list of patterns. Each
-   pattern is on its own line. A pattern behaves similiar to a line in
-   .gitignore. To show all currently installed patternfiles with their
-   contents use
+   A patternfile is a list of patterns. Each pattern is on its own line.
+   A pattern behaves similiar to a line in .gitignore. To show all currently
+   installed patternfiles with their contents use:
 
       mulle-sde patternfile list --cat
 
-   There are various commands to manipulate patternfiles. By default match
-   patternfiles will be used. Utilize the -i flag to choose "ignore"
-   patternfiles instead.
+   There commands operate on "match" patternfiles by default. Utilize the -i
+   flag to choose "ignore" patternfiles instead.
 
    This example patternfile matches all JPG and all PNG files, except those
    starting with an underscore:
@@ -61,6 +59,9 @@ Usage:
    *.jpg
    !_*
 
+   See the Wiki for more information:
+      https://github.com/mulle-sde/mulle-sde/wiki
+
 Options:
    -i         : use ignore.d patternfiles
 
@@ -68,6 +69,7 @@ Commands:
    add        : add a patternfile
    cat        : show contents of patternfile
    copy       : copy a patternfile
+   status     : check if patternfiles need repairing
    edit       : edit a patternfile
    list       : list patternfiles currently in use
    remove     : remove a patternfile
@@ -87,12 +89,12 @@ cat_patternfile_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile cat <patternfile>
+   ${MULLE_USAGE_NAME} patternfile cat [patternfile]
 
-   Read contents of a patternfile and prinz it to stdout. You get the names of
+   Read contents of a patternfile and print  it to stdout. You get the names of
    the available patternfiles using:
 
-      \`${MULLE_USAGE_NAME}patternfile list\`
+      \`${MULLE_USAGE_NAME} patternfile list\`
 EOF
    exit 1
 }
@@ -121,6 +123,9 @@ Usage:
    callback \"c_files\":
 
       (echo '*.h'; echo '*.c') | ${MULLE_USAGE_NAME} patternfile add c_files -
+
+   See the Wiki for more information:
+      https://github.com/mulle-sde/mulle-sde/wiki
 
 Options:
    -c <name>    : give this patternfile category. The defaults are "all" or
@@ -401,19 +406,24 @@ cat_patternfile_main()
       shift
    done
 
-   [ "$#" -ne 1 ] && cat_patternfile_usage
+   [ "$#" -gt 1 ] && cat_patternfile_usage
 
    local filename="$1"
 
-   case "${OPTION_FOLDER_NAME}" in
-      ignore.d)
-         exekutor cat "${MULLE_MATCH_SKIP_DIR}/${filename}"
-      ;;
+   if [ -z "${filename}" -o "${filename}" = '*' ]
+   then
+      list_patternfile_main "${OPTION_FOLDER_NAME}" "${OPTION_CATEGORY}" --cat
+   else
+      case "${OPTION_FOLDER_NAME}" in
+         ignore.d)
+            exekutor cat "${MULLE_MATCH_SKIP_DIR}/${filename}"
+         ;;
 
-      *)
-         exekutor cat "${MULLE_MATCH_USE_DIR}/${filename}"
-      ;;
-   esac
+         *)
+            exekutor cat "${MULLE_MATCH_USE_DIR}/${filename}"
+         ;;
+      esac
+   fi
 }
 
 
@@ -1091,6 +1101,122 @@ repair_patternfile_main()
 }
 
 
+_status_patternfile_main()
+{
+   log_entry "_status_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+
+   local OPTION_ADD='NO'
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            status_patternfile_usage
+         ;;
+
+         -*)
+            status_patternfile_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -ne 0 ] && status_patternfile_usage
+
+   local srcdir
+   local dstdir
+
+   srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
+   dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
+
+   if [ ! -d "${dstdir}" ]
+   then
+      log_verbose "Nothing to do, as etc does not exist yet"
+      return
+   fi
+
+   local filename
+   local patternfile
+
+   #
+   # go through etc, throw out symlinks that point to nowhere
+   # create symlinks for files that are identical in share and throw old
+   # files away
+   #
+   shopt -s nullglob
+   for filename in "${dstdir}"/* # dstdir is etc
+   do
+      shopt -u nullglob
+
+      r_basename "${filename}"
+      patternfile="${RVAL}"
+      if [ -L "${filename}" ]
+      then
+         if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
+         then
+            local globtest
+
+            globtest="*-${patternfile#*-}"
+            if [ -f "${srcdir}"/${globtest} ]
+            then
+               log_warning "\"${patternfile}\" moved to ${globtest}, use \`patternfile repair\` to fix"
+            else
+               log_warning "\"${patternfile}\" no longer exists, use \`patternfile repair\` to fix"
+            fi
+         fi
+      else
+         if [ -f "${srcdir}/${patternfile}" ]
+         then
+            if diff -q -b "${filename}" "${srcdir}" > /dev/null
+            then
+               log_info "\"${patternfile}\" has no user edits, use \`patternfile repair\` to fix"
+            fi
+         fi
+      fi
+   done
+
+   #
+   # go through share, symlink everything that is not in etc
+   #
+   shopt -s nullglob
+   for filename in "${srcdir}"/*
+   do
+      shopt -u nullglob
+
+      r_basename "${filename}"
+      patternfile="${RVAL}"
+      if [ ! -e "${dstdir}/${patternfile}" ]
+      then
+         log_warning "\"${patternfile}\" is not used. Use \`repair --add\` to add it."
+      fi
+   done
+   shopt -u nullglob
+}
+
+
+status_patternfile_main()
+{
+   shift
+   shift
+
+   _status_patternfile_main "match.d" "$@"
+   _status_patternfile_main "ignore.d" "$@"
+}
+
+
+doctor_patternfile_main()
+{
+   status_patternfile_main "$@"
+}
+
+
 ###
 ###  MAIN
 ###
@@ -1158,7 +1284,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd:-list}" in
-      cat|edit|add|repair|remove)
+      add|cat|edit|remove|repair|status)
          ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
                                  "${OPTION_CATEGORY}" \
                                  "$@"

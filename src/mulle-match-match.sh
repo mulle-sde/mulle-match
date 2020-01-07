@@ -485,7 +485,7 @@ patternlines_match_relative_filename()
             rval=0
          ;;
 
-         2)
+         2)  # 2 is correct here (not 4)
             rval=1
          ;;
       esac
@@ -570,7 +570,7 @@ _patternfilefunction_create()
       cachefile="${cachedirectory}/${varname}"
       if [ "${cachefile}" -nt "${patternfile}" ]
       then
-         log_verbose "Use cached \"${cachefile#${MULLE_USER_PWD}/}\" for \"${patternfile#${MULLE_USER_PWD}/}\""
+         log_debug "Use cached \"${cachefile#${MULLE_USER_PWD}/}\" for \"${patternfile#${MULLE_USER_PWD}/}\""
 
          . "${cachefile}" || internal_fail "corrupted file \"${cachefile}\""
          return 0
@@ -823,7 +823,7 @@ r_match_filepath()
    #
    if [ -z "${match}" ]
    then
-      return 2
+      return 4
    fi
 
    if r_patternfilefunctions_match_relative_filename "${match}" "${filename}"
@@ -859,10 +859,10 @@ matching_filepath_pattern()
       set -o noglob
 
       IFS=$'\n'
-      # returns 0,1,2
+      # returns 0,1,4
       r_match_filepath "$@"
       case $? in
-         0|2)
+         0|4)
             printf "%s\n" "${RVAL##*/}"
             exit 0 # subshell
          ;;
@@ -1018,9 +1018,12 @@ _match_print_filepath()
    then
       printf "%s\n" "${filename}"
    else
-      if [ ! -z "${patternfile}" ]
+      if [ "${format}" != "-" ]
       then
-         _match_print_patternfilename "${format}" "${patternfile}"
+         if [ ! -z "${patternfile}" ]
+         then
+            _match_print_patternfilename "${format}" "${patternfile}"
+         fi
       fi
    fi
 }
@@ -1059,6 +1062,10 @@ match_match_main()
       case "$1" in
          -h*|--help|help)
             match_match_usage
+         ;;
+
+         -q|--quiet)
+            OPTION_FORMAT='-'
          ;;
 
          -f|--format)
