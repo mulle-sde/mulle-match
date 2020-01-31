@@ -46,7 +46,11 @@ Usage:
    Run the mulle-match file classification with the given filename.
    It will emit the callback being matched, if there is any.
 
-   A match file has the form 00-type--category.
+   A match file has the form 00-type--category. You can filter for type or
+   category or both.
+
+Example:
+   ${MULLE_USAGE_NAME} list -f "%f: category=%c,type=%t\\n"
 
 Options:
    -f <format>    : specify output values.
@@ -55,11 +59,12 @@ EOF
    then
      cat <<EOF >&2
                     This is like a simplified C printf format:
+                        %cb: basename of file that matched
                         %c : category of patternfile (can be empty)
                         %C : category of patternfile as upcase identifier
-                        %f : input filename that was matched
+                        %f : filename that was matched
                         %m : the matching patternfile
-                        %p : the relative path pof the matching patternfile
+                        %p : the relative path of the matching patternfile
                         %t : type of patternfile
                         %T : type of patternfile as upcase identifier
                         \\n : a linefeed
@@ -68,16 +73,17 @@ EOF
    fi
 
    cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching <type> e.g. "source|test"
+   -cf <filter>   : specify a filter for matching <category> e.g. "header"
+   -tf <filter>   : specify a filter for matching <type> e.g. "source|test"
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" ]
    then
      cat <<EOF >&2
-                    A filter is a comma separated list of type expressions.
-                    A type expression is either a type name with wildcard
-                    characters or a negated type expression. An expression is
-                    negated by being prefixed with !.
-                    Example: "header*,!header_private"
+                    A type or category filter is a ',' separated list of
+                    expressions. An type expression is a name (with wildcards)
+                    or a negated expression. An expression is negated by
+                    being prefixed with !.
+                    Example: "source*,!source-special"
 EOF
    cat <<EOF >&2
    -pf <patfile>  : match the filename against the specified patternfile
@@ -896,6 +902,12 @@ _match_print_patternfilename()
    while [ ! -z "${format}" ]
    do
       case "${format}" in
+         \%b*)
+            r_basename "${filename}"
+            s="${s}${RVAL}"
+            format="${format:2}"
+         ;;
+
          \%c*)
             matchcategory="${matchname##*--}"
             s="${s}${matchcategory}"
@@ -974,7 +986,9 @@ _match_print_filepath()
    log_entry "_match_print_filepath" "$@"
 
    local format="$1" ; shift
-   local filter="$1" ; shift
+   local tfilter="$1" ; shift
+   local cfilter="$1" ; shift
+
 #   local ignore="$1"
 #   local match="$2"
    local filename="$3"
@@ -997,14 +1011,31 @@ _match_print_filepath()
 
    patternfile="${RVAL}"
    patternfilename="${patternfile##*/}"
-   if [ ! -z "${filter}" ]
+
+   if [ ! -z "${tfilter}" ]
    then
       local matchtype
 
       matchtype="${patternfilename%--*}"
       matchtype="${matchtype##*-}"
       case "${matchtype}" in
-         ${filter})
+         ${tfilter})
+            # pass
+         ;;
+
+         *)
+            return 1
+         ;;
+      esac
+   fi
+
+   if [ ! -z "${cfilter}" ]
+   then
+      local matchcategory
+
+      matchcategory="${patternfilename#*--}"
+      case "${matchcategory}" in
+         ${cfilter})
             # pass
          ;;
 
@@ -1038,8 +1069,8 @@ match_match_main()
    log_entry "match_match_main" "$@"
 
    local OPTION_FORMAT="%m\\n"
-   local OPTION_MATCH_FILTER
-   local OPTION_IGNORE_FILTER
+   local OPTION_MATCH_TYPE_FILTER
+   local OPTION_MATCH_CATEGORY_FILTER
    local OPTION_PATTERN
    local OPTION_PATTERN_FILE
 
@@ -1075,11 +1106,18 @@ match_match_main()
             OPTION_FORMAT="$1"
          ;;
 
-         -mf|--match-filter)
+         -mf|--match-filter-|-tf|--type-filter)
             [ $# -eq 1 ] && match_match_usage "missing argument to $1"
             shift
 
-            OPTION_MATCH_FILTER="$1"
+            OPTION_MATCH_TYPE_FILTER="$1"
+         ;;
+
+         -cf|--category-filter)
+            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+            shift
+
+            OPTION_MATCH_CATEGORY_FILTER="$1"
          ;;
 
          -p|--pattern)
@@ -1170,7 +1208,8 @@ match_match_main()
    while [ $# -ne 0 ]
    do
       if _match_print_filepath "${OPTION_FORMAT}" \
-                               "${OPTION_MATCH_FILTER}" \
+                               "${OPTION_MATCH_TYPE_FILTER}" \
+                               "${OPTION_MATCH_CATEGORY_FILTER}" \
                                "${ignore_patterncache}" \
                                "${match_patterncache}" \
                                "$1"

@@ -41,7 +41,7 @@ expect_match_print_filepath()
    set -o noglob
    IFS=$'\n'
 
-   if ! result="`_match_print_filepath "${format}" "" "$@"`"
+   if ! result="`_match_print_filepath "${format}" "" "" "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filename \"${filename}\""
    fi
