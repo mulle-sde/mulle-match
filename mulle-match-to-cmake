@@ -34,7 +34,7 @@
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION="0.5.3"
+MULLE_EXECUTABLE_VERSION="0.6.0"
 
 
 usage()

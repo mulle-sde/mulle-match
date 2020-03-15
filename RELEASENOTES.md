@@ -1,3 +1,11 @@
+## 0.6.0
+
+* add --no-follow-symlink option, but follow by default
+* add category filter
+* add status command
+* fix small display ugly in list command, where it doesn't show etc or share
+
+
 ### 0.5.3
 
 * distributed too soon... now fix symlinks on darwin/freebsd for real

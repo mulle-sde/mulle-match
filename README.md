@@ -10,25 +10,27 @@
 ## Description
 
 **mulle-match** matches filenames against a set of .gitignore like patternfiles
-to categorize files according to their filenames and location.
+to categorize files according to their filenames and location. Its like a
+marriage of `find` and `git-ignore`.
 
 ![](dox/mulle-sde-overview.png)
 
-Executable                   | Description
------------------------------|--------------------------------
-`mulle-match`                | Match filename according to .gitignore like patternfiles
+Executable              | Description
+------------------------|--------------------------------
+`mulle-match`           | Match filename according to .gitignore like patternfiles
 `mulle-match-to-cmake`  | Use **mulle-match** to create cmake files
 
 ## Install
 
-See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how
-to install *mulle-sde*, this will also install *mulle-bashfunctions* and
-*mulle-match*.
+See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) on how
+to install *mulle-sde*, this will also install *mulle-bashfunctions* and *mulle-match*.
 
-Otherwise install
-[mulle-bashfunctions](//github.com/mulle-sde/mulle-sde-developer)
+Otherwise install [mulle-bashfunctions](//github.com/mulle-sde/mulle-sde-developer)
 first and then after downloading *mulle-match* use its installer script
-`./bin/installer --prefix /usr/local`.
+
+```
+./bin/installer --prefix /usr/local`.
+```
 
 
 ## Commands
@@ -40,6 +42,19 @@ for demo purposes or as a starting point:
 
 ```
 mulle-match init
+```
+
+Would produce in a folder `my-project` a structure like this:
+
+```
+my-project
+└── .mulle
+    └── etc
+        └── match
+            └── match.d
+                ├── 50-source--private-headers
+                ├── 60-source--public-headers
+                └── 70-source--sources
 ```
 
 
@@ -62,10 +77,12 @@ Example:
 ```
 
 A *patternfile* resides in either the `ignore.d` folder or the
-`match.d` folder. It's filename is composed of three segments.
-The first digits-only segment is there to prioritize patternfiles. Lower
-numbers are matched before higher numbers (`ls` sorting)
-. The second segment gives the *type* of the file. And the last segment
+`match.d` folder. Its filename is composed of three
+segments: `priority-type--category`.
+
+The first digits-only segment is there to prioritize patternfiles.
+Lower numbers are matched before higher numbers (`ls` sorting).
+The second segment gives the *type* of the file. And the last segment
 is the *category* of the file. A *type* is required, a *category* is optional.
 
 ![](dox/mulle-match-match.png)
@@ -75,24 +92,37 @@ On the other hand, if a *patternfile* of the `match.d` folder matches, the
 matching has succeeded. *patternfiles* are matched in sort order of their
 filename.
 
-> The [Wiki](https://github.com/mulle-sde/mulle-match/wiki)
-> explains this in much more detail.
+> The [Wiki](https://github.com/mulle-sde/mulle-match/wiki) explains this in more detail.
 
 Add a *patternfile* to select PNG files. We give it a type "hello":
 
 ```
 echo "*.png" > pattern.txt
-mulle-match patternfile install hello pattern.txt
+mulle-match patternfile add hello pattern.txt
 ```
 
-You can optionally specify a *category* for the patternfile:
+This will result in this change in the `match.d` folder.
 
 ```
-mulle-match patternfile install --category special hello pattern.txt
+├── .mulle
+│   └── etc
+│       └── match
+│           └── match.d
+│               ├── 50-hello--all
+│               ├── 50-source--private-headers
+│               ├── 60-source--public-headers
+│               └── 70-source--sources
+```
+
+You could optionally specify a *category* for the patternfile:
+
+```
+mulle-match patternfile add --category special hello pattern.txt
 ```
 
 It may be useful, especially in conjunction with `mulle-match find`,
-that large and changing folders like `.git` and `build` are ignored. Install the following *patternfile* into the `ignore.d` folder with `-i`:
+that large and changing folders like `.git` and `build` are ignored.
+Install the following *patternfile* into the `ignore.d` folder with `-i`:
 
 ```
 echo ".git/" > pattern.txt
@@ -112,6 +142,12 @@ List all *patternfiles*:
 
 ```
 mulle-match patternfile list
+```
+
+and see their contents with
+
+```
+mulle-match patternfile cat
 ```
 
 
@@ -144,9 +180,9 @@ This example lists all the files, that pass through *patternfiles* of type
 mulle-match list --match-filter "hello"
 ```
 
-The speed of the `list` command is highly dependent on a reduction of the search space with
-the environment variables `MULLE_MATCH_FILENAMES`, `MULLE_MATCH_IGNORE_PATH`,
-`MULLE_MATCH_PATH`.
+The speed of the `list` command is highly dependent on a reduction of the
+search space with the environment variables `MULLE_MATCH_FILENAMES`,
+`MULLE_MATCH_IGNORE_PATH`, `MULLE_MATCH_PATH`.
 
 
 ## Environment

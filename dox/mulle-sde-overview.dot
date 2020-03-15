@@ -1,5 +1,5 @@
 digraph G {
-    graph [rankdir = TD];
+    graph [rankdir = LR];
 
     node[shape=record];
 
