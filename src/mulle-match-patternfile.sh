@@ -994,12 +994,15 @@ _repair_patternfile_main()
    local srcdir
    local dstdir
 
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+
    srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
 
    if [ ! -d "${dstdir}" ]
    then
-      log_verbose "Nothing to do, as etc does not exist yet"
+      log_verbose "No patternfiles to repair, as \"${dstdir}\" does not exist yet"
       return
    fi
 
@@ -1021,6 +1024,7 @@ _repair_patternfile_main()
 
       r_basename "${filename}"
       patternfile="${RVAL}"
+
       if [ -L "${filename}" ]
       then
          if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
@@ -1133,12 +1137,15 @@ _status_patternfile_main()
    local srcdir
    local dstdir
 
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+
    srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
 
    if [ ! -d "${dstdir}" ]
    then
-      log_verbose "Nothing to do, as etc does not exist yet"
+      log_verbose "No patternfiles have been modified, as \"${dstdir}\" does not exist yet"
       return
    fi
 

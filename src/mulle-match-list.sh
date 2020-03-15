@@ -97,12 +97,16 @@ EOF
    fi
 
      cat <<EOF >&2
+   --no-follow    : don't follow symlinks
+EOF
+
+     cat <<EOF >&2
 
 Environment:
-   MULLE_MATCH_FILENAMES   : filename wildcards, separated by ':'   (*)
-   MULLE_MATCH_IGNORE_PATH : locations to ignore
-   MULLE_MATCH_PATH        : locations to search for, separated by ':'' (src)
-
+   MULLE_MATCH_FILENAMES      : filename wildcards, separated by ':'   (*)
+   MULLE_MATCH_IGNORE_PATH    : locations to ignore
+   MULLE_MATCH_PATH           : locations to search for, separated by ':'' (src)
+   MULLE_MATCH_FOLLOW_SYMLINK : follow symlinks (YES)
 EOF
    exit 1
 }
@@ -464,6 +468,11 @@ libexec:\
       ;;
    esac
 
+   if [ "${MULLE_MATCH_FOLLOW_SYMLINK}" = 'YES' ]
+   then
+      flags="-L"
+   fi
+
    parallel_list_filtered_files "${match_dirs:-.}" \
                                 "${format}" \
                                 "${tfilter}" \
@@ -511,7 +520,6 @@ match_list_main()
    local OPTION_SORTED='YES'
    local OPTION_MATCH_TYPE_FILTER
    local OPTION_MATCH_CATEGORY_FILTER
-
    local MATCH_DIR
    local IGNORE_DIR
 
@@ -520,7 +528,7 @@ match_list_main()
    MULLE_MATCH_PATH="${MULLE_MATCH_PATH:-${MULLE_MATCH_FIND_LOCATIONS}}"
    MULLE_MATCH_IGNORE_PATH="${MULLE_MATCH_IGNORE_PATH:-${MULLE_MATCH_FIND_IGNORE_PATH}}"
    MULLE_MATCH_FILENAMES="${MULLE_MATCH_FILENAMES:-${MULLE_MATCH_FILENAMES}}"
-
+   MULLE_MATCH_FOLLOW_SYMLINK="${MULLE_MATCH_FOLLOW_SYMLINK:-YES}"
 
    match_list_include
 
@@ -578,6 +586,14 @@ match_list_main()
 
          -u|--unsorted)
             OPTION_SORTED='NO'
+         ;;
+
+         --follow|--follow-symlink)
+            MULLE_MATCH_FOLLOW_SYMLINK='YES'
+         ;;
+
+         --no-follow|--no-follow-symlink)
+            MULLE_MATCH_FOLLOW_SYMLINK='NO'
          ;;
 
          -*)

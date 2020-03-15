@@ -227,7 +227,7 @@ ${text_hdr}
 
    log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
    r_dirname "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
-   exekutor mkdir -p "${RVAL}"
+   mkdir_if_missing"${RVAL}"
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}"
    redirect_exekutor "${MULLE_MATCH_TO_CMAKE_HEADERS_FILE}" printf "%s\n" "${text_hdr}"
@@ -293,7 +293,7 @@ ${text_src}"
 
    log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
    r_dirname "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
-   exekutor mkdir -p  "${RVAL}" 2> /dev/null
+   mkdir_if_missing"${RVAL}"
    exekutor chmod a+w "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"  2> /dev/null
    r_mkdir_parent_if_missing "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
    redirect_exekutor "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" printf "%s\n" "${text_src}"

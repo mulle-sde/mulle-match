@@ -512,7 +512,12 @@ patternfile_read()
 
    if [ ! -f "${filename}" ]
    then
-      log_debug "\"${filename}\" does not exist"
+      if [ -L "${filename}" ]
+      then
+         log_verbose "\"${filename#}\" symbolic link is broken"
+      else
+         log_verbose "\"${filename#}\" does not exist"
+      fi
       return 1
    fi
 
@@ -585,13 +590,13 @@ _patternfilefunction_create()
 
    if ! contents="`patternfile_read "${patternfile}"`"
    then
-      log_warning "\"${patternfile}\" is broken. Run \`mulle-match patternfile repair\`"
+      log_warning "\"${patternfile#${MULLE_USER_PWD}/}\" is broken. Run \`mulle-match patternfile repair\`"
       return 1
    fi
 
    if [ -z "${contents}" ]
    then
-      log_fluff "\"${patternfile}\" is empty"
+      log_fluff "\"${patternfile#${MULLE_USER_PWD}/}}\" is empty"
       return 1
    fi
 
