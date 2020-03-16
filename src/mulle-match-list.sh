@@ -355,6 +355,8 @@ list_filenames()
 {
    log_entry "list_filenames" "$@"
 
+   [ $# -ne 5 ] && internal_fail "API mismatch"
+
    local format="$1"
    local tfilter="$2"
    local cfilter="$3"
