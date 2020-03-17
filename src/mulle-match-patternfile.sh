@@ -364,9 +364,12 @@ list_patternfile_main()
 
 
    local patternfile
+   local files
+
+   files="`_list_patternfiles "${directory}"`"
 
    IFS=$'\n'
-   for patternfile in `_list_patternfiles "${directory}"`
+   for patternfile in ${files}
    do
       IFS="${DEFAULT_IFS}"
       log_info "-----------------------------------------"
