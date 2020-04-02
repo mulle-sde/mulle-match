@@ -614,7 +614,7 @@ _patternfilefunction_create()
    bigbody="
    local rval=1
 "
-   set -o noglob ; IFS=$'\n'
+   set -o noglob; IFS=$'\n'
    for pattern in ${contents}
    do
       IFS="${DEFAULT_IFS}"; set +o noglob
