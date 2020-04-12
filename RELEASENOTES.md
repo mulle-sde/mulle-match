@@ -1,3 +1,8 @@
+## 0.7.0
+
+* **the default reflection output directory is now cmake/reflect and src/reflect instead of cmake/ and src/**
+
+
 ## 0.6.0
 
 * add --no-follow-symlink option, but follow by default
