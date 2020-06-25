@@ -72,6 +72,7 @@ Commands:
    status     : check if patternfiles need repairing
    edit       : edit a patternfile
    list       : list patternfiles currently in use
+   path       : print patternfile path for a given name
    remove     : remove a patternfile
    rename     : rename a patternfile
    repair     : repair symlinks (if available)
@@ -150,6 +151,29 @@ Usage:
 
    Copy an existing patternfile. You can also set portions of the patternfile
    with options, instead of providing a full destination patternfile name.
+
+Options:
+   -c <category>  : change the of a patternfile
+   -p <digits>    : change position of the patternfile
+   -t <type>      : change type of the patternfile
+EOF
+   exit 1
+}
+
+
+path_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile path [options] <filename>
+
+   Check if a patternfile exists and if it does, output its absolute path.
+   Returns 1 if no file exists.
 
 Options:
    -c <category>  : change the of a patternfile
@@ -1227,6 +1251,117 @@ doctor_patternfile_main()
 }
 
 
+path_patternfile_main()
+{
+   log_entry "file_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="$1"; shift
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            path_patternfile_usage
+         ;;
+
+
+         -c|--category)
+            [ $# -eq 1 ] && "${usage}" "missing argument to $1"
+            shift
+
+            OPTION_CATEGORY="$1"
+         ;;
+
+         -p|--position)
+            [ $# -eq 1 ] &&  ${usage} "missing argument to $1"
+            shift
+
+            OPTION_POSITION="$1"
+         ;;
+
+         -t|--type)
+            [ $# -eq 1 ] &&  ${usage} "missing argument to $1"
+            shift
+
+            OPTION_TYPE="$1"
+         ;;
+
+         -*)
+            path_patternfile_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -eq 0 ] && path_patternfile_usage "Missing filename"
+   [ "$#" -gt 1 ] && path_patternfile_usage "Superflous arguments $*"
+
+   local  name
+
+   name="$1"
+
+   if [ ! -z "${OPTION_TYPE}" ]
+   then
+      name="${OPTION_TYPE}"
+   fi
+
+   if [ ! -z "${OPTION_POSITION}" ]
+   then
+      case "${name}" in
+         *[^-]-[^-]*)
+         ;;
+
+         *)
+            name="${OPTION_POSITION}-${name}"
+         ;;
+      esac
+   fi
+
+   if [ ! -z "${OPTION_CATEGORY}" ]
+   then
+      case "${name}" in
+         *--*)
+         ;;
+
+         *)
+            name="${name}--${OPTION_CATEGORY}"
+         ;;
+      esac
+   fi
+
+   local share
+   local etc
+
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+
+   etc="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${name}"
+   log_fluff "Checking ${etc}"
+   if [ -f "${etc}" ]
+   then
+      echo "${etc}"
+      return
+   fi
+
+   share="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}/${name}"
+   log_fluff "Checking ${share}"
+   if [ -f "${share}" ]
+   then
+      echo "${share}"
+      return
+   fi
+
+   log_info "${name} is unknown"
+   return 1
+}
+
+
 ###
 ###  MAIN
 ###
@@ -1294,11 +1429,19 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd:-list}" in
-      add|cat|edit|remove|repair|status)
+      add|edit|remove|repair|status)
          ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
                                  "${OPTION_CATEGORY}" \
                                  "$@"
       ;;
+
+      cat|path)
+         ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
+                                 "${OPTION_CATEGORY}" \
+                                 "$@"
+         return $?
+      ;;
+
 
       copy|rename)
          ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
@@ -1332,6 +1475,7 @@ match_patternfile_main()
                                   "${OPTION_CATEGORY}" \
                                   "$@"
          fi
+         return $?
       ;;
 
       "")
@@ -1348,12 +1492,6 @@ match_patternfile_main()
    # always clean after patternfile changes
    #
    [ $? -ne 0 ] && return 1
-
-   case "${cmd:-list}" in
-      list)
-         return 0
-      ;;
-   esac
 
    [ -z "${MULLE_MATCH_CLEAN_SH}" ] && \
       . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-clean.sh"

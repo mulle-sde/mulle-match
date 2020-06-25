@@ -313,10 +313,10 @@ _pattern_function_header()
 
    printf "%s\n" "${functionname}()
 {"
-   if [ "${MULLE_FLAG_LOG_DEBUG}" = 'YES' -a "${MULLE_FLAG_LOG_SETTINGS}" != 'YES' ]
-   then
-      echo "   log_entry ${functionname} \"\$@\""
-   fi
+#   if [ "${MULLE_FLAG_LOG_DEBUG}" = 'YES' -a "${MULLE_FLAG_LOG_SETTINGS}" != 'YES' ]
+#   then
+#      echo "   log_entry ${functionname} \"\$@\""
+#   fi
 }
 
 
@@ -514,9 +514,9 @@ patternfile_read()
    then
       if [ -L "${filename}" ]
       then
-         log_verbose "\"${filename#}\" symbolic link is broken"
+         log_verbose "\"${filename#${MULLE_USER_PWD}/}\" symbolic link is broken"
       else
-         log_verbose "\"${filename#}\" does not exist"
+         log_verbose "\"${filename#${MULLE_USER_PWD}/}\" does not exist"
       fi
       return 1
    fi
@@ -541,15 +541,18 @@ patternfile_match_relative_filename()
 }
 
 
-patternfile_identifier()
+r_patternfile_identifier()
 {
-   log_entry "patternfile_identifier" "$@"
+   log_entry "r_patternfile_identifier" "$@"
 
    local filename="$1"
 
-   LC_ALL=C sed -e 's|.*ignore.d/\(.*\)|i_\1|' \
-       -e 's|.*match.d/\(.*\)|m_\1|' <<< "${filename}" |
-      LC_ALL=C tr -c '[a-zA-Z0-9_\n]' '_'
+   RVAL="${filename/*ignore.d\/i_/}"
+   if [ "${RVAL}" = "${filename}" ]
+   then
+      RVAL="${filename/*match.d\/m_/}"
+   fi
+   r_identifier "${RVAL}"
 }
 
 #
@@ -656,7 +659,7 @@ ${functiontext}"
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
    then
-      log_verbose "Cached \"${patternfile#${MULLE_USER_PWD}/}\" in \"${cachefile#${MULLE_USER_PWD}/}\""
+      log_fluff "Cached \"${patternfile#${MULLE_USER_PWD}/}\" in \"${cachefile#${MULLE_USER_PWD}/}\""
 
       mkdir_if_missing "${cachedirectory}"
       redirect_exekutor "${cachefile}" printf "%s\n" "${alltext}"
@@ -681,7 +684,9 @@ _define_patternfilefunction()
 
    local varname
 
-   varname="__p__`patternfile_identifier "${patternfile}"`"
+   r_patternfile_identifier "${patternfile}"
+   varname="__p__${RVAL}"
+
    log_debug "Function \"${varname}\" for \"${patternfile}\""
    if eval [ -z \$\{${varname}+x\} ]
    then
@@ -700,6 +705,7 @@ _define_patternfilefunction()
 
    r_basename "${patternfile}"
    varname_f="${RVAL}"
+
    eval "${varname}_f='${varname_f}'"
 
    return 0
