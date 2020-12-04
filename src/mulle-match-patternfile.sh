@@ -69,13 +69,50 @@ Commands:
    add        : add a patternfile
    cat        : show contents of patternfile
    copy       : copy a patternfile
-   status     : check if patternfiles need repairing
    edit       : edit a patternfile
+   ignore     : create a rule to ignore a specific sourcefile
    list       : list patternfiles currently in use
    path       : print patternfile path for a given name
    remove     : remove a patternfile
    rename     : rename a patternfile
    repair     : repair symlinks (if available)
+   status     : check if patternfiles need repairing
+EOF
+   exit 1
+}
+
+
+add_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile add [options] <type> <filename>
+
+   Add a patternfile for a specific type. The filename of a patternfile is
+   of the form <digits>-<type>--<category>. For example to crate a patternfile
+   named 80-source--fooblet use:
+
+       echo "*.fooblet" | \
+         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
+
+   To create a patternfile to match C header and source files for a
+   callback \"c_files\":
+
+      (echo '*.h'; echo '*.c') | ${MULLE_USAGE_NAME} patternfile add c_files -
+
+   See the Wiki for more information:
+      https://github.com/mulle-sde/mulle-sde/wiki
+
+Options:
+   -c <name>    : give this patternfile category. The defaults are "all" or
+                  "none" for match.d/ignore.d patternfiles respectively.
+   -p <digits>  : position, the default is 50. Patternfiles with lower numbers
+                  are matched first. (shell sort order)
 EOF
    exit 1
 }
@@ -96,43 +133,6 @@ Usage:
    the available patternfiles using:
 
       \`${MULLE_USAGE_NAME} patternfile list\`
-EOF
-   exit 1
-}
-
-
-add_patternfile_usage()
-{
-   if [ "$#" -ne 0 ]
-   then
-      log_error "$*"
-   fi
-
-   cat <<EOF >&2
-Usage:
-   ${MULLE_USAGE_NAME} patternfile add [options] <type> <filename>
-
-   Add a patternfile for a specific type. The filename of a patternfile is
-   of the form <digits>-<type>--<category>.
-
-   Example. Create a patternfile named 80-source--fooblet:
-
-       echo "*.fooblet" | \
-         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
-
-   Example. Create a patternfile to match C header and source files for a
-   callback \"c_files\":
-
-      (echo '*.h'; echo '*.c') | ${MULLE_USAGE_NAME} patternfile add c_files -
-
-   See the Wiki for more information:
-      https://github.com/mulle-sde/mulle-sde/wiki
-
-Options:
-   -c <name>    : give this patternfile category. The defaults are "all" or
-                  "none" for match.d/ignore.d patternfiles respectively.
-   -p <digits>  : position, the default is 50. Patternfiles with lower numbers
-                  are matched first. (shell sort order)
 EOF
    exit 1
 }
@@ -260,6 +260,28 @@ Usage:
 Options:
    -e <editor>      : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
    -t <patternfile> : use patternfile as template
+EOF
+   exit 1
+}
+
+
+ignore_patternfile_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile ignore <sourcefile>
+
+   Ignore a specific file. The file will be appended to the ignore.d
+   patternfile 30-ignore--all.
+
+Options:
+   -t <patternfile> : use patternfile as template for creation
+
 EOF
    exit 1
 }
@@ -963,8 +985,6 @@ edit_patternfile_main()
 
    local dstfile
 
-   OPTION_FOLDER_NAME="${OPTION_FOLDER_NAME:-match.d}"
-
    setup_etc_if_needed "${OPTION_FOLDER_NAME}"
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
@@ -977,6 +997,62 @@ edit_patternfile_main()
    make_file_from_symlinked_patternfile "${dstfile}"
 
    exekutor "${EDITOR:-vi}" "${dstfile}"
+}
+
+
+ignore_patternfile_main()
+{
+   log_entry "ignore_patternfile_main" "$@"
+
+   local OPTION_FOLDER_NAME="ignore.d"; shift
+   local OPTION_CATEGORY="none"; shift
+
+   local templatefile=""
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            ignore_patternfile_usage
+         ;;
+
+         -t|--template|--template-file)
+            [ $# -eq 1 ] && ignore_patternfile_usage "missing argument to $1"
+            shift
+
+            templatefile="$1"
+         ;;
+
+         -*)
+            ignore_patternfile_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -eq 0 ] && ignore_patternfile_usage
+
+   local filename="30-ignored--none"
+
+   local dstfile
+
+   setup_etc_if_needed "${OPTION_FOLDER_NAME}"
+
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+
+   if [ ! -z "${templatefile}" ]
+   then
+      copy_template_patternfile "${templatefile}" "${dstfile}"
+   fi
+
+   make_file_from_symlinked_patternfile "${dstfile}"
+
+   merge_line_into_file "$*" "${dstfile}"
 }
 
 
@@ -1429,7 +1505,7 @@ match_patternfile_main()
    [ $# -ne 0 ] && shift
 
    case "${cmd:-list}" in
-      add|edit|remove|repair|status)
+      add|edit|ignore|remove|repair|status)
          ${cmd}_patternfile_main "${OPTION_FOLDER_NAME}" \
                                  "${OPTION_CATEGORY}" \
                                  "$@"

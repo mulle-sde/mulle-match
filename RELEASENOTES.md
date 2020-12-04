@@ -1,5 +1,7 @@
 ## 0.7.0
 
+* added ignore command
+* add patternfile path command
 * **the default reflection output directory is now cmake/reflect and src/reflect instead of cmake/ and src/**
 
 
