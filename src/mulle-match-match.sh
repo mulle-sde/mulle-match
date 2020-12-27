@@ -50,7 +50,7 @@ Usage:
    category or both.
 
 Example:
-   ${MULLE_USAGE_NAME} list -f "%f: category=%c,type=%t\\n"
+   ${MULLE_USAGE_NAME} list -f '%f: category=%c,type=%t\\n'
 
 Options:
    -f <format>    : specify output values.
@@ -68,7 +68,7 @@ EOF
                         %t : type of patternfile
                         %T : type of patternfile as upcase identifier
                         \\n : a linefeed
-                     (e.g. "category=%c,type=%t\\n)"
+                     (e.g. 'category=%c,type=%t\\n')"
 EOF
    fi
 
@@ -83,7 +83,7 @@ EOF
                     expressions. An type expression is a name (with wildcards)
                     or a negated expression. An expression is negated by
                     being prefixed with !.
-                    Example: "source*,!source-special"
+                    Example: 'source*,!source-special'
 EOF
    cat <<EOF >&2
    -pf <patfile>  : match the filename against the specified patternfile

@@ -63,6 +63,7 @@ EOF
      cat <<EOF >&2
    -f <format>    : specify output values
                     This is like a simplified C printf format:
+                        %b : basename of the file that was matched
                         %c : category of match file (can be empty)
                         %e : executable name of callback
                         %f : filename that was matched
@@ -70,7 +71,7 @@ EOF
                         %t : type of match file
                         %I : category of match file as an uppercase identifier
                         \\n : a linefeed
-                     (e.g. "category=%c,type=%t\\n")
+                     (e.g. 'category=%c,type=%t\\n')
 EOF
    else
      cat <<EOF >&2
@@ -88,15 +89,16 @@ EOF
                     A type expression is either a type name with wildcard
                     characters or a negated type expression. An expression is
                     negated by being prefixed with !.
-                    Example: filter is "header*,!header_private"
+                    Example: filter is "source*,!sourcex"
 EOF
    else
      cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching <type> (-v for detailed help)
+   -mf <filter>   : specify a filter for matching the type (-v for detailed help)
 EOF
    fi
 
      cat <<EOF >&2
+   -cf <filter>   : specify a filter for matching the category (see -mf)
    --no-follow    : don't follow symlinks
 EOF
 
