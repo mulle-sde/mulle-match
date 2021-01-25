@@ -19,6 +19,7 @@ Executable              | Description
 ------------------------|--------------------------------
 `mulle-match`           | Match filename according to .gitignore like patternfiles
 `mulle-match-to-cmake`  | Use **mulle-match** to create cmake files
+`mulle-match-to-c`      | Create include files for public headers
 
 ## Install
 

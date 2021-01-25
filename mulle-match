@@ -53,8 +53,8 @@ print_commands()
    SHOWN_COMMANDS="\
    init        : setup some initial patternfiles
    clean       : remove cached patternfiles
-   list        : list files that match patternfiles
-   match       : match filenames against patternfiles
+   list        : list files that match patternfiles (default)
+   filename    : find patternfile that matches a filename
    patternfile : manage patternfiles"
 
    HIDDEN_COMMANDS="\
@@ -235,7 +235,7 @@ main()
 
    match_environment "" "${cmd}"
 
-   case "${cmd}" in
+   case "${cmd:-list}" in
       help)
          usage "${MULLE_TRACE}"
       ;;
@@ -265,11 +265,11 @@ main()
          match_list_main "$@"
       ;;
 
-      match)
-         # shellcheck source=src/mulle-match-match.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh"
+      filename|match)
+         # shellcheck source=src/mulle-match-filename.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-filename.sh"
 
-         match_match_main "$@"
+         match_filename_main "$@"
       ;;
 
       patternfile)
@@ -315,6 +315,16 @@ _init()
       exit 0
    fi
 
+   #
+   # leading backslash ? looks like we're getting called from
+   # mingw via a .BAT or so
+   #
+   case "$PATH" in
+      '\\'*)
+         PATH="${PATH//\\/\/}"
+      ;;
+   esac
+
    if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
       MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir 2> /dev/null`"
@@ -334,7 +344,7 @@ _init()
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "minimal" || \
       fail "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
 
-   r_get_libexec_dir "$0" "mulle-match" "mulle-match-match.sh"
+   r_get_libexec_dir "$0" "mulle-match" "mulle-match-filename.sh"
    MULLE_MATCH_LIBEXEC_DIR="${RVAL}"
 
    #

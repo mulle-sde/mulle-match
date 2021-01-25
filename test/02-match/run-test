@@ -109,7 +109,7 @@ init()
 
    MULLE_MATCH_LIBEXEC_DIR="`"${MULLE_MATCH}" "libexec-dir"`" || exit 1
 
-   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
+   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-filename.sh" || exit 1
 }
 
 

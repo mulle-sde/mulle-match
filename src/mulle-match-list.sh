@@ -80,6 +80,9 @@ EOF
    fi
 
    cat <<EOF >&2
+   -l             : use a long format that shows type,category and basename
+EOF
+   cat <<EOF >&2
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
@@ -401,16 +404,16 @@ list_filenames()
 
    #
    # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
-   # ignored. This can be  important for acceptable performance and easier
+   # ignored. This can be important for acceptable performance and easier
    # setup
    #
    if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
    then
-      MULLE_MATCH_IGNORE_PATH="addiction:\
+      MULLE_MATCH_IGNORE_PATH="${MULLE_CRAFT_ADDICTION_DIRNAME:-addiction}:\
 build:\
-kitchen:\
-dependency:\
-stash:\
+${MULLE_CRAFT_KITCHEN_DIRNAME:-kitchen}:\
+${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}:\
+${MULLE_SOURCETREE_STASH_DIRNAME:-stash}:\
 include:\
 lib:\
 libexec:\
@@ -504,10 +507,10 @@ match_list_include()
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
    fi
 
-   if [ -z "${MULLE_MATCH_MATCH_SH}" ]
+   if [ -z "${MULLE_MATCH_FILENAME_SH}" ]
    then
-      # shellcheck source=src/mulle-match-match.sh
-      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-match.sh" || exit 1
+      # shellcheck source=src/mulle-match-filename.sh
+      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-filename.sh" || exit 1
    fi
 }
 
@@ -558,6 +561,10 @@ match_list_main()
             shift
 
             OPTION_MATCH_CATEGORY_FILTER="$1"
+         ;;
+
+         -l)
+            OPTION_FORMAT="%t/%c: %f\\n"
          ;;
 
          --locations)

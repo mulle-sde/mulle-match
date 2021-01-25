@@ -15,6 +15,7 @@ set( PROJECT_VERSION "${MULLE_MATCH_VERSION}")
 set( SCRIPTS
 mulle-match
 mulle-match-to-cmake
+mulle-match-to-c
 )
 
 file( GLOB LIBRARY_SCRIPTS
