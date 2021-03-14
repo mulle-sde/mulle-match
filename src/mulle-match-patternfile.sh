@@ -235,7 +235,8 @@ list_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile list [options]
 
-   List patternfiles.
+   List patternfiles. A '*' indicates a file, that contains edits germane to
+   the local project.
 
 Options:
    -c   : cat patternfile contents
@@ -258,6 +259,7 @@ Usage:
    Edit a patternfiles
 
 Options:
+   -a <line>        : non-interactive addition of line to file (if missing)
    -e <editor>      : specifiy editor to use instead of EDITOR (${EDITOR:-vi})
    -t <patternfile> : use patternfile as template
 EOF
@@ -316,6 +318,7 @@ _list_patternfiles()
    log_entry "_list_patternfiles" "$@"
 
    local directory="$1"
+   local filemark="$2"
 
    if ! [ -d "${directory}" ]
    then
@@ -324,7 +327,18 @@ _list_patternfiles()
 
    (
       exekutor cd "${directory}"
-      exekutor ls -1 | egrep '[0-9]*-.*--.*'
+
+
+      IFS=$'\n'
+      for file in `rexekutor ls -1 | egrep '[0-9]*-.*--.*'`
+      do
+         printf "%s" "${file}"
+         if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
+         then
+            printf " *" 
+         fi
+         echo
+      done
    )
 }
 
@@ -362,11 +376,18 @@ list_patternfile_main()
    done
 
    local directory
+   local filemark='NO'
 
    directory="${MULLE_MATCH_USE_DIR}"
    case "${OPTION_FOLDER_NAME}" in
       ignore.d)
          directory="${MULLE_MATCH_SKIP_DIR}"
+      ;;
+   esac
+
+   case "${directory}" in 
+      ${MULLE_MATCH_ETC_DIR}/*)
+         filemark='YES'
       ;;
    esac
 
@@ -399,15 +420,13 @@ list_patternfile_main()
       foldername="${C_MAGENTA}${C_BOLD}etc${C_INFO}/${foldername}"
    fi
 
-
    if [ "${OPTION_DUMP}" != 'YES' ]
    then
       log_info "${outputname%%.d} (${where}):"
 
-      _list_patternfiles "${directory}"
+      _list_patternfiles "${directory}" "${filemark}"
       return $?
    fi
-
 
    local patternfile
    local files
@@ -423,7 +442,6 @@ list_patternfile_main()
       log_info "-----------------------------------------"
       cat "${directory}/${patternfile}"
       echo
-
    done
    IFS="${DEFAULT_IFS}"
 }
@@ -943,6 +961,7 @@ edit_patternfile_main()
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
    local OPTION_CATEGORY="${1:-all}"; shift
+   local OPTION_ADD=''
 
    local templatefile=""
 
@@ -951,6 +970,13 @@ edit_patternfile_main()
       case "$1" in
          -h*|--help|help)
             edit_patternfile_usage
+         ;;
+
+         -a|--add)
+            [ $# -eq 1 ] && edit_patternfile_usage "missing argument to $1"
+            shift
+
+            OPTION_ADD="$1"
          ;;
 
          -e|--editor)
@@ -996,7 +1022,20 @@ edit_patternfile_main()
 
    make_file_from_symlinked_patternfile "${dstfile}"
 
-   exekutor "${EDITOR:-vi}" "${dstfile}"
+   if [ ! -z "${OPTION_ADD}" ]
+   then
+      local escaped 
+
+      r_escaped_grep_pattern "${OPTION_ADD}"
+      escaped="${RVAL}"
+
+      if ! rexekutor grep -q -x "${escaped}" "${dstfile}"
+      then
+         redirect_append_exekutor "${dstfile}" printf "%s\n" "${OPTION_ADD}"
+      fi
+   else
+      exekutor "${EDITOR:-vi}" "${dstfile}"
+   fi
 }
 
 
