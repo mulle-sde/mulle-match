@@ -87,7 +87,7 @@ EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching <type>
+   -tf <filter>   : specify a filter for matching <type>
                     A filter is a comma separated list of type expressions.
                     A type expression is either a type name with wildcard
                     characters or a negated type expression. An expression is
@@ -96,7 +96,7 @@ EOF
 EOF
    else
      cat <<EOF >&2
-   -mf <filter>   : specify a filter for matching the type (-v for detailed help)
+   -tf <filter>   : specify a filter for matching the type (-v for detailed help)
 EOF
    fi
 

@@ -437,7 +437,7 @@ main()
    local OPTION_C_PUBLIC_HEADERS='DEFAULT'
    local OPTION_OBJC_PUBLIC_HEADERS='DEFAULT'
 
-   MULLE_MATCH_TO_C_PATTERNFILETYPE="${MULLE_MATCH_TO_C_PATTERNFILETYPE:-source}"
+   MULLE_MATCH_TO_C_PATTERNFILETYPE="${MULLE_MATCH_TO_C_PATTERNFILETYPE:-header}"
    MULLE_MATCH_TO_C_UNDERSCORE_HEADERS="${MULLE_MATCH_TO_C_UNDERSCORE_HEADERS:-NO}"
 
    while [ $# -ne 0 ]
@@ -499,7 +499,7 @@ main()
             MULLE_MATCH_TO_C_OBJC_HEADERS_FILE="$1"
          ;;
 
-         -F|--filter-type)
+         --header-filter-type)
             [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
@@ -537,28 +537,6 @@ main()
    MULLE_MATCH="${MULLE_MATCH:-`command -v mulle-match`}"
    [ -z "${MULLE_MATCH}" ] && fail "mulle-match not in PATH"
 
-   #
-   # With 1000 header and 1000 source files, a full update takes ~7s on
-   # my machine. It certainly would be interesting to make this properly
-   # incremental.
-   #
-   local categorized_files
-
-   if ! categorized_files="`rexekutor "${MULLE_MATCH}" \
-                                          ${MULLE_TECHNICAL_FLAGS} \
-                                       find --format "%C;%f\\n" \
-                                            --match-filter "${MULLE_MATCH_TO_C_PATTERNFILETYPE}"`"
-   then
-      return 1
-   fi
-
-   if [ -z "${categorized_files}" ]
-   then
-      log_warning "No matching source files found. " >&2
-      # exit 0 # but still create empty files, otherwise include is unjappy
-   fi
-
-   categorized_files="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_files}" `"
 
    if [ -z "${MULLE_CASE_SH}" ]
    then
@@ -600,15 +578,37 @@ main()
       OPTION_OBJC_PUBLIC_HEADERS='YES'
    fi
 
+
+   #
+   # With 1000 header and 1000 source files, a full update takes ~7s on
+   # my machine. It certainly would be interesting to make this properly
+   # incremental.
+   #
+   local categorized_headers
+
+   if ! categorized_headers="`rexekutor "${MULLE_MATCH}" \
+                                          ${MULLE_TECHNICAL_FLAGS} \
+                                       find --format "%C;%f\\n" \
+                                            --type-filter "${MULLE_MATCH_TO_C_PATTERNFILETYPE}"`"
+   then
+      return 1
+   fi
+
+   categorized_headers="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_headers}" `"
+   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+   then
+      log_trace2 "categorized_headers=${categorized_headers}"
+   fi
+
    if [ "${OPTION_PARALLEL}" = 'YES' ]
    then
    	if [ "${OPTION_C_PUBLIC_HEADERS}" = 'YES' ]
    	then
-      	create_c_headers_file "${categorized_files}" "${PROJECT_NAME}" &
+      	create_c_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
       fi
       if [ "${OPTION_OBJC_PUBLIC_HEADERS}" = 'YES' ]
       then
-         create_objc_headers_file "${categorized_files}" "${PROJECT_NAME}" &
+         create_objc_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
       fi
 
       log_fluff "waiting..."
@@ -617,12 +617,12 @@ main()
    else
       if [ "${OPTION_C_PUBLIC_HEADERS}" = 'YES' ]
       then
-         create_c_headers_file "${categorized_files}" "${PROJECT_NAME}"
+         create_c_headers_file "${categorized_headers}" "${PROJECT_NAME}"
       fi
 
       if [ "${OPTION_OBJC_PUBLIC_HEADERS}" = 'YES' ]
       then
-         create_objc_headers_file "${categorized_files}" "${PROJECT_NAME}"
+         create_objc_headers_file "${categorized_headers}" "${PROJECT_NAME}"
       fi
    fi
 }

@@ -513,11 +513,7 @@ r_patternfile_identifier()
 
    local filename="$1"
 
-   RVAL="${filename/*ignore.d\/i_/}"
-   if [ "${RVAL}" = "${filename}" ]
-   then
-      RVAL="${filename/*match.d\/m_/}"
-   fi
+   RVAL="${filename/*\/*\.d\//i_}"
    r_identifier "${RVAL}"
 }
 
@@ -962,9 +958,11 @@ _match_print_filepath()
 {
    log_entry "_match_print_filepath" "$@"
 
-   local format="$1" ; shift
-   local tfilter="$1" ; shift
-   local cfilter="$1" ; shift
+   local format="$1" 
+   local tfilter="$2" 
+   local cfilter="$3" 
+   
+   shift 3
 
 #   local ignore="$1"
 #   local match="$2"

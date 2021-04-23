@@ -332,9 +332,14 @@ main()
    local OPTION_HEADERS='YES'
    local OPTION_SOURCES='YES'
 
-   if [ "${MULLE_MATCH_TO_CMAKE_PATTERNFILETYPE}" != 'NONE' ]
+   if [ "${MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE}" != 'NONE' ]
    then
-      MULLE_MATCH_TO_CMAKE_PATTERNFILETYPE="source"
+      MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE="source"
+   fi
+
+   if [ "${MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE}" != 'NONE' ]
+   then
+      MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE="header"
    fi
 
    while [ $# -ne 0 ]
@@ -380,11 +385,18 @@ main()
 				MULLE_MATCH_TO_CMAKE_SOURCES_FILE="$1"
 			;;
 
-         -F|--filter-type)
+         --hader-filter-type)
             [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
-            MULLE_MATCH_TO_CMAKE_PATTERNFILETYPE="$1"
+            MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE="$1"
+         ;;
+
+         -F|--source-filter-type|--filter-type)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE="$1"
          ;;
 
          --stdout)
@@ -417,38 +429,66 @@ main()
    MULLE_MATCH="${MULLE_MATCH:-`command -v mulle-match`}"
    [ -z "${MULLE_MATCH}" ] && fail "mulle-match not in PATH"
 
+
    #
    # With 1000 header and 1000 source files, a full update takes ~7s on
    # my machine. It certainly would be interesting to make this properly
    # incremental.
    #
-   local categorized_files
+   local categorized_sources
 
-   if ! categorized_files="`rexekutor "${MULLE_MATCH}" \
-                                          ${MULLE_TECHNICAL_FLAGS} \
-                                       find --format "%C;%f\\n" \
-                                            --match-filter "${MULLE_MATCH_TO_CMAKE_PATTERNFILETYPE}"`"
+   if [ "${OPTION_SOURCES}" = 'YES' ]
    then
-      return 1
+      if ! categorized_sources="`rexekutor "${MULLE_MATCH}" \
+                                             ${MULLE_TECHNICAL_FLAGS} \
+                                          find --format "%C;%f\\n" \
+                                               --type-filter "${MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE}"`"
+      then
+         return 1
+      fi
+
+      if [ -z "${categorized_sources}" ]
+      then
+         log_warning "No matching source files found. " >&2
+         # exit 0 # but still create empty files, otherwise cmake is unhappy
+      fi
+
+      categorized_sources="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_sources}" `"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "categorized_sources=${categorized_sources}"
+      fi
    fi
 
-   if [ -z "${categorized_files}" ]
-   then
-      log_warning "No matching source files found. " >&2
-      # exit 0 # but still create empty files, otherwise cmake is unhappy
-   fi
 
-   categorized_files="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_files}" `"
+   local categorized_headers
+
+   if [ "${OPTION_HEADERS}" = 'YES' ]
+   then
+      if ! categorized_headers="`rexekutor "${MULLE_MATCH}" \
+                                             ${MULLE_TECHNICAL_FLAGS} \
+                                          find --format "%C;%f\\n" \
+                                               --type-filter "${MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE}"`"
+      then
+         return 1
+      fi
+
+      categorized_headers="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_headers}" `"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "categorized_headers=${categorized_headers}"
+      fi
+   fi
 
    if [ "${OPTION_PARALLEL}" = 'YES' ]
    then
    	if [ "${OPTION_HEADERS}" = 'YES' ]
    	then
-      	create_headers_file "${categorized_files}" &
+      	create_headers_file "${categorized_headers}" &
       fi
    	if [ "${OPTION_SOURCES}" = 'YES' ]
    	then
-      	create_sources_file "${categorized_files}" &
+      	create_sources_file "${categorized_sources}" &
       fi
 
       log_fluff "waiting..."
@@ -457,11 +497,11 @@ main()
    else
    	if [ "${OPTION_HEADERS}" = 'YES' ]
    	then
-   	   create_headers_file "${categorized_files}"
+   	   create_headers_file "${categorized_headers}"
       fi
    	if [ "${OPTION_SOURCES}" = 'YES' ]
    	then
-   	   create_sources_file "${categorized_files}"
+   	   create_sources_file "${categorized_sources}"
       fi
    fi
 }
