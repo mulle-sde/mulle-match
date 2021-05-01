@@ -32,7 +32,7 @@
 MULLE_MATCH_FILENAME_SH="included"
 
 
-match_match_usage()
+match_filename_usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -43,10 +43,9 @@ match_match_usage()
 Usage:
    ${MULLE_USAGE_NAME} filename [options] <filename>
 
-   Run the mulle-match file classification with the given filename.
-   It will emit the callback being matched, if there is any.
-
-   You can specify an ad-hoc pattern or patternfile a to match. This is useful
+   Run the mulle-match file classification with the given filename. It will 
+   emit the callback being matched, if there is any. You can specify an ad-hoc 
+   pattern or a specific patternfile a to match. This is useful
    during the development of your own patternfiles.
 
 Example:
@@ -1035,6 +1034,43 @@ _match_print_filepath()
 }
 
 
+match_check_match_filenames()
+{
+   local filename="$1"
+
+   local extension
+   local base 
+
+   if [ -z "${MULLE_MATCH_FILENAMES}" ]
+   then
+      return 
+   fi
+
+   r_basename "${filename}"
+   base="${RVAL}"
+
+   local i 
+   local matches 
+
+   matches='NO'
+   IFS=":"; set -f
+   for i in ${MULLE_MATCH_FILENAMES}
+   do
+      case "${base}" in 
+         $i)
+            matches='YES'
+            break
+         ;;
+      esac
+   done
+   IFS="${DEFAULT_IFS}"; set +f
+
+   if [  "${matches}" = 'NO' ]
+   then
+      log_warning "Does not match MULLE_MATCH_FILENAMES (${MULLE_MATCH_FILENAMES})"
+   fi
+}
+
 
 ###
 ###  MAIN
@@ -1067,7 +1103,7 @@ match_filename_main()
    do
       case "$1" in
          -h*|--help|help)
-            match_match_usage
+            match_filename_usage
          ;;
 
          -q|--quiet)
@@ -1075,35 +1111,35 @@ match_filename_main()
          ;;
 #
 #         -mf|--match-filter-|-tf|--type-filter)
-#            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+#            [ $# -eq 1 ] && match_filename_usage "missing argument to $1"
 #            shift
 #
 #            OPTION_MATCH_TYPE_FILTER="$1"
 #         ;;
 #
 #         -cf|--category-filter)
-#            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+#            [ $# -eq 1 ] && match_filename_usage "missing argument to $1"
 #            shift
 #
 #            OPTION_MATCH_CATEGORY_FILTER="$1"
 #         ;;
 
          -p|--pattern)
-            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_filename_usage "missing argument to $1"
             shift
 
             OPTION_PATTERN="$1"
          ;;
 
          -pf|--pattern-file)
-            [ $# -eq 1 ] && match_match_usage "missing argument to $1"
+            [ $# -eq 1 ] && match_filename_usage "missing argument to $1"
             shift
 
             OPTION_PATTERN_FILE="$1"
          ;;
 
          -*)
-            match_match_usage "Unknown option \"$1\""
+            match_filename_usage "Unknown option \"$1\""
             ;;
 
          *)
@@ -1117,20 +1153,23 @@ match_filename_main()
    local rval
    local filename
 
-   [ "$#" -eq  0 ] && match_match_usage "missing filename"
+   [ "$#" -eq  0 ] && match_filename_usage "missing filename"
    filename="$1"
    shift
 
-   [ "$#" -ne  0 ] && match_match_usage "superflous arguments $*"
+   [ "$#" -ne  0 ] && match_filename_usage "superflous arguments $*"
+
+
+   match_check_match_filenames "${filename}"
 
    if [ ! -z "${OPTION_PATTERN}" ]
    then
       if pattern_matches_relative_filename "${OPTION_PATTERN}" "${filename}"
       then
-         log_info "match"
+         log_info "Match"
          return 0
       fi
-      log_verbose "no match"
+      log_warning "No match"
       return 1
    fi
 
@@ -1181,9 +1220,9 @@ match_filename_main()
 
    if [ "${rval}" -eq 0 ]
    then
-      log_info "match"
+      log_info "Match"
    else
-      log_verbose "no match"
+      log_warning "No match"
    fi
 
    return $rval
