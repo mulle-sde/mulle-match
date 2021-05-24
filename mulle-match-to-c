@@ -138,10 +138,14 @@ r_match_type_for_filename()
    IFS="${DEFAULT_IFS}"; set +f
 
    case "${filename}" in
+      #
       # underscore files should be included by other files if they are
       # public and relevant
+      # by default we keep them, but you can remove them with
+      # MULLE_MATCH_TO_C_UNDERSCORE_HEADERS NO
+      #
       _*|*[+-]_*)
-         if [ "${MULLE_MATCH_TO_C_UNDERSCORE_HEADERS}" = 'NO' ]
+         if [ "${MULLE_MATCH_TO_C_UNDERSCORE_HEADERS}" != 'YES' ]
          then
             RVAL="ignore"
             return
@@ -158,7 +162,7 @@ r_match_type_for_filename()
       ;;
 
       ${pattern}*|_${pattern}*|__${pattern}*)
-         RVAL="objc"
+         RVAL="${PROJECT_DIALECT}" # objc if set
       ;;
 
       *)
@@ -246,8 +250,10 @@ r_statements_for_matching_headers()
 
       if [ "${match_type}" = "c" ]
       then
+         log_fluff "Add C #include \"${filename}\""
          r_add_line "${result}" "#include \"${filename}\""
       else
+         log_fluff "Add Objective-C #import \"${filename}\""
          r_add_line "${result}" "#import \"${filename}\""
       fi
       result="${RVAL}"
@@ -273,7 +279,7 @@ r_text_info_on()
  *
  *      mulle-sde environment set ${key} DISABLE
  *
- *   To not generate any header files:
+ *   To not let mulle-match-to-c generate any header files:
  *
  *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
  */"
@@ -339,6 +345,19 @@ create_c_headers_file()
       ;;
    esac
 
+   if [ ! -z "${MULLE_MATCH_TO_C_IGNORE_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_IGNORE_HEADERS=${MULLE_MATCH_TO_C_IGNORE_HEADERS}"
+   fi
+   if [ ! -z "${MULLE_MATCH_TO_C_C_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_C_HEADERS=${MULLE_MATCH_TO_C_C_HEADERS}"
+   fi
+
    if [ "${MULLE_MATCH_TO_C_C_HEADERS_FILE}" = '-' ]
    then
    	log_info "C Public Headers"
@@ -392,6 +411,19 @@ create_objc_headers_file()
          fi
       ;;
    esac
+
+   if [ ! -z "${MULLE_MATCH_TO_C_IGNORE_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_IGNORE_HEADERS=${MULLE_MATCH_TO_C_IGNORE_HEADERS}"
+   fi
+   if [ ! -z "${MULLE_MATCH_TO_C_OBJC_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_OBJC_HEADERS=${MULLE_MATCH_TO_C_OBJC_HEADERS}"
+   fi
 
    if [ "${MULLE_MATCH_TO_C_OBJC_HEADERS_FILE}" = '-' ]
    then

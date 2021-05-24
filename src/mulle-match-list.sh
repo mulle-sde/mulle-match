@@ -109,7 +109,7 @@ EOF
 
 Environment:
    MULLE_MATCH_FILENAMES      : filename wildcards, separated by ':'   (*)
-   MULLE_MATCH_IGNORE_PATH    : locations to ignore
+   MULLE_MATCH_IGNORE_PATH    : locations to ignore (.mulle:kitchen:...)
    MULLE_MATCH_PATH           : locations to search for, separated by ':'' (src)
    MULLE_MATCH_FOLLOW_SYMLINK : follow symlinks (YES)
 EOF

@@ -77,7 +77,7 @@ Environment:
    MULLE_MATCH_TO_CMAKE_HEADERS_FILE             : headers file to create
    MULLE_MATCH_TO_CMAKE_SOURCES_FILE             : sources file to create
    MULLE_MATCH_TO_CMAKE_RESOURCES_FILE           : resources file to create
-         
+
 EOF
    exit 1
 }
@@ -89,12 +89,18 @@ emit_cmake_var()
 
    local name="$1"
    local contents="$2"
+   local comment="$3"
 
    if [ -z "${contents}" ]
    then
+      echo "# No contents in ${name}"
       return
    fi
 
+   if [ ! -z "${comment}" ]
+   then
+      echo "${comment}"
+   fi
    echo "set( ${name}"
    LC_ALL="C" sed '/ /s/\(.*\)/"\1"/' <<< "${contents}"
    echo ")"
@@ -126,7 +132,9 @@ emit_common_directories()
       fi
    fi
 
-   "${emitter}" "${parameter}" "${collection}"
+   "${emitter}" "${parameter}" "${collection}" "#
+# contents are derived from the file locations
+"
 }
 
 
@@ -136,6 +144,7 @@ emit_by_category()
 
    local emitter="$1"
    local items="$2"
+   local type="$3"
 
    [ -z "${emitter}" ] && internal_fail "emitter is empty"
 
@@ -153,7 +162,10 @@ emit_by_category()
       collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q;}' <<< "${remainder}" `"
       collection="`egrep "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
 
-      "${emitter}" "${collectname}" "${collection}"
+      r_lowercase "${collectname}"
+      "${emitter}" "${collectname}" "${collection}" "#
+# contents selected with patternfile ??-${type}--${RVAL//_/-}
+#"
 
       remainder="`egrep -v "^${collectname};" <<< "${remainder}" `"
    done
@@ -186,7 +198,7 @@ create_headers_file()
          local text_hdr2
 
          text_hdr1="`emit_common_directories emit_cmake_var INCLUDE_DIRS "${categorized_files}" `"  || return 1
-         text_hdr2="`emit_by_category emit_cmake_var "${categorized_files}" `"  || return 1
+         text_hdr2="`emit_by_category emit_cmake_var "${categorized_files}" 'header'`"  || return 1
 
          if [ -z "${text_hdr2}" ]
          then
@@ -263,7 +275,7 @@ create_sources_file()
       ;;
 
       *)
-         text_src="`emit_by_category emit_cmake_var "${categorized_files}" `"   || return 1
+         text_src="`emit_by_category emit_cmake_var "${categorized_files}" 'source'`"   || return 1
 
          if [ -z "${text_src}" ]
          then
@@ -328,7 +340,7 @@ create_resources_file()
       ;;
 
       *)
-         text_src="`emit_by_category emit_cmake_var "${categorized_files}" `"   || return 1
+         text_src="`emit_by_category emit_cmake_var "${categorized_files}" 'resource'`"   || return 1
 
          if [ -z "${text_src}" ]
          then
@@ -541,7 +553,10 @@ main()
 
       if [ -z "${categorized_sources}" ]
       then
-         log_warning "No matching source files found. " >&2
+         if [ "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" != "NONE" ]
+         then
+            log_warning "No matching source files found. " >&2
+         fi
          # exit 0 # but still create empty files, otherwise cmake is unhappy
       fi
 
@@ -567,7 +582,7 @@ main()
 
       if [ -z "${categorized_resources}" ]
       then
-         log_verbose "No matching resource files found. " 
+         log_verbose "No matching resource files found. "
          # exit 0 # but still create empty files, otherwise cmake is unhappy
       fi
 
