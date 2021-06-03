@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.7.0
+MULLE_EXECUTABLE_VERSION=0.8.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 
@@ -103,8 +103,15 @@ _usage()
 Usage:
    ${MULLE_USAGE_NAME} [flags] [command]
 
-   Match filenames to a user-definable set of patternfiles.
-   Also: lists all files matching those patternfiles.
+   Manage patternfiles, that are used to type and categorize files, with
+   the "patternfile" command.
+
+   Lists all file matching those patternfiles with the "list" command.
+
+   You can use the "filename" command, to test, which patternfile matches a 
+   given filename. This command can also check, if a specific patternfile 
+   matches a filename. This can be useful, when the output of "list" 
+   doesn't match your expectations.
 
 Flags:
 EOF
@@ -277,6 +284,14 @@ main()
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
 
          match_patternfile_main "$@"
+      ;;
+
+      # commands like 'padd' are "expanded" into "patternfile add"
+      p*)
+         # shellcheck source=src/mulle-match-patternfile.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+
+         match_patternfile_main "${1:1}" "$@"
       ;;
 
       uname)

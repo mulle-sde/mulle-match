@@ -10,8 +10,8 @@
 ## Description
 
 **mulle-match** matches filenames against a set of .gitignore like patternfiles
-to categorize files according to their filenames and location. Its like a
-marriage of `find` and `git-ignore`.
+to categorize and type files according to their filenames and location. Its 
+like a marriage of `find` and `git-ignore`.
 
 ![](dox/mulle-sde-overview.png)
 
@@ -21,17 +21,6 @@ Executable              | Description
 `mulle-match-to-cmake`  | Use **mulle-match** to create cmake files
 `mulle-match-to-c`      | Create include files for public headers
 
-## Install
-
-See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) on how
-to install *mulle-sde*, this will also install *mulle-bashfunctions* and *mulle-match*.
-
-Otherwise install [mulle-bashfunctions](//github.com/mulle-sde/mulle-sde-developer)
-first and then after downloading *mulle-match* use its installer script
-
-```
-./bin/installer --prefix /usr/local`.
-```
 
 
 ## Commands
@@ -152,19 +141,27 @@ mulle-match patternfile cat
 ```
 
 
-### match
+### filename
 
-To test your installed *patternfile* you can use `mulle-match match`. It
+To test your installed *patternfile* you can use `mulle-match filename`. It
 will output the patternfile name if one matches.
 
 ```
-mulle-match match pix/foo.png
+mulle-match filename pix/foo.png
 ```
 
-You can also test individual *patterns* using the `--pattern` option:
+To test a specific patternfile use the `--pattern-file` option. This will work
+for both ignored.d and match.d patternfiles:
 
 ```
-mulle-match match --pattern '*.png' pix/foo.png
+mulle-match filename --pattern-file '20-ignored--none' pix/foo.png
+```
+
+
+You can test individual *patterns* using the `--pattern` option:
+
+```
+mulle-match filename --pattern '*.png' pix/foo.png
 ```
 
 
@@ -184,6 +181,20 @@ mulle-match list --match-filter "hello"
 The speed of the `list` command is highly dependent on a reduction of the
 search space with the environment variables `MULLE_MATCH_FILENAMES`,
 `MULLE_MATCH_IGNORE_PATH`, `MULLE_MATCH_PATH`.
+
+
+## Install
+
+See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) on how
+to install *mulle-sde*, this will also install *mulle-bashfunctions* and 
+*mulle-match*.
+
+Otherwise install [mulle-bashfunctions](//github.com/mulle-sde/mulle-sde-developer)
+first and then after downloading *mulle-match* use its installer script
+
+```
+./bin/installer --prefix /usr/local`.
+```
 
 
 ## Environment

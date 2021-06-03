@@ -43,18 +43,34 @@ match_list_usage()
 Usage:
    ${MULLE_USAGE_NAME} list [options]
 
-   List files that match the rules contained in the patternfiles of the project
-   directory.
+   List files that match the rules contained in the patternfiles, that reside
+   in "${MULLE_MATCH_USE_DIR#${MULLE_USER_PWD}/}" and that don't match those
+   in "${MULLE_MATCH_SKIP_DIR#${MULLE_USER_PWD}/}".
 
-   For good performance it is important to restrict the searched items as much
-   as possible using the environment variables. You can further restrict the
-   output, by only matching certian patternfile types.
+   Only filenames that match the patterns in MULLE_MATCH_FILENAMES are 
+   considered. If a patternfile contains a pattern for a file extension, say 
+   *.jpg and MULLE_MATCH_FILENAMES does not match *.jpg, the pattern will never
+   be matched.
 
-   The following example searches for C source files in 'src' and 'foo/src':
+   Only files and folders listed in MULLE_MATCH_PATH will be searched, Files 
+   and folders listed in MULLE_MATCH_IGNORE_PATH will be ignored. For good 
+   performance it is important to restrict the searched items as much as 
+   possible using these environment variables. 
+
+Examples:
+   List all files matched by patternfiles sorted by type and category:
+
+      ${MULLE_USAGE_NAME} list -l
+
+   List names of all matching files together with the matching patternfiles:
+
+      ${MULLE_USAGE_NAME} list -f "%m: %b\\n"
+
+   Search for C source files in 'src' and 'foo/src' only:
 
       MULLE_MATCH_FILENAMES="*.c:*.h" \\
       MULLE_MATCH_PATH="src:foo/src" \\
-         ${MULLE_USAGE_NAME} list --mf source
+         ${MULLE_USAGE_NAME} list -tf source
 
 Options:
 EOF
@@ -63,12 +79,11 @@ EOF
      cat <<EOF >&2
    -f <format>    : specify output values
                     This is like a simplified C printf format:
-                        %b : basename of the file that was matched
-                        %c : category of match file (can be empty)
-                        %e : executable name of callback
+                        %b : basename of the file 
+                        %c : category of file (can be empty)
                         %f : filename that was matched
-                        %m : the full match filename
-                        %t : type of match file
+                        %m : the patternfile filename
+                        %t : type of file
                         %I : category of match file as an uppercase identifier
                         \\n : a linefeed
                      (e.g. 'category=%c,type=%t\\n')
@@ -101,7 +116,7 @@ EOF
    fi
 
      cat <<EOF >&2
-   -cf <filter>   : specify a filter for matching the category (see -mf)
+   -cf <filter>   : specify a filter for matching the category (see -tf)
    --no-follow    : don't follow symlinks
 EOF
 
@@ -112,6 +127,7 @@ Environment:
    MULLE_MATCH_IGNORE_PATH    : locations to ignore (.mulle:kitchen:...)
    MULLE_MATCH_PATH           : locations to search for, separated by ':'' (src)
    MULLE_MATCH_FOLLOW_SYMLINK : follow symlinks (YES)
+
 EOF
    exit 1
 }
@@ -210,13 +226,15 @@ parallel_list_filtered_files()
 {
    log_entry "parallel_list_filtered_files" "$@"
 
-   local quoted_filenames="$1" ; shift
-   local format="$1" ; shift
-   local tfilter="$1" ; shift
-   local cfilter="$1" ; shift
-   local ignore="$1" ; shift
-   local match="$1" ; shift
-   local flags="$1" ; shift
+   local quoted_filenames="$1"
+   local format="$2" 
+   local tfilter="$3"
+   local cfilter="$4" 
+   local ignore="$5" 
+   local match="$6" 
+   local flags="$7" 
+
+   shift 7
 
    [ -z "${MULLE_PARALLEL_SH}" ] && \
       . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-parallel.sh"

@@ -45,15 +45,27 @@ Usage:
 
    Run the mulle-match file classification with the given filename. It will 
    emit the callback being matched, if there is any. You can specify an ad-hoc 
-   pattern or a specific patternfile a to match. This is useful
-   during the development of your own patternfiles.
+   pattern or a specific patternfile to match. This can be useful during the 
+   development of your own patternfiles.
 
-Example:
-   ${MULLE_USAGE_NAME} filename -p '*.c' "foo.c"
+Examples:
+   Which patternfile matches "foo.c" ?
+
+      ${MULLE_USAGE_NAME} filename "foo.c"
+
+   Will "foo.c" be matched by patternfile "95-source--sources" ?
+
+      ${MULLE_USAGE_NAME} filename -pf 95-source--sources "foo.c"
+
+   Is "foo.c" being matched by the pattern '*.c' ?
+
+      ${MULLE_USAGE_NAME} filename -p '*.c' "foo.c"
 
 Options:
-   -pf <patfile>  : match the filename against the specified patternfile
-   -p <pattern>   : match the filename against the specified pattern
+   -f <patfile>  : match the filename against the specified patternfile
+                   which can be either a ignore.d or a match.d patternfile
+   -p <pattern>  : match the filename against the specified pattern
+
 EOF
    exit 1
 }
@@ -1131,7 +1143,7 @@ match_filename_main()
             OPTION_PATTERN="$1"
          ;;
 
-         -pf|--pattern-file)
+         -f|-pf|--pattern-file)
             [ $# -eq 1 ] && match_filename_usage "missing argument to $1"
             shift
 

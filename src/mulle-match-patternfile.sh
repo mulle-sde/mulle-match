@@ -43,40 +43,46 @@ match_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile [options] <command>
 
-   A patternfile is a list of patterns. Each pattern is on its own line.
-   A pattern behaves similiar to a line in .gitignore. To show all currently
-   installed patternfiles with their contents use:
+   A patternfile is like a .gitignore file. It consists of a list of patterns 
+   and comments. Each pattern is on its own line. A patternfile that matches 
+   all JPG and all PNG files in a "pix" folder, except all those starting with 
+   an underscore, could look like this:
 
-      mulle-sde patternfile list --cat
+      # commment
+      pix/**/*.png
+      *.jpg
+      !_*
 
-   There commands operate on "match" patternfiles by default. Utilize the -i
-   flag to choose "ignore" patternfiles instead.
+   There are patternfiles that are used to "match" files and there are 
+   patternfiles that are used to "ignore" files. They are kept in separate 
+   folders. Patternfile commands operate on "match" by default. Utilize -i to 
+   choose "ignore" instead.
 
-   This example patternfile matches all JPG and all PNG files, except those
-   starting with an underscore:
-
-   pix/**/*.png
-   *.jpg
-   !_*
-
+   Each "patternfile" command comes with its own usage, that gives further 
+   information. 
    See the Wiki for more information:
       https://github.com/mulle-sde/mulle-sde/wiki
 
+Example:
+   Show all currently installed patternfiles with their contents use:
+
+      ${MULLE_USAGE_NAME} patternfile cat
+
 Options:
-   -i         : use ignore.d patternfiles
+   -i     : use ignore.d patternfiles
 
 Commands:
-   add        : add a patternfile
-   cat        : show contents of patternfile
-   copy       : copy a patternfile
-   edit       : edit a patternfile
-   ignore     : create a rule to ignore a specific sourcefile
-   list       : list patternfiles currently in use
-   path       : print patternfile path for a given name
-   remove     : remove a patternfile
-   rename     : rename a patternfile
-   repair     : repair symlinks (if available)
-   status     : check if patternfiles need repairing
+   add    : add a patternfile
+   cat    : show contents of patternfile
+   copy   : copy a patternfile
+   edit   : edit a patternfile
+   ignore : create a rule to ignore a specific sourcefile
+   list   : list patternfiles currently in use
+   path   : print patternfile path for a given name
+   remove : remove a patternfile
+   rename : rename a patternfile
+   repair : repair symlinks (if available)
+   status : check if patternfiles need repairing
 EOF
    exit 1
 }
@@ -95,10 +101,15 @@ Usage:
 
    Add a patternfile for a specific type. The filename of a patternfile is
    of the form <digits>-<type>--<category>. For example to crate a patternfile
-   named 80-source--fooblet use:
+   named 80-source--fooblet to match "*.fooblet" files use:
 
-       echo "*.fooblet" | \
-         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
+      echo "*.fooblet" | \
+        ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
+
+   If you are using mulle-match inside mulle-sde, be sure to also increase the
+   filename search for *.fooblet files:
+
+      mulle-sde environment set --add MULLE_MATCH_FILENAMES '*.fooblet' 
 
    To create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -256,7 +267,7 @@ edit_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile edit [options] <filename>
 
-   Edit a patternfiles
+   Edit a patternfile. See the "patternfile add" command for more help.
 
 Options:
    -a <line>        : non-interactive addition of line to file (if missing)
@@ -279,7 +290,7 @@ Usage:
    ${MULLE_USAGE_NAME} patternfile ignore <sourcefile>
 
    Ignore a specific file. The file will be appended to the ignore.d
-   patternfile 30-ignore--all.
+   patternfile 30-ignore--all. This is a hardcoded choice.
 
 Options:
    -t <patternfile> : use patternfile as template for creation
@@ -300,8 +311,7 @@ repair_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile repair [options]
 
-   Repair symlinks to original patternfile. Useful after having done an
-   extension upgrade to get changes, when you have custom changes.
+   Repair symlinks to original patternfiles. 
 
 Options:
    --add      : add new (or previously deleted) patternfiles
