@@ -51,8 +51,8 @@ main()
 
    #-----------
 
-   expect_mulle_match "00-vfl--none" patternfile -i list
-   expect_mulle_match "00-bochum--all" patternfile -m list
+   expect_mulle_match "00-vfl--none" patternfile -i list --output-no-file-marker
+   expect_mulle_match "00-bochum--all" patternfile -m list --output-no-file-marker
 
    log_verbose "----- #1 PASSED -----"
 
@@ -62,7 +62,6 @@ main()
    expect_mulle_match "bochum" patternfile cat "00-bochum--all"
 
    log_verbose "----- #2 PASSED -----"
-
 
    run_mulle_match patternfile copy "00-bochum--all" "02-bochum--some"
    run_mulle_match patternfile rename "02-bochum--some" "02-bochum--more"

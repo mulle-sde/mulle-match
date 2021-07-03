@@ -43,9 +43,9 @@ match_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile [options] <command>
 
-   A patternfile is like a .gitignore file. It consists of a list of patterns 
-   and comments. Each pattern is on its own line. A patternfile that matches 
-   all JPG and all PNG files in a "pix" folder, except all those starting with 
+   A patternfile is like a .gitignore file. It consists of a list of patterns
+   and comments. Each pattern is on its own line. A patternfile that matches
+   all JPG and all PNG files in a "pix" folder, except all those starting with
    an underscore, could look like this:
 
       # commment
@@ -53,13 +53,13 @@ Usage:
       *.jpg
       !_*
 
-   There are patternfiles that are used to "match" files and there are 
-   patternfiles that are used to "ignore" files. They are kept in separate 
-   folders. Patternfile commands operate on "match" by default. Utilize -i to 
+   There are patternfiles that are used to "match" files and there are
+   patternfiles that are used to "ignore" files. They are kept in separate
+   folders. Patternfile commands operate on "match" by default. Utilize -i to
    choose "ignore" instead.
 
-   Each "patternfile" command comes with its own usage, that gives further 
-   information. 
+   Each "patternfile" command comes with its own usage, that gives further
+   information.
    See the Wiki for more information:
       https://github.com/mulle-sde/mulle-sde/wiki
 
@@ -109,7 +109,7 @@ Usage:
    If you are using mulle-match inside mulle-sde, be sure to also increase the
    filename search for *.fooblet files:
 
-      mulle-sde environment set --add MULLE_MATCH_FILENAMES '*.fooblet' 
+      mulle-sde environment set --add MULLE_MATCH_FILENAMES '*.fooblet'
 
    To create a patternfile to match C header and source files for a
    callback \"c_files\":
@@ -250,7 +250,8 @@ Usage:
    the local project.
 
 Options:
-   -c   : cat patternfile contents
+   -c                      : cat patternfile contents
+   --no-output-file-marker : suppress the '*'
 EOF
    exit 1
 }
@@ -311,7 +312,7 @@ repair_patternfile_usage()
 Usage:
    ${MULLE_USAGE_NAME} patternfile repair [options]
 
-   Repair symlinks to original patternfiles. 
+   Repair symlinks to original patternfiles.
 
 Options:
    --add      : add new (or previously deleted) patternfiles
@@ -336,8 +337,7 @@ _list_patternfiles()
    fi
 
    (
-      exekutor cd "${directory}"
-
+      rexekutor cd "${directory}"
 
       IFS=$'\n'
       for file in `rexekutor ls -1 | egrep '[0-9]*-.*--.*'`
@@ -345,7 +345,7 @@ _list_patternfiles()
          printf "%s" "${file}"
          if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
          then
-            printf " *" 
+            printf " *"
          fi
          echo
       done
@@ -359,6 +359,7 @@ list_patternfile_main()
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
    local OPTION_CATEGORY="${1:-all}"; shift
+   local OPTION_OUTPUT_FILE_MARKER="DEFAULT"
 
    local OPTION_DUMP='NO'
 
@@ -367,6 +368,14 @@ list_patternfile_main()
       case "$1" in
          -h*|--help|help)
             list_patternfile_usage
+         ;;
+
+         --no-output-file-marker|--output-no-file-marker)
+            OPTION_OUTPUT_FILE_MARKER='NO'
+         ;;
+
+         --output-file-marker)
+            OPTION_OUTPUT_FILE_MARKER='YES'
          ;;
 
          -c|--cat)
@@ -395,9 +404,12 @@ list_patternfile_main()
       ;;
    esac
 
-   case "${directory}" in 
+   case "${directory}" in
       ${MULLE_MATCH_ETC_DIR}/*)
-         filemark='YES'
+         if [ "${OPTION_OUTPUT_FILE_MARKER}" != "NO" ]
+         then
+            filemark='YES'
+         fi
       ;;
    esac
 
@@ -516,7 +528,7 @@ remove_patternfile_main()
    local filename="$1"
 
    etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
-                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}" 
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    local dstfile
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
@@ -631,7 +643,7 @@ add_patternfile_main()
    fi
 
    etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
-                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}" 
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
 
    etc_prepare_for_write_of_file "${dstfile}"
    redirect_exekutor "${dstfile}" printf "%s\n" "${contents}"
@@ -769,7 +781,7 @@ rename_patternfile_main()
    [ ! -f "${srcfile}" ] && fail "\"${patternfile}\" not found (at ${srcfile})"
 
    etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
-                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}" 
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
 
    exekutor ${operation} "${srcfile}" "${dstfile}"
    exekutor chmod ug+w "${dstfile}"
@@ -878,7 +890,7 @@ edit_patternfile_main()
    local dstfile
 
    etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
-                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}" 
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
 
@@ -891,7 +903,7 @@ edit_patternfile_main()
 
    if [ ! -z "${OPTION_ADD}" ]
    then
-      local escaped 
+      local escaped
 
       r_escaped_grep_pattern "${OPTION_ADD}"
       escaped="${RVAL}"
@@ -950,7 +962,7 @@ ignore_patternfile_main()
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
 
    etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
-                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}" 
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
 
    if [ ! -z "${templatefile}" ]
    then
