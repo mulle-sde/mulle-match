@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /bin/sh
 #
 #   Copyright (c) 2018 Nat! - Mulle kybernetiK
 #   All rights reserved.
@@ -31,6 +31,66 @@
 #
 [ "${TRACE}" = 'YES' -o "${MULLE_MATCH_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
+####
+#
+# Prelude to be placed at top of each script. Rerun this script either in
+# bash or zsh, if not already running in either (which can happen!)
+# Allows script to run on systems that either have bash (linux) or
+# zsh (macOS) only by default.
+
+if [ "$1" != --no-auto-shell ]
+then
+   if [ -z "${BASH_VERSION}" -a -z "${ZSH_VERSION}" ]
+   then
+      exe_shell="`command -v "bash" `"
+      exe_shell="${exe_shell:-`command -v "zsh" `}"
+
+      script="$0"
+
+      #
+      # Quote incoming arguments for shell expansion
+      #
+      args=""
+      for arg in "$@"
+      do
+         # True bourne sh doesn't know ${a//b/c} and <<<
+         case "${arg}" in
+            *\'*)
+               # Use cat instead of echo to avoid possible echo -n
+               # problems. Escape single quotes in string.
+               arg="`cat <<EOF | sed -e s/\'/\'\\\"\'\\\"\'/g
+${arg}
+EOF
+`"
+            ;;
+         esac
+         if [ -z "${args}" ]
+         then
+            args="'${arg}'"
+         else
+            args="${args} '${arg}'"
+         fi
+      done
+
+      #
+      # bash/zsh will use arg after -c <arg> as $0, convenient!
+      #
+
+      exec "${exe_shell:-bash}" -c ". ${script} --no-auto-shell ${args}" "${script}"
+   fi
+   if [ ! -z "${BASH_VERSION}" ]
+   then
+      set +o posix
+   fi
+else
+   shift    # get rid of --no-auto-shell
+fi
+
+
+#
+# Main script to follow, runs now either in zsh or bash
+#
+####
 
 MULLE_EXECUTABLE_VERSION=0.8.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
@@ -39,13 +99,6 @@ MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 #
 # This is the main user interface to mulle-match
 #
-
-trap_fail()
-{
-   exit 1
-}
-
-
 print_commands()
 {
    local show_all="${1:-NO}"
@@ -222,7 +275,7 @@ main()
       shift
    done
 
-   options_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}" && set -x
 
    local cmd
 
@@ -322,15 +375,6 @@ main()
 _init()
 {
    #
-   # minimal setup exit
-   #
-   if [ "$1" = "version" ]
-   then
-      printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
-      exit 0
-   fi
-
-   #
    # leading backslash ? looks like we're getting called from
    # mingw via a .BAT or so
    #
@@ -349,7 +393,7 @@ _init()
          then
             echo "Fatal Error: Could not find mulle-bashfunctions-env in PATH ($PATH) - mulle-bashfunctions not installed ?" >&2
          else
-            echo "Fatal Error: Could not find libexec of mulle-bashfunctions-env ($PWD)" >&2
+            echo "Fatal Error: Could not find libexec of mulle-bashfunctions-env (${PWD}})" >&2
          fi
          exit 1
       fi
@@ -359,24 +403,36 @@ _init()
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "minimal" || \
       fail "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
 
-   r_get_libexec_dir "$0" "mulle-match" "mulle-match-filename.sh"
-   MULLE_MATCH_LIBEXEC_DIR="${RVAL}"
+   if [ -z "${MULLE_MATCH_LIBEXEC_DIR}" ]
+   then
+      r_get_libexec_dir "${MULLE_EXECUTABLE}" "mulle-match" "mulle-match-filename.sh"
+      MULLE_MATCH_LIBEXEC_DIR="${RVAL}"
+   fi
+   #
+   # commands with minimal trap setup
+   #
+   if [ $# -eq 1 ]
+   then
+      case "${1}" in
+         libexec-dir|library-path)
+            printf "%s\n" "${MULLE_MATCH_LIBEXEC_DIR}"
+            exit 0
+         ;;
 
-   #
-   # minimal setup exit
-   #
-   case "$1" in
-      "libexec-dir"|"library-path")
-         printf "%s\n" "${MULLE_MATCH_LIBEXEC_DIR}"
-         exit 0
-      ;;
-   esac
+         version)
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+      esac
+   fi
 
    #  set -e # more pain then gain in the end
    #  set -u # doesn't work with my style
 
-   trap trap_fail INT
-   set -o pipefail
+   shell_enable_pipefail
+   shell_enable_extglob
+
+   call_main "${MULLE_MATCH_FLAGS}" "$@"
 }
 ###
 ### INIT
@@ -384,19 +440,8 @@ _init()
 ########
 
 
+MULLE_EXECUTABLE="${MULLE_EXECUTABLE:-${BASH_SOURCE[0]:-${(%):-%x}}}"
+
 _init "$@" # needs params
 
-
-quote="'"
-args=""
-for arg in "$@"
-do
-   arg="${arg//${quote}/${quote}\"${quote}\"${quote}}"
-   args="${args} '${arg}'"
-done
-
-unset quote
-unset arg
-
-eval main "${MULLE_MATCH_FLAGS}" "${args}"
 

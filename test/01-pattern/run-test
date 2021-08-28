@@ -35,7 +35,7 @@ main()
 {
    MULLE_MATCH_FLAGS="$@"
 
-   _options_mini_main "$@"
+   _options_mini_main "$@" && set -x
 
    #
    # memo: remember we only deal with relative paths w/o leading /!

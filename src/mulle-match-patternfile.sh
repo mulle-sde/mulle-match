@@ -1093,10 +1093,10 @@ _status_patternfile_main()
    # create symlinks for files that are identical in share and throw old
    # files away
    #
-   shopt -s nullglob
+   shell_enable_nullglob
    for filename in "${dstdir}"/* # dstdir is etc
    do
-      shopt -u nullglob
+      shell_disable_nullglob
 
       r_basename "${filename}"
       patternfile="${RVAL}"
@@ -1128,10 +1128,10 @@ _status_patternfile_main()
    #
    # go through share, symlink everything that is not in etc
    #
-   shopt -s nullglob
+   shell_enable_nullglob
    for filename in "${srcdir}"/*
    do
-      shopt -u nullglob
+      shell_disable_nullglob
 
       r_basename "${filename}"
       patternfile="${RVAL}"
@@ -1140,7 +1140,7 @@ _status_patternfile_main()
          log_warning "\"${patternfile}\" is not used. Use \`repair --add\` to add it."
       fi
    done
-   shopt -u nullglob
+   shell_disable_nullglob
 }
 
 

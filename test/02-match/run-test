@@ -38,7 +38,7 @@ expect_match_print_filepath()
 
    local result
 
-   set -o noglob
+   shell_disable_glob
    IFS=$'\n'
 
    if ! result="`_match_print_filepath "${format}" "" "" "$@"`"
@@ -59,9 +59,9 @@ main()
 {
    MULLE_MATCH_FLAGS="$@"
 
-   _options_mini_main "$@"
+   _options_mini_main "$@" && set -x
 
-   shopt -s extglob
+   shell_enable_extglob
    #
    # memo: remember we only deal with relative paths w/o leading /!
    # for simplicity it's also assumed that no relative path contain a

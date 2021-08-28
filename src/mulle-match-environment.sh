@@ -117,5 +117,5 @@ match_environment()
    fi
 
    # required!
-   shopt -s extglob || internal_fail "Can't extglob"
+   shell_enable_extglob || internal_fail "Can't extglob"
 }

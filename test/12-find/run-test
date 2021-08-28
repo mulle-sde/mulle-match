@@ -6,7 +6,7 @@
 run_mulle_match()
 {
    echo "####################################" >&2
-   echo mulle-match ${MULLE_MATCH_FLAGS} "$@"  >&2
+   echo mulle-match ${MULLE_MATCH_FLAGS} "$*"  >&2
    echo "####################################" >&2
 
    "${MULLE_MATCH}" ${MULLE_MATCH_FLAGS} "$@" || fail "\`mulle-match $*\` failed"
@@ -47,7 +47,7 @@ main()
 {
    MULLE_MATCH_FLAGS="$@"
 
-   _options_mini_main "$@"
+   _options_mini_main "$@" && set -x
 
    MULLE_MATCH_PATH="a:b:z"
    export MULLE_MATCH_PATH

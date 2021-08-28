@@ -280,8 +280,8 @@ parallel_list_filtered_files()
 
    log_debug "Search locations: ${quoted_filenames}"
 
-   shopt -s extglob
-   set -o noglob
+   shell_enable_extglob
+   shell_disable_glob
 
    while IFS=$'\n' read -r filename_0
    do
@@ -366,7 +366,7 @@ parallel_list_filtered_files()
                | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
                | LC_ALL="C" rexekutor sort -u )
 
-   set +o noglob
+   shell_enable_glob
 
    log_fluff "Waiting for jobs to finish..."
    wait
@@ -409,7 +409,7 @@ list_filenames()
    fi
 
    IFS=':'
-   set -o noglob # turn off globbing temporarily
+   shell_disable_glob # turn off globbing temporarily
 
    for name in ${MULLE_MATCH_PATH}
    do
@@ -478,7 +478,7 @@ libexec:\
       fi
    fi
 
-   set +o noglob
+   shell_enable_glob
    IFS="${DEFAULT_IFS}"
 
    # use xtype to also catch symlinks to files

@@ -387,9 +387,9 @@ EOF
 }
 
 
-pattern_unique_functionname()
+r_pattern_unique_functionname()
 {
-   log_entry "pattern_unique_functionname" "$@"
+   log_entry "r_pattern_unique_functionname" "$@"
 
    local identifier
    local functionname
@@ -401,13 +401,14 @@ pattern_unique_functionname()
    while :
    do
       identifier="`uuidgen | tr -d '-'`"
-      identifier="${identifier::6}" # so
+      identifier="${identifier:0:6}" # so
 
       functionname="_m${identifier}"
-      if [ "`type -t "${functionname}"`" != "function" ]
+      # find unused name
+      if ! shell_is_function "${functionname}"
       then
-         printf "%s\n" "${functionname}"
-         return
+         RVAL="${functionname}"
+         return 0
       fi
    done
 }
@@ -426,11 +427,12 @@ pattern_matches_relative_filename()
    local functionname
    local declaration
 
-   shopt -s extglob
+   shell_enable_extglob
 
    _match_assert_filename "${filename}"
 
-   functionname="`pattern_unique_functionname`"
+   r_pattern_unique_functionname
+   functionname="${RVAL}"
 
    declaration="`pattern_emit_function "${functionname}" "${pattern}"`"
    if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
@@ -457,7 +459,7 @@ patternlines_match_relative_filename()
    rval=1
 
    IFS=$'\n'
-   set -o noglob
+   shell_disable_glob
    for pattern in ${patterns}
    do
       IFS="${DEFAULT_IFS}"
@@ -473,7 +475,7 @@ patternlines_match_relative_filename()
          ;;
       esac
    done
-   set +o noglob
+   shell_enable_glob
 
    IFS="${DEFAULT_IFS}"
 
@@ -583,17 +585,17 @@ _patternfilefunction_create()
    local bigbody
    local functiontext
    local alltext
-   local functionname
+#   local functionname
    local pattern
 
    # of the big function this is the start
    bigbody="
    local rval=1
 "
-   set -o noglob; IFS=$'\n'
+   shell_disable_glob; IFS=$'\n'
    for pattern in ${contents}
    do
-      IFS="${DEFAULT_IFS}"; set +o noglob
+      IFS="${DEFAULT_IFS}"; shell_enable_glob
 
       # build little cases for each pattern
 #      functionname="`pattern_unique_functionname`"
@@ -606,7 +608,7 @@ _patternfilefunction_create()
 ${casetext}"
    done
 
-   IFS="${DEFAULT_IFS}"; set +o noglob
+   IFS="${DEFAULT_IFS}"; shell_enable_glob
 
    # finish up the patternfile function
    #
@@ -697,10 +699,10 @@ _define_patternfilefunctions()
    # must be declared externally
    _cache=""
 
-   shopt -s nullglob
+   shell_enable_nullglob
    for patternfile in "${directory}"/[0-9]*
    do
-      shopt -u nullglob
+      shell_disable_nullglob
 
       # be helpful...
       case "${patternfile}" in
@@ -718,7 +720,7 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
       _define_patternfilefunction "${patternfile}" "${cachedirectory}"
    done
 
-   shopt -u nullglob
+   shell_disable_nullglob
 }
 
 
@@ -778,8 +780,8 @@ _match_assert_filename()
 #
 # MUST BE CALLED WITH:
 #
-#      shopt -s extglob
-#      set -o noglob
+#      shell_enable_extglob
+#      shell_disable_glob
 #      IFS="
 #"
 r_match_filepath()
@@ -845,8 +847,8 @@ matching_filepath_pattern()
    fi
 
    (
-         shopt -s extglob
-      set -o noglob
+      shell_enable_extglob
+      shell_disable_glob
 
       IFS=$'\n'
       # returns 0,1,4
@@ -961,8 +963,8 @@ _match_print_patternfilename()
 
 # MUST BE CALLED WITH:
 #
-#      shopt -s extglob
-#      set -o noglob
+#      shell_enable_extglob
+#      shell_disable_glob
 #      IFS="
 #"
 _match_print_filepath()
@@ -1065,7 +1067,7 @@ match_check_match_filenames()
    local matches 
 
    matches='NO'
-   IFS=":"; set -f
+   IFS=":"; shell_disable_glob
    for i in ${MULLE_MATCH_FILENAMES}
    do
       case "${base}" in 
@@ -1075,7 +1077,7 @@ match_check_match_filenames()
          ;;
       esac
    done
-   IFS="${DEFAULT_IFS}"; set +f
+   IFS="${DEFAULT_IFS}"; shell_enable_glob
 
    if [  "${matches}" = 'NO' ]
    then
