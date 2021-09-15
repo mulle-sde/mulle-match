@@ -396,7 +396,7 @@ list_filenames()
    #
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
-      MULLE_MATCH_PATH=".mulle/etc/sourcetree/config:src"
+      MULLE_MATCH_PATH=".mulle/etc/sourcetree:src"
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
          log_trace2 "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
