@@ -11,7 +11,8 @@
 
 **mulle-match** matches filenames against a set of .gitignore like patternfiles
 to categorize and type files according to their filenames and location. Its 
-like a marriage of `find` and `git-ignore`.
+like a marriage of `find` and `git-ignore`. **mulle-match** is the backbone of
+the mulle-sde reflection mechanism.
 
 ![](dox/mulle-sde-overview.png)
 
@@ -21,6 +22,46 @@ Executable              | Description
 `mulle-match-to-cmake`  | Use **mulle-match** to create cmake files
 `mulle-match-to-c`      | Create include files for public headers
 
+
+## Example
+
+**mulle-match-to-cmake** produces *cmake* output for inclusion into
+`CMakeLists.txt`. This is excerpt of actual output from the
+[mulle-allocator](https://github.com/mulle-c/mulle-allocator) project:
+
+```
+#
+# contents are derived from the file locations
+
+set( INCLUDE_DIRS
+src
+src/reflect
+)
+
+#
+# contents selected with patternfile ??-header--private-generated-headers
+#
+set( PRIVATE_GENERATED_HEADERS
+src/reflect/_mulle-allocator-include-private.h
+)
+
+...
+
+#
+# contents selected with patternfile ??-source--sources
+#
+set( SOURCES
+src/mulle-allocator.c
+)
+```
+
+**mulle-match-to-c** producesr heade inclusion statements, useful for
+generating export headers:
+
+```
+#include "mulle-allocator-struct.h"
+#include "version.h"
+```
 
 
 ## Commands

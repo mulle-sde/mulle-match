@@ -78,7 +78,8 @@ match_environment()
             then
             	if [ "${cmd}" != "clean" -a "${cmd}" != "init" ]
             	then
-   	            log_fluff "There is no use directory \"${MULLE_MATCH_USE_DIR#${PWD}/}\" set up"
+   	            log_verbose "There are no patternfiles set up yet (in \"${MULLE_MATCH_ETC_DIR#${PWD}/}\")
+See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
    	         fi
                MULLE_MATCH_USE_DIR=""
             fi
