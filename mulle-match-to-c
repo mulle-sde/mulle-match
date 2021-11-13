@@ -346,7 +346,6 @@ r_text_info_on()
 }
 
 
-
 write_header_file()
 {
    log_entry "write_header_file" "$@"
@@ -363,9 +362,11 @@ write_header_file()
    log_verbose "Writing ${C_RESET_BOLD}${filename}"
    r_dirname "${filename}"
    mkdir_if_missing "${RVAL}"
-   exekutor chmod ug+w "${filename}"  2> /dev/null
-   r_mkdir_parent_if_missing "${filename}"
-   redirect_exekutor "${filename}" printf "%s\n" "${text_hdr}"
+   [ -f "${filename}" ] && exekutor chmod a+w "${filename}" || return 1  
+   if ! redirect_exekutor "${filename}" printf "%s\n" "${text_hdr}"
+   then
+      return 1
+   fi
    exekutor chmod a-w "${filename}"
 }
 
@@ -434,7 +435,6 @@ create_c_headers_file()
                      "${projectname}" \
                      'MULLE_MATCH_TO_C_C_HEADERS_FILE'
 }
-
 
 
 create_objc_headers_file()
