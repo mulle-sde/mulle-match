@@ -242,15 +242,20 @@ output_file()
    local filename="$1"
    local text="$2"
 
-   log_verbose "Writing ${C_RESET_BOLD}${filename}"
+   log_verbose "mulle-match-to-cmake writes ${C_RESET_BOLD}${filename}"
    r_dirname "${filename}"
    mkdir_if_missing "${RVAL}"
-   [ -f "${filename}" ] && exekutor chmod a+w "${filename}" || return 1  
+   if [ -f "${filename}" ] 
+   then 
+      exekutor chmod a+w "${filename}" || _fatal "Can't unprotect \"${filename}\"" 
+   fi
+
    if ! redirect_exekutor "${filename}" printf "%s\n" "${text}"
    then
+      log_error "Failed to write \"${filename}\""
       return 1
    fi
-   exekutor chmod a-w "${filename}"
+   exekutor chmod a-w "${filename}" || log_warning "Failed to protect \"${filename}\""
 }
 
 
@@ -383,8 +388,6 @@ endif()
 
 ${text_src}"
 
-   log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}"
-
    output_file "${MULLE_MATCH_TO_CMAKE_SOURCES_FILE}" "${text_src}"
 }
 
@@ -440,8 +443,6 @@ if( MULLE_TRACE_INCLUDE)
 endif()
 
 ${text_src}"
-
-   log_verbose "Writing ${C_RESET_BOLD}${MULLE_MATCH_TO_CMAKE_RESOURCES_FILE}"
 
    output_file "${MULLE_MATCH_TO_CMAKE_RESOURCES_FILE}" "${text_src}"
 }
@@ -709,6 +710,12 @@ main()
 }
 
 
+_fatal()
+{
+   echo "$0 fatal error: $*" >&2
+   exit 1
+}
+
 _init()
 {
    #
@@ -725,8 +732,7 @@ _init()
    then
       MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
       [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ] && \
-         echo "mulle-bashfunctions-env not installed" >&2 && \
-         exit 1
+         _fatal "mulle-bashfunctions-env not installed"
    fi
 
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh"  || exit 1
