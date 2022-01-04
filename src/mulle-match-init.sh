@@ -32,7 +32,7 @@
 MULLE_MATCH_INIT_SH="included"
 
 
-match_init_usage()
+match::init::usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -59,9 +59,9 @@ EOF
 ###
 ###  MAIN
 ###
-match_init_main()
+match::init::main()
 {
-   log_entry "match_init_main" "$@"
+   log_entry "match::init::main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -81,11 +81,11 @@ match_init_main()
    do
       case "$1" in
          -h*|--help|help)
-            match_init_usage
+            match::init::usage
          ;;
 
          -d|--directory)
-            [ $# -eq 1 ] && match_init_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::init::usage "missing argument to $1"
             shift
 
             mkdir_if_missing "${directory}" || exit 1
@@ -93,7 +93,7 @@ match_init_main()
          ;;
 
          -*)
-            match_init_usage "Unknown option \"$1\""
+            match::init::usage "Unknown option \"$1\""
             ;;
 
          *)
@@ -106,7 +106,7 @@ match_init_main()
 
    local rval
 
-   [ $# -ne 0 ] && match_init_usage "superflous parameters \"$*\""
+   [ $# -ne 0 ] && match::init::usage "superflous parameters \"$*\""
 
    [ -z "${MULLE_MATCH_PATTERNFILE_SH}" ] &&
       . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh" || exit 1
@@ -127,9 +127,9 @@ private.inc
 *.[cm]
 "
 
-   add_patternfile_main "" "" -c private-headers -p 50 source - <<< "${PRIVATE_HEADERS}"
-   add_patternfile_main "" "" -c public-headers  -p 60 source - <<< "${PUBLIC_HEADERS}"
-   add_patternfile_main "" "" -c sources         -p 70 source - <<< "${SOURCES}"
+   match::patternfile::add "" "" -c private-headers -p 50 source - <<< "${PRIVATE_HEADERS}"
+   match::patternfile::add "" "" -c public-headers  -p 60 source - <<< "${PUBLIC_HEADERS}"
+   match::patternfile::add "" "" -c sources         -p 70 source - <<< "${SOURCES}"
 
    log_info "Patternfiles set up for C/ObjC"
 }

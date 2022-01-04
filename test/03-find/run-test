@@ -1,6 +1,13 @@
-#! /usr/bin/env bash
+#! /bin/sh
 
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
 
 
 expect_find_filenames()
@@ -11,7 +18,7 @@ expect_find_filenames()
 
    local result
 
-   result="`list_filenames "$@" | LC_ALL=C sort`"
+   result="`match::list::list_filenames "$@" | LC_ALL=C sort`"
 
    if [ "${result}" != "${expected}" ]
    then
@@ -38,10 +45,10 @@ main()
    local match
    local _cache
 
-   _define_patternfilefunctions "ignore.d"
+   match::filename::_define_patternfilefunctions "ignore.d"
    ignore="${_cache}"
 
-   _define_patternfilefunctions "match.d"
+   match::filename::_define_patternfilefunctions "match.d"
    match="${_cache}"
 
    #-----------
@@ -76,10 +83,6 @@ src/foo.h"
 
 init()
 {
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`" || exit 1
-
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
-
    MULLE_MATCH="${MULLE_MATCH:-${PWD}/../../mulle-match}"
 
    MULLE_MATCH_LIBEXEC_DIR="`"${MULLE_MATCH}" "libexec-dir"`" || exit 1

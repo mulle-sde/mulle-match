@@ -32,12 +32,15 @@
 MULLE_MATCH_LIST_SH="included"
 
 
-match_list_usage()
+match::list::usage()
 {
    if [ "$#" -ne 0 ]
    then
       log_error "$*"
    fi
+
+   match::list::set_match_path
+   match::list::set_ignore_path
 
    cat <<EOF >&2
 Usage:
@@ -47,15 +50,25 @@ Usage:
    in "${MULLE_MATCH_USE_DIR#${MULLE_USER_PWD}/}" and that don't match those
    in "${MULLE_MATCH_SKIP_DIR#${MULLE_USER_PWD}/}".
 
-   Only filenames that match the patterns in MULLE_MATCH_FILENAMES are 
-   considered. If a patternfile contains a pattern for a file extension, say 
-   *.jpg and MULLE_MATCH_FILENAMES does not match *.jpg, the pattern will never
-   be matched.
+   Only filenames that match the patterns in the environment variable
+   MULLE_MATCH_FILENAMES are considered. If a patternfile contains a pattern
+   for a file extension, say *.jpg and MULLE_MATCH_FILENAMES does not match
+   *.jpg, the pattern will never be matched.
 
-   Only files and folders listed in MULLE_MATCH_PATH will be searched, Files 
-   and folders listed in MULLE_MATCH_IGNORE_PATH will be ignored. For good 
-   performance it is important to restrict the searched items as much as 
+   MULLE_MATCH_FILENAMES is currently set to:
+      "${MULLE_MATCH_FILENAMES:-*}"
+
+   Only files and folders listed in MULLE_MATCH_PATH will be searched.
+
+   MULLE_MATCH_PATH is currently set to:
+      "${MULLE_MATCH_PATH}"
+
+   Files and folders listed in MULLE_MATCH_IGNORE_PATH will be ignored. For
+   good performance it is important to restrict the searched items as much as
    possible using these environment variables. 
+
+   MULLE_MATCH_IGNORE_PATH is currently set to:
+      "${MULLE_MATCH_IGNORE_PATH}"
 
 Examples:
    List all files matched by patternfiles sorted by type and category:
@@ -123,9 +136,9 @@ EOF
      cat <<EOF >&2
 
 Environment:
-   MULLE_MATCH_FILENAMES      : filename wildcards, separated by ':'   (*)
-   MULLE_MATCH_IGNORE_PATH    : locations to ignore (.mulle:kitchen:...)
-   MULLE_MATCH_PATH           : locations to search for, separated by ':'' (src)
+   MULLE_MATCH_FILENAMES      : filename wildcards, separated by ':' (*)
+   MULLE_MATCH_IGNORE_PATH    : locations to ignore (addiction:kitchen:...)
+   MULLE_MATCH_PATH           : locations to search for (src:...)
    MULLE_MATCH_FOLLOW_SYMLINK : follow symlinks (YES)
 
 EOF
@@ -133,11 +146,61 @@ EOF
 }
 
 
+match::list::set_match_path()
+{
+   if [ -z "${MULLE_MATCH_PATH}" ]
+   then
+      MULLE_MATCH_PATH="src:.mulle/etc/sourcetree:"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      fi
+   else
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+      fi
+   fi
+}
+
+
+match::list::set_ignore_path()
+{
+   #
+   # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
+   # ignored. This can be important for acceptable performance and easier
+   # setup
+   #
+   if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
+   then
+      MULLE_MATCH_IGNORE_PATH="\
+${MULLE_CRAFT_ADDICTION_DIRNAME:-addiction}:\
+${MULLE_CRAFT_KITCHEN_DIRNAME:-kitchen}:\
+${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}:\
+${MULLE_SOURCETREE_STASH_DIRNAME:-stash}:\
+[Bb]uild:\
+tmp:\
+old:\
+*.old:\
+.mulle:\
+.git"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
+   else
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_trace2 "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
+   fi
+}
+
 
 # this is a nicety for scripts that run find
-list_emit_common_directories()
+match::list::emit_common_directories()
 {
-   log_entry "list_emit_common_directories" "$@"
+   log_entry "match::list::emit_common_directories" "$@"
 
    local items="$1"
    local emitter="$2"
@@ -157,9 +220,9 @@ list_emit_common_directories()
 
 
 # this is a nicety for scripts that run find
-list_emit_by_category()
+match::list::emit_by_category()
 {
-   log_entry "list_emit_by_category" "$@"
+   log_entry "match::list::emit_by_category" "$@"
 
    local items="$1"
    local emitter="$2"
@@ -186,9 +249,9 @@ list_emit_by_category()
 }
 
 
-_list_toplevel_files()
+match::list::_toplevel_files()
 {
-   log_entry "_list_toplevel_files" "$@"
+   log_entry "match::list::_toplevel_files" "$@"
 
    local ignore="$1"
 
@@ -222,9 +285,9 @@ _list_toplevel_files()
 }
 
 
-parallel_list_filtered_files()
+match::list::parallel_list_filtered_files()
 {
-   log_entry "parallel_list_filtered_files" "$@"
+   log_entry "match::list::parallel_list_filtered_files" "$@"
 
    local quoted_filenames="$1"
    local format="$2" 
@@ -320,46 +383,46 @@ parallel_list_filtered_files()
       wait_for_available_job "${maxjobs}"
 
       (
-         _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_0}"
+         match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_0}"
 
-         [ ! -z "${filename_1}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1}"
-         [ ! -z "${filename_2}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_2}"
-         [ ! -z "${filename_3}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_3}"
+         [ ! -z "${filename_1}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1}"
+         [ ! -z "${filename_2}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_2}"
+         [ ! -z "${filename_3}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_3}"
 
-         [ ! -z "${filename_4}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_4}"
-         [ ! -z "${filename_5}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_5}"
-         [ ! -z "${filename_6}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_6}"
-         [ ! -z "${filename_7}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_7}"
+         [ ! -z "${filename_4}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_4}"
+         [ ! -z "${filename_5}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_5}"
+         [ ! -z "${filename_6}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_6}"
+         [ ! -z "${filename_7}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_7}"
 
-         [ ! -z "${filename_8}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_8}"
-         [ ! -z "${filename_9}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_9}"
-         [ ! -z "${filename_a}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_a}"
-         [ ! -z "${filename_b}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_b}"
+         [ ! -z "${filename_8}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_8}"
+         [ ! -z "${filename_9}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_9}"
+         [ ! -z "${filename_a}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_a}"
+         [ ! -z "${filename_b}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_b}"
 
-         [ ! -z "${filename_c}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_c}"
-         [ ! -z "${filename_d}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_d}"
-         [ ! -z "${filename_e}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_e}"
-         [ ! -z "${filename_f}" ]  && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_f}"
+         [ ! -z "${filename_c}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_c}"
+         [ ! -z "${filename_d}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_d}"
+         [ ! -z "${filename_e}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_e}"
+         [ ! -z "${filename_f}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_f}"
 
-         [ ! -z "${filename_10}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_10}"
-         [ ! -z "${filename_11}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_11}"
-         [ ! -z "${filename_12}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_12}"
-         [ ! -z "${filename_13}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_13}"
+         [ ! -z "${filename_10}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_10}"
+         [ ! -z "${filename_11}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_11}"
+         [ ! -z "${filename_12}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_12}"
+         [ ! -z "${filename_13}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_13}"
 
-         [ ! -z "${filename_14}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_14}"
-         [ ! -z "${filename_15}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_15}"
-         [ ! -z "${filename_16}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_16}"
-         [ ! -z "${filename_17}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_17}"
+         [ ! -z "${filename_14}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_14}"
+         [ ! -z "${filename_15}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_15}"
+         [ ! -z "${filename_16}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_16}"
+         [ ! -z "${filename_17}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_17}"
 
-         [ ! -z "${filename_18}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_18}"
-         [ ! -z "${filename_19}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_19}"
-         [ ! -z "${filename_1a}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1a}"
-         [ ! -z "${filename_1b}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1b}"
+         [ ! -z "${filename_18}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_18}"
+         [ ! -z "${filename_19}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_19}"
+         [ ! -z "${filename_1a}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1a}"
+         [ ! -z "${filename_1b}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1b}"
 
-         [ ! -z "${filename_1c}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1c}"
-         [ ! -z "${filename_1d}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1d}"
-         [ ! -z "${filename_1e}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1e}"
-         [ ! -z "${filename_1f}" ] && _match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1f}"
+         [ ! -z "${filename_1c}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1c}"
+         [ ! -z "${filename_1d}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1d}"
+         [ ! -z "${filename_1e}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1e}"
+         [ ! -z "${filename_1f}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
    done < <( eval_exekutor find ${flags} ${quoted_filenames} "$@" -print \
@@ -374,9 +437,9 @@ parallel_list_filtered_files()
 }
 
 
-list_filenames()
+match::list::list_filenames()
 {
-   log_entry "list_filenames" "$@"
+   log_entry "match::list::list_filenames" "$@"
 
    [ $# -ne 5 ] && internal_fail "API mismatch"
 
@@ -394,65 +457,24 @@ list_filenames()
    #
    # MULLE_MATCH_PATH: This is where the find search starts
    #
-   if [ -z "${MULLE_MATCH_PATH}" ]
-   then
-      MULLE_MATCH_PATH=".mulle/etc/sourcetree:src"
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-      fi
-   else
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-      fi
-   fi
+   match::list::set_match_path
 
-   IFS=':'
-   shell_disable_glob # turn off globbing temporarily
-
-   for name in ${MULLE_MATCH_PATH}
-   do
+   .foreachpath name in ${MULLE_MATCH_PATH}
+   .do
       if [ -e "${name}" ]
       then
          r_concat "${match_dirs}" "'${name}'"
          match_dirs="${RVAL}"
       fi
-   done
+   .done
 
-   #
-   # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
-   # ignored. This can be important for acceptable performance and easier
-   # setup
-   #
-   if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
-   then
-      MULLE_MATCH_IGNORE_PATH="${MULLE_CRAFT_ADDICTION_DIRNAME:-addiction}:\
-build:\
-${MULLE_CRAFT_KITCHEN_DIRNAME:-kitchen}:\
-${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}:\
-${MULLE_SOURCETREE_STASH_DIRNAME:-stash}:\
-include:\
-lib:\
-libexec:\
-.mulle:\
-.git"
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
-      fi
-   else
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
-      fi
-   fi
+   match::list::set_ignore_path
 
-   for name in ${MULLE_MATCH_IGNORE_PATH}
-   do
-      r_concat "${ignore_dirs}" "-path '${name}'" " -o "
+   .foreachpath name in ${MULLE_MATCH_IGNORE_PATH}
+   .do
+      r_concat "${ignore_dirs}" "-path '*/${name}/*'" " -o "
       ignore_dirs="${RVAL}"
-   done
+   .done
 
    #
    # MULLE_MATCH_FILENAMES: Even more important for acceptable perfomance is
@@ -466,20 +488,17 @@ libexec:\
          log_trace2 "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
       fi
    else
-      for name in ${MULLE_MATCH_FILENAMES}
-      do
+      .foreachpath name in ${MULLE_MATCH_FILENAMES}
+      .do
          r_concat "${match_files}" "-name '$name'" " -o "
          match_files="${RVAL}"
-      done
+      .done
 
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
          log_trace2 "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
       fi
    fi
-
-   shell_enable_glob
-   IFS="${DEFAULT_IFS}"
 
    # use xtype to also catch symlinks to files
 
@@ -498,21 +517,21 @@ libexec:\
       flags="-L"
    fi
 
-   parallel_list_filtered_files "${match_dirs:-.}" \
-                                "${format}" \
-                                "${tfilter}" \
-                                "${cfilter}" \
-                                "${ignore}" \
-                                "${match}" \
-                                "${flags}" \
-                                "\\(" ${ignore_dirs} "\\)" -prune  \
-                                -o \
-                                ${query} \
-                                "\\(" ${match_files} "\\)"
+   match::list::parallel_list_filtered_files "${match_dirs:-.}" \
+                                             "${format}" \
+                                             "${tfilter}" \
+                                             "${cfilter}" \
+                                             "${ignore}" \
+                                             "${match}" \
+                                             "${flags}" \
+                                             "\\(" ${ignore_dirs} "\\)" -prune  \
+                                             -o \
+                                             ${query} \
+                                             "\\(" ${match_files} "\\)"
 }
 
 
-match_list_include()
+match::list::include()
 {
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -536,9 +555,9 @@ match_list_include()
 ###
 ###  MAIN
 ###
-match_list_main()
+match::list::main()
 {
-   log_entry "match_list_main" "$@"
+   log_entry "match::list::main" "$@"
 
 
    local OPTION_FORMAT="%f\\n"
@@ -555,7 +574,7 @@ match_list_main()
    MULLE_MATCH_FILENAMES="${MULLE_MATCH_FILENAMES:-${MULLE_MATCH_FILENAMES}}"
    MULLE_MATCH_FOLLOW_SYMLINK="${MULLE_MATCH_FOLLOW_SYMLINK:-YES}"
 
-   match_list_include
+   match::list::include
 
    #
    # handle options
@@ -564,18 +583,18 @@ match_list_main()
    do
       case "$1" in
          -h*|--help|help)
-            match_list_usage
+            match::list::usage
          ;;
 
          -mf|--match-filter|-tf|--type-filter)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             OPTION_MATCH_TYPE_FILTER="$1"
          ;;
 
          -cf|--category-filter)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             OPTION_MATCH_CATEGORY_FILTER="$1"
@@ -586,28 +605,28 @@ match_list_main()
          ;;
 
          --locations)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             MULLE_MATCH_PATH="$1"
          ;;
 
          --ignore-path)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             MULLE_MATCH_IGNORE_PATH="$1"
          ;;
 
          --match-names)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             MULLE_MATCH_FILENAMES="$1"
          ;;
 
          -f|--format)
-            [ $# -eq 1 ] && match_list_usage "missing argument to $1"
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
             OPTION_FORMAT="$1"
@@ -626,7 +645,7 @@ match_list_main()
          ;;
 
          -*)
-            match_list_usage "Unknown option \"$1\""
+            match::list::usage "Unknown option \"$1\""
             ;;
 
          *)
@@ -637,7 +656,7 @@ match_list_main()
       shift
    done
 
-   [ "$#" -ne 0 ] && match_list_usage "superflous arguments \"$*\""
+   [ "$#" -ne 0 ] && match::list::usage "superflous arguments \"$*\""
 
 
    local _cache
@@ -646,26 +665,26 @@ match_list_main()
 
    [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "MULLE_MATCH_VAR_DIR not set"
 
-   _define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+   match::filename::_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
                                 "${MULLE_MATCH_VAR_DIR}/cache/match"
    skip_patterncache="${_cache}"
 
-   _define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+   match::filename::_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
                                 "${MULLE_MATCH_VAR_DIR}/cache/match"
    use_patterncache="${_cache}"
 
    if [ "${OPTION_SORTED}" = 'YES' ]
    then
-      list_filenames "${OPTION_FORMAT}" \
-                     "${OPTION_MATCH_TYPE_FILTER}" \
-                     "${OPTION_MATCH_CATEGORY_FILTER}" \
-                     "${skip_patterncache}" \
-                     "${use_patterncache}" | LC_ALL=C sort
+      match::list::list_filenames "${OPTION_FORMAT}" \
+                                  "${OPTION_MATCH_TYPE_FILTER}" \
+                                  "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                  "${skip_patterncache}" \
+                                  "${use_patterncache}" | LC_ALL=C sort
    else
-      list_filenames "${OPTION_FORMAT}" \
-                     "${OPTION_MATCH_TYPE_FILTER}" \
-                     "${OPTION_MATCH_CATEGORY_FILTER}" \
-                     "${skip_patterncache}" \
-                     "${use_patterncache}"
+      match::list::list_filenames "${OPTION_FORMAT}" \
+                                  "${OPTION_MATCH_TYPE_FILTER}" \
+                                  "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                  "${skip_patterncache}" \
+                                  "${use_patterncache}"
    fi
 }

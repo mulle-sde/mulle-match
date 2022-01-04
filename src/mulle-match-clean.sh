@@ -33,7 +33,7 @@
 MULLE_MATCH_CLEAN_SH="included"
 
 
-match_clean_usage()
+match::clean::usage()
 {
    if [ "$#" -ne 0 ]
    then
@@ -55,9 +55,9 @@ EOF
 ###
 ###  MAIN
 ###
-match_clean_main()
+match::clean::main()
 {
-   log_entry "match_clean_main" "$@"
+   log_entry "match::clean::main" "$@"
 
    if [ -z "${MULLE_PATH_SH}" ]
    then
@@ -74,11 +74,11 @@ match_clean_main()
    do
       case "$1" in
          -h*|--help|help)
-            match_clean_usage
+            match::clean::usage
          ;;
 
          -*)
-            match_clean_usage "Unknown option \"$1\""
+            match::clean::usage "Unknown option \"$1\""
          ;;
 
          *)

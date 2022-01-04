@@ -1,6 +1,13 @@
-#! /usr/bin/env bash
+#! /bin/sh
 
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
 
 
 expect_matching_filepath_pattern()
@@ -14,7 +21,7 @@ expect_matching_filepath_pattern()
 
    local result
 
-   if ! result="`matching_filepath_pattern "$@"`"
+   if ! result="`match::filename::matching_filepath_pattern "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filepath \"${filepath}\""
    fi
@@ -41,7 +48,7 @@ expect_match_print_filepath()
    shell_disable_glob
    IFS=$'\n'
 
-   if ! result="`_match_print_filepath "${format}" "" "" "$@"`"
+   if ! result="`match::filename::_match_print_filepath "${format}" "" "" "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filename \"${filename}\""
    fi
@@ -73,11 +80,11 @@ main()
    local _cache
 
    _cache=
-   _define_patternfilefunctions "ignore" ""
+   match::filename::_define_patternfilefunctions "ignore" ""
    ignore="${_cache}"
 
    _cache=
-   _define_patternfilefunctions "match" ""
+   match::filename::_define_patternfilefunctions "match" ""
    match="${_cache}"
 
    expect_matching_filepath_pattern "1-a--"  "${ignore}" "${match}" "a"
@@ -101,10 +108,6 @@ main()
 
 init()
 {
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`" || exit 1
-
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
-
    MULLE_MATCH="${MULLE_MATCH:-${PWD}/../../mulle-match}"
 
    MULLE_MATCH_LIBEXEC_DIR="`"${MULLE_MATCH}" "libexec-dir"`" || exit 1

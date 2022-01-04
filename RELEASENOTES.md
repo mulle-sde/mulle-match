@@ -1,3 +1,10 @@
+# 1.0.0
+
+* big function rename to `<tool>`::`<file>`::`<function>` to make it easier to read hopefully
+* uses mulle-bashfunctions 4 now
+* can now run under zsh if bash is not available
+
+
 ## 0.8.0
 
 * improved output of mulle-match-to-c

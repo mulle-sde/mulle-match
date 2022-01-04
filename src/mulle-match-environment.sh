@@ -33,9 +33,9 @@
 MULLE_MATCH_ENVIRONMENT_SH="included"
 
 
-match_environment()
+match::environment::init()
 {
-   log_entry "match_environment" "$@"
+   log_entry "match::environment::init" "$@"
 
    local directory="$1"
    local cmd="$2"
