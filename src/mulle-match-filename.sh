@@ -83,11 +83,11 @@ match::filename::assert_pattern()
 
    case "${pattern}" in
       "")
-         internal_fail "Empty pattern is illegal"
+         _internal_fail "Empty pattern is illegal"
       ;;
 
       *"//"*)
-         internal_fail "Pattern \"${pattern}\" is illegal. It must not contain  \"//\""
+         _internal_fail "Pattern \"${pattern}\" is illegal. It must not contain  \"//\""
       ;;
    esac
 }
@@ -435,10 +435,7 @@ match::filename::pattern_matches_relative_filename()
    functionname="${RVAL}"
 
    declaration="`match::filename::pattern_emit_function "${functionname}" "${pattern}"`"
-   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-   then
-      log_trace2 "${declaration}"
-   fi
+   log_setting "${declaration}"
 
    eval "${declaration}"
 
@@ -511,8 +508,8 @@ match::filename::patternfile_match_relative_filename()
    local patternfile="$1"
    local filename="$2"
 
-   [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
-   [ -z "${filename}" ]    && internal_fail "filename is empty"
+   [ -z "${patternfile}" ] && _internal_fail "patternfile is empty"
+   [ -z "${filename}" ]    && _internal_fail "filename is empty"
 
    lines="`match::filename::patternfile_read "${patternfile}"`"
 
@@ -561,7 +558,7 @@ match::filename::_patternfilefunction_create()
       then
          log_debug "Use cached \"${cachefile#${MULLE_USER_PWD}/}\" for \"${patternfile#${MULLE_USER_PWD}/}\""
 
-         . "${cachefile}" || internal_fail "corrupted file \"${cachefile}\""
+         . "${cachefile}" || _internal_fail "corrupted file \"${cachefile}\""
          return 0
       fi
    fi
@@ -626,10 +623,10 @@ ${functiontext}"
    #
    if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
    then
-      log_trace2 "${alltext}"
+      log_setting "${alltext}"
    fi
 
-   eval "${alltext}" || internal_fail "failed to produce functions"
+   eval "${alltext}" || _internal_fail "failed to produce functions"
 
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
@@ -710,7 +707,7 @@ match::filename::_define_patternfilefunctions()
          ;;
 
          *)
-            log_warning "Ignoring badly named file \"${patternfile}\".
+            _log_warning "Ignoring badly named file \"${patternfile}\".
 A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
 (... minus type minus minus ...)"
             continue
@@ -761,15 +758,15 @@ match::filename::_match_assert_filename()
 
    case "${filename}" in
       "")
-         internal_fail "Empty filename is illegal"
+         _internal_fail "Empty filename is illegal"
       ;;
 
       /*)
-         internal_fail "Filename \"${filename}\" is illegal. It must not start with '/'"
+         _internal_fail "Filename \"${filename}\" is illegal. It must not start with '/'"
       ;;
 
       */)
-         internal_fail "Filename \"${filename}\" is illegal. It must not end with '/'"
+         _internal_fail "Filename \"${filename}\" is illegal. It must not end with '/'"
       ;;
    esac
 }
@@ -872,7 +869,7 @@ match::filename::_match_print_patternfilename()
    local format="$1"
    local patternfile="$2"
 
-   [ -z "${patternfile}" ] && internal_fail "patternfile is empty"
+   [ -z "${patternfile}" ] && _internal_fail "patternfile is empty"
 
    local matchname
 
@@ -1211,7 +1208,7 @@ match::filename::main()
       match::filename::_define_patternfilefunction "${OPTION_PATTERN_FILE}"
       match_patterncache="${_cache}"
    else
-      [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "MULLE_MATCH_VAR_DIR not set"
+      [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
       match::filename::_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
                                    "${MULLE_MATCH_VAR_DIR}/cache"

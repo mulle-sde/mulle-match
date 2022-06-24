@@ -1,3 +1,7 @@
+### 1.0.1
+
+* Various small improvements
+
 # 1.0.0
 
 * big function rename to `<tool>`::`<file>`::`<function>` to make it easier to read hopefully

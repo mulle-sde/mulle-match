@@ -89,7 +89,7 @@ match::clean::main()
       shift
    done
 
-   [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "empty MULLE_MATCH_VAR_DIR"
+   [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "empty MULLE_MATCH_VAR_DIR"
 
    #
    # why another /match ?

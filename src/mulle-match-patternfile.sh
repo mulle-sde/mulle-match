@@ -1018,8 +1018,8 @@ match::patternfile::_repair()
    local srcdir
    local dstdir
 
-   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
-   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && _internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && _internal_fail "MULLE_MATCH_ETC_DIR is empty"
 
    srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
@@ -1076,8 +1076,8 @@ match::patternfile::_status()
    local srcdir
    local dstdir
 
-   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
-   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && _internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && _internal_fail "MULLE_MATCH_ETC_DIR is empty"
 
    srcdir="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
    dstdir="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}"
@@ -1250,8 +1250,8 @@ match::patternfile::path()
    local share
    local etc
 
-   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && internal_fail "MULLE_MATCH_SHARE_DIR is empty"
-   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && internal_fail "MULLE_MATCH_ETC_DIR is empty"
+   [ -z "${MULLE_MATCH_SHARE_DIR}" ] && _internal_fail "MULLE_MATCH_SHARE_DIR is empty"
+   [ -z "${MULLE_MATCH_ETC_DIR}" ]   && _internal_fail "MULLE_MATCH_ETC_DIR is empty"
 
    etc="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${name}"
    log_fluff "Checking ${etc}"

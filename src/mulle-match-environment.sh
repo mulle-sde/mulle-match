@@ -78,7 +78,7 @@ match::environment::init()
             then
             	if [ "${cmd}" != "clean" -a "${cmd}" != "init" ]
             	then
-   	            log_verbose "There are no patternfiles set up yet (in \"${MULLE_MATCH_ETC_DIR#${PWD}/}\")
+   	            _log_verbose "There are no patternfiles set up yet (in \"${MULLE_MATCH_ETC_DIR#${PWD}/}\")
 See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
    	         fi
                MULLE_MATCH_USE_DIR=""
@@ -107,16 +107,13 @@ See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
       ;;
    esac
 
-   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-   then
-      log_trace2 "MULLE_MATCH_ETC_DIR     : \"${MULLE_MATCH_ETC_DIR}\""
-      log_trace2 "MULLE_MATCH_PROJECT_DIR : \"${MULLE_MATCH_PROJECT_DIR}\""
-      log_trace2 "MULLE_MATCH_SHARE_DIR   : \"${MULLE_MATCH_SHARE_DIR}\""
-      log_trace2 "MULLE_MATCH_SKIP_DIR    : \"${MULLE_MATCH_SKIP_DIR}\""
-      log_trace2 "MULLE_MATCH_USE_DIR     : \"${MULLE_MATCH_USE_DIR}\""
-      log_trace2 "MULLE_MATCH_VAR_DIR     : \"${MULLE_MATCH_VAR_DIR}\""
-   fi
+   log_setting "MULLE_MATCH_ETC_DIR     : \"${MULLE_MATCH_ETC_DIR}\""
+   log_setting "MULLE_MATCH_PROJECT_DIR : \"${MULLE_MATCH_PROJECT_DIR}\""
+   log_setting "MULLE_MATCH_SHARE_DIR   : \"${MULLE_MATCH_SHARE_DIR}\""
+   log_setting "MULLE_MATCH_SKIP_DIR    : \"${MULLE_MATCH_SKIP_DIR}\""
+   log_setting "MULLE_MATCH_USE_DIR     : \"${MULLE_MATCH_USE_DIR}\""
+   log_setting "MULLE_MATCH_VAR_DIR     : \"${MULLE_MATCH_VAR_DIR}\""
 
    # required!
-   shell_enable_extglob || internal_fail "Can't extglob"
+   shell_enable_extglob || _internal_fail "Can't extglob"
 }

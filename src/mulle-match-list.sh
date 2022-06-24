@@ -151,15 +151,9 @@ match::list::set_match_path()
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
       MULLE_MATCH_PATH="src:.mulle/etc/sourcetree:"
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-      fi
+      log_setting "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    else
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_trace2 "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-      fi
+      log_setting "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    fi
 }
 
@@ -186,12 +180,12 @@ old:\
 .git"
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
-         log_trace2 "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+         log_setting "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
       fi
    else
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
-         log_trace2 "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+         log_setting "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
       fi
    fi
 }
@@ -206,7 +200,7 @@ match::list::emit_common_directories()
    local emitter="$2"
    local parameter="$3"
 
-   [ -z "${emitter}" ] && internal_fail "emitter is empty"
+   [ -z "${emitter}" ] && _internal_fail "emitter is empty"
 
    local collection
 
@@ -227,7 +221,7 @@ match::list::emit_by_category()
    local items="$1"
    local emitter="$2"
 
-   [ -z "${emitter}" ] && internal_fail "emitter is empty"
+   [ -z "${emitter}" ] && _internal_fail "emitter is empty"
 
    local collectname
    local collection
@@ -441,7 +435,7 @@ match::list::list_filenames()
 {
    log_entry "match::list::list_filenames" "$@"
 
-   [ $# -ne 5 ] && internal_fail "API mismatch"
+   [ $# -ne 5 ] && _internal_fail "API mismatch"
 
    local format="$1"
    local tfilter="$2"
@@ -485,7 +479,7 @@ match::list::list_filenames()
       match_files="-name '*'"
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
-         log_trace2 "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+         log_setting "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
       fi
    else
       .foreachpath name in ${MULLE_MATCH_FILENAMES}
@@ -496,7 +490,7 @@ match::list::list_filenames()
 
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
-         log_trace2 "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
+         log_setting "MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
       fi
    fi
 
@@ -663,7 +657,7 @@ match::list::main()
    local skip_patterncache
    local use_patterncache
 
-   [ -z "${MULLE_MATCH_VAR_DIR}" ] && internal_fail "MULLE_MATCH_VAR_DIR not set"
+   [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
    match::filename::_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
                                 "${MULLE_MATCH_VAR_DIR}/cache/match"
