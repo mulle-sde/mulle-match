@@ -158,7 +158,9 @@ Usage:
    Manage patternfiles, that are used to type and categorize files, with
    the "patternfile" command.
 
-   Lists all file matching those patternfiles with the "list" command.
+   Lists all file matching those patternfiles with the "list" command. For
+   example:
+      mulle-match list -tf header    # list all headers in mulle-objc projects
 
    You can use the "filename" command, to test, which patternfile matches a 
    given filename. This command can also check, if a specific patternfile 
