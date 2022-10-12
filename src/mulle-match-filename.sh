@@ -55,7 +55,7 @@ Examples:
 
    Will "foo.c" be matched by patternfile "95-source--sources" ?
 
-      ${MULLE_USAGE_NAME} filename -pf 95-source--sources "foo.c"
+      ${MULLE_USAGE_NAME} filename -f 95-source--sources "foo.c"
 
    Is "foo.c" being matched by the pattern '*.c' ?
 
@@ -1165,6 +1165,7 @@ match::filename::main()
    local filename
 
    [ "$#" -eq  0 ] && match::filename::usage "missing filename"
+
    filename="$1"
    shift
 

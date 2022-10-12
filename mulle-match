@@ -106,7 +106,7 @@ match::print_commands()
    init        : setup some initial patternfiles
    clean       : remove cached patternfiles
    list        : list files that match patternfiles (default)
-   filename    : find patternfile that matches a filename
+   filename    : find the patternfile that matches a filename
    patternfile : manage patternfiles"
 
    HIDDEN_COMMANDS="\
@@ -280,8 +280,11 @@ match::main()
 
    local cmd
 
-   cmd="$1"
-   [ $# -ne 0 ] && shift
+   if [ $# -ne 0 ]
+   then
+      cmd="$1"
+      shift
+   fi
 
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
@@ -333,7 +336,7 @@ match::main()
          match::filename::main "$@"
       ;;
 
-      patternfile)
+      patternfile|patternfiles)
          # shellcheck source=src/mulle-match-patternfile.sh
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
 

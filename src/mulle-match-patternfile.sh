@@ -103,7 +103,7 @@ Usage:
    of the form <digits>-<type>--<category>. For example to crate a patternfile
    named 80-source--fooblet to match "*.fooblet" files use:
 
-      echo "*.fooblet" | \
+      echo "*.fooblet" | \\
         ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
 
    If you are using mulle-match inside mulle-sde, be sure to also increase the
@@ -120,6 +120,10 @@ Usage:
       https://github.com/mulle-sde/mulle-sde/wiki
 
    Use the -f flag to clobber ab existing patternfile.
+
+Tip:
+   Use the "filename" command to check if your patternfile works as intended:
+      ${MULLE_USAGE_NAME} filename -f 80-source--fooblet src/x.fooblet
 
 Options:
    -i           : use as ignore patternfile
