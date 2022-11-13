@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+# shellcheck shell=bash
 #
 #   Copyright (c) 2018 Nat! - Mulle kybernetiK
 #   All rights reserved.
@@ -490,9 +490,9 @@ match::filename::patternfile_read()
    then
       if [ -L "${filename}" ]
       then
-         log_verbose "\"${filename#${MULLE_USER_PWD}/}\" symbolic link is broken"
+         log_verbose "\"${filename#"${MULLE_USER_PWD}/"}\" symbolic link is broken"
       else
-         log_verbose "\"${filename#${MULLE_USER_PWD}/}\" does not exist"
+         log_verbose "\"${filename#"${MULLE_USER_PWD}/"}\" does not exist"
       fi
       return 1
    fi
@@ -556,7 +556,7 @@ match::filename::_patternfilefunction_create()
       cachefile="${cachedirectory}/${varname}"
       if [ "${cachefile}" -nt "${patternfile}" ]
       then
-         log_debug "Use cached \"${cachefile#${MULLE_USER_PWD}/}\" for \"${patternfile#${MULLE_USER_PWD}/}\""
+         log_debug "Use cached \"${cachefile#"${MULLE_USER_PWD}/"}\" for \"${patternfile#"${MULLE_USER_PWD}/"}\""
 
          . "${cachefile}" || _internal_fail "corrupted file \"${cachefile}\""
          return 0
@@ -565,13 +565,13 @@ match::filename::_patternfilefunction_create()
 
    if ! contents="`match::filename::patternfile_read "${patternfile}"`"
    then
-      log_warning "\"${patternfile#${MULLE_USER_PWD}/}\" is broken. Run \`mulle-match patternfile repair\`"
+      log_warning "\"${patternfile#"${MULLE_USER_PWD}/"}\" is broken. Run \`mulle-match patternfile repair\`"
       return 1
    fi
 
    if [ -z "${contents}" ]
    then
-      log_fluff "\"${patternfile#${MULLE_USER_PWD}/}}\" is empty"
+      log_fluff "\"${patternfile#"${MULLE_USER_PWD}/"}}\" is empty"
       return 1
    fi
 
@@ -631,7 +631,7 @@ ${functiontext}"
    # cache it if so desired
    if [ ! -z "${cachefile}" ]
    then
-      log_fluff "Cached \"${patternfile#${MULLE_USER_PWD}/}\" in \"${cachefile#${MULLE_USER_PWD}/}\""
+      log_fluff "Cached \"${patternfile#"${MULLE_USER_PWD}/"}\" in \"${cachefile#"${MULLE_USER_PWD}/"}\""
 
       mkdir_if_missing "${cachedirectory}"
       redirect_exekutor "${cachefile}" printf "%s\n" "${alltext}"
@@ -879,7 +879,6 @@ match::filename::_match_print_patternfilename()
    local matchcategory
    local matchexecutable
    local matchdigits
-   local uppercase
    local s
 
    while [ ! -z "${format}" ]
@@ -927,16 +926,16 @@ match::filename::_match_print_patternfilename()
 
          \%C*)
             matchcategory="${matchname##*--}"
-            uppercase="`tr 'a-z-' 'A-Z_' <<< "${matchcategory}"`"
-            s="${s}${uppercase}"
+            r_uppercase "${matchcategory}"
+            s="${s}${RVAL//-/_}"
             format="${format:2}"
          ;;
 
          \%T*)
             matchtype="${matchname%--*}"
             matchtype="${matchtype##*-}"
-            uppercase="`tr 'a-z-' 'A-Z_' <<< "${matchtype}"`"
-            s="${s}${uppercase}"
+            r_uppercase "${matchtype}"
+            s="${s}${RVAL//-/_}"
             format="${format:2}"
          ;;
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+# shellcheck shell=bash
 #
 #   Copyright (c) 2018 Nat! - Mulle kybernetiK
 #   All rights reserved.
@@ -47,8 +47,8 @@ Usage:
    ${MULLE_USAGE_NAME} list [options]
 
    List files that match the rules contained in the patternfiles, that reside
-   in "${MULLE_MATCH_USE_DIR#${MULLE_USER_PWD}/}" and that don't match those
-   in "${MULLE_MATCH_SKIP_DIR#${MULLE_USER_PWD}/}".
+   in "${MULLE_MATCH_USE_DIR#"${MULLE_USER_PWD}/"}" and that don't match those
+   in "${MULLE_MATCH_SKIP_DIR#"${MULLE_USER_PWD}/"}".
 
    Only filenames that match the patterns in the environment variable
    MULLE_MATCH_FILENAMES are considered. If a patternfile contains a pattern

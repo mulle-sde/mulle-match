@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+# shellcheck shell=bash
 #
 #   Copyright (c) 2018 Nat! - Mulle kybernetiK
 #   All rights reserved.
@@ -77,6 +77,7 @@ Commands:
    copy   : copy a patternfile
    edit   : edit a patternfile
    ignore : create a rule to ignore a specific sourcefile
+   match  : add a rule to match a specific sourcefile
    list   : list patternfiles currently in use
    path   : print patternfile path for a given name
    remove : remove a patternfile
@@ -119,7 +120,7 @@ Usage:
    See the Wiki for more information:
       https://github.com/mulle-sde/mulle-sde/wiki
 
-   Use the -f flag to clobber ab existing patternfile.
+   Use the -f flag to clobber an existing patternfile.
 
 Tip:
    Use the "filename" command to check if your patternfile works as intended:
@@ -171,7 +172,7 @@ Usage:
    with options, instead of providing a full destination patternfile name.
 
 Options:
-   -c <category>  : change the of a patternfile
+   -c <category>  : change the category of a patternfile
    -p <digits>    : change position of the patternfile
    -t <type>      : change type of the patternfile
 EOF
@@ -194,9 +195,9 @@ Usage:
    Returns 1 if no file exists.
 
 Options:
-   -c <category>  : change the of a patternfile
-   -p <digits>    : change position of the patternfile
-   -t <type>      : change type of the patternfile
+   -c <category>  : the category of a patternfile
+   -p <digits>    : position of the patternfile
+   -t <type>      : type of the patternfile
 EOF
    exit 1
 }
@@ -211,13 +212,13 @@ match::patternfile::rename_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile rename [options] <srcfilename> [dstfilename]
+   ${MULLE_USAGE_NAME} patternfile rename [options] <src> [dst]
 
    Rename an existing patternfile. You can also set portions of the patternfile
    with options, instead of providing a full destination patternfile name.
 
 Options:
-   -c <category>  : change the of a patternfile
+   -c <category>  : change the category of a patternfile
    -p <digits>    : change position of the patternfile
    -t <type>      : change type of the patternfile
 EOF
@@ -298,7 +299,7 @@ Usage:
    ${MULLE_USAGE_NAME} patternfile ignore <sourcefile>
 
    Ignore a specific file. The file will be appended to the ignore.d
-   patternfile 30-ignore--all. This is a hardcoded choice.
+   patternfile 00-user--none. This is a hardcoded choice.
 
 Options:
    -t <patternfile> : use patternfile as template for creation
@@ -306,6 +307,39 @@ Options:
 EOF
    exit 1
 }
+
+
+match::patternfile::match_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile match [options] <sourcefile> <patternfile>
+
+   Add a specific sourcefile to a patternfile. For example to make a specific
+   header "foo.h" a private header and you have a patternfile named
+   "80-header--private", you would say:
+
+   ${MULLE_USAGE_NAME} patternfile match "foo.h" "80-header--private"
+
+   See available patternfiles names with
+
+   ${MULLE_USAGE_NAME} patternfile list
+
+Options:
+   -t <patternfile> : use patternfile as template for creation
+   -c <category>    : the category of a patternfile
+   -p <digits>      : position of the patternfile
+   -t <type>        : type of the patternfile
+
+EOF
+   exit 1
+}
+
 
 
 match::patternfile::repair_usage()
@@ -346,16 +380,15 @@ match::patternfile::_list()
    (
       rexekutor cd "${directory}"
 
-      IFS=$'\n'
-      for file in `rexekutor ls -1 | egrep '[0-9]*-.*--.*'`
-      do
+      .foreachline file in `rexekutor ls -1 | egrep '[0-9]*-.*--.*'`
+      .do
          printf "%s" "${file}"
          if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
          then
             printf " *"
          fi
          echo
-      done
+      .done
    )
 }
 
@@ -457,22 +490,20 @@ match::patternfile::list()
       return $?
    fi
 
-   local patternfile
    local files
 
    files="`match::patternfile::_list "${directory}"`"
 
-   IFS=$'\n'
-   for patternfile in ${files}
-   do
-      IFS="${DEFAULT_IFS}"
+   local patternfile
+
+   .foreachline patternfile in ${files}
+   .do
       log_info "-----------------------------------------"
       log_info "${foldername}/${patternfile}"
       log_info "-----------------------------------------"
       cat "${directory}/${patternfile}"
       echo
-   done
-   IFS="${DEFAULT_IFS}"
+   .done
 }
 
 
@@ -549,27 +580,92 @@ match::patternfile::remove()
 }
 
 
-match::patternfile::_validate_digits()
+match::patternfile::is_valid_number()
 {
-   log_entry "match::patternfile::_validate_digits" "$@"
+   log_entry "match::patternfile::is_valid_number" "$@"
 
-   [ ! -z "$1" -a -z "`tr -d '0-9' <<< "$1"`" ]
+   [  ! -z "$1" -a -z "${1//[0-9]/}" ]
 }
 
 
-match::patternfile::_validate_typename()
+match::patternfile::is_valid_typename()
 {
-   log_entry "match::patternfile::_validate_typename" "$@"
+   log_entry "match::patternfile::is_valid_typename" "$@"
 
-   [ ! -z "$1" -a -z "`tr -d '0-9A-Za-z_' <<< "$1"`" ]
+   [ ! -z "${1}" -a "${1//[^a-zA-Z0-9-_]/_}" = "$1" ]
 }
 
 
-match::patternfile::_validate_category()
+match::patternfile::is_valid_category()
 {
-   log_entry "match::patternfile::_validate_category" "$@"
+   log_entry "match::patternfile::is_valid_category" "$@"
 
-   [ -z "`tr -d '0-9A-Za-z-_' <<< "$1"`" ]
+   [ ! -z "${1}" -a "${1//[^a-zA-Z0-9-_]/_}" = "$1" ]
+}
+
+
+match::patternfile::r_get_type()
+{
+   local s="$1"
+
+   s="${s#*-}"
+   RVAL="${s%%--*}"
+}
+
+
+match::patternfile::r_parse()
+{
+   log_entry "match::patternfile::r_parse" "$@"
+
+   local s="$1"
+
+   local OPTION_POSITION="$2"
+   local OPTION_TYPE="$3"
+   local OPTION_CATEGORY="$4"
+
+   local _position
+   local _type
+   local _category
+
+   case "${s}" in
+      *-*--*)
+         _position="${s%%-*}"
+         s="${s#*-}"
+         _type="${s%%--*}"
+         _category="${s#*--}"
+      ;;
+
+      *--*)
+         _type="${s%%--*}"
+         _category="${s#*--}"
+      ;;
+
+      "")
+         fail "patternfile type must not be empty"
+      ;;
+
+      *)
+         type="$s"
+      ;;
+   esac
+
+   _position="${_position:-${OPTION_POSITION}}"
+   # default value
+   _position="${_position:-50}"
+
+   _type="${_type:-${OPTION_TYPE}}"
+
+   _category="${_category:-${OPTION_CATEGORY}}"
+   # default value
+   _category="${_category:-all}"
+
+   match::patternfile::is_valid_number   "${_position}" || fail "position should only contain digits"
+   match::patternfile::is_valid_typename "${_type}"     || fail "type should only contain a-z _ and digits"
+   match::patternfile::is_valid_category "${_category}" || fail "category should only contain a-z _- and digits"
+
+   RVAL="${_position}-${_type}--${_category}"
+
+   return 0
 }
 
 
@@ -578,9 +674,9 @@ match::patternfile::add()
    log_entry "match::patternfile::add" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_CATEGORY="${1:-all}"; shift
-
-   local OPTION_POSITION="50"
+   local OPTION_CATEGORY="$1"; shift
+   local OPTION_POSITION=""
+   local OPTION_TYPE=""
 
    while :
    do
@@ -610,6 +706,12 @@ match::patternfile::add()
             OPTION_POSITION="$1"
          ;;
 
+         -t|--type)
+            [ $# -eq 1 ] && match::patternfile::add_usage "missing argument to $1"
+            shift
+            OPTION_TYPE="$1"
+         ;;
+
          -*)
             match::patternfile::add_usage "Unknown option \"$1\""
          ;;
@@ -621,22 +723,21 @@ match::patternfile::add()
 
       shift
    done
+
    [ "$#" -ne 2 ] && match::patternfile::add_usage
 
-   local typename="$1"
+   local s="$1"
    local filename="$2"
 
-   [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
+   match::patternfile::r_parse "$s" "${OPTION_POSITION}" "${OPTION_TYPE}" "${OPTION_CATEGORY}"
+   patternfile="${RVAL}"
 
-   match::patternfile::_validate_digits "${OPTION_POSITION}"   || fail "position should only contain digits"
-   match::patternfile::_validate_typename "${typename}"        || fail "type should only contain a-z _ and digits"
-   match::patternfile::_validate_category "${OPTION_CATEGORY}" || fail "category should only contain a-z _- and digits"
+   [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
 
    local patternfile
    local contents
    local dstfile
 
-   patternfile="${OPTION_POSITION}-${typename}--${OPTION_CATEGORY}"
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
 
    [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = 'NO' ] \
@@ -730,35 +831,21 @@ match::patternfile::rename()
    local patternfile="$1"
    local dstpatternfile="$2"
 
-   local matchposition
-   local matchtype
-   local matchcategory
+   match::patternfile::r_parse "$1"
+   patternfile="${RVAL}"
 
-   if [ ! -z "${dstpatternfile}" ]
+   if [ -z "${dstpatternfile}" ]
    then
-      matchposition="${dstpatternfile%%-*}"
-      matchtype="${dstpatternfile%--*}"
-      matchtype="${matchtype##*-}"
-      matchcategory="${dstpatternfile##*--}"
-   else
-      matchposition="${patternfile%%-*}"
-      matchtype="${patternfile%--*}"
-      matchtype="${matchtype##*-}"
-      matchcategory="${patternfile##*--}"
+      patternfile::match:get_type "${patternfile}"
+      dstpatternfile="${RVAL}"
    fi
 
-   matchposition="${OPTION_POSITION:-${matchposition}}"
-   matchtype="${OPTION_TYPE:-${matchtype}}"
-   matchcategory="${OPTION_CATEGORY:-${matchcategory}}"
-
-   match::patternfile::_validate_digits "${matchposition}"   || fail "position should only contain digits"
-   match::patternfile::_validate_typename "${matchtype}"     || fail "type should only contain a-z and digits"
-   match::patternfile::_validate_category "${matchcategory}" || fail "category should only contain a-z and digits"
+   match::patternfile::r_parse "${dstpatternfile}" "${OPTION_POSITION}" "${OPTION_TYPE}" "${OPTION_CATEGORY}"
+   dstpatternfile="${RVAL}"
 
    local dstfile
    local srcfile
 
-   dstpatternfile="${matchposition}-${matchtype}--${matchcategory}"
    if [ "${dstpatternfile}" = "${patternfile}" ]
    then
       log_warning "No change in filename"
@@ -929,8 +1016,10 @@ match::patternfile::ignore()
 {
    log_entry "match::patternfile::ignore" "$@"
 
-   local OPTION_FOLDER_NAME="ignore.d"; shift
-   local OPTION_CATEGORY="none"; shift
+   local OPTION_FOLDER_NAME="ignore.d"
+   local OPTION_CATEGORY="none"
+
+   shift 2
 
    local templatefile=""
 
@@ -962,7 +1051,7 @@ match::patternfile::ignore()
 
    [ "$#" -eq 0 ] && match::patternfile::ignore_usage
 
-   local filename="30-ignored--none"
+   local filename="00-user--none"
 
    local dstfile
 
@@ -979,7 +1068,75 @@ match::patternfile::ignore()
    etc_make_file_from_symlinked_file "${dstfile}"
 
    merge_line_into_file "$*" "${dstfile}"
+
+   etc_make_symlink_if_possible "${dstfile}"
 }
+
+
+match::patternfile::match()
+{
+   log_entry "match::patternfile::match" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"
+   local OPTION_CATEGORY="$2"
+
+   shift 2
+
+   local OPTION_TYPE=
+   local OPTION_POSITION=
+   local templatefile=""
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            match::patternfile::match_usage
+         ;;
+
+         -t|--template|--template-file)
+            [ $# -eq 1 ] && match::patternfile::match_usage "missing argument to $1"
+            shift
+
+            templatefile="$1"
+         ;;
+
+         -*)
+            match::patternfile::match_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -ne 2 ] && match::patternfile::match_usage
+
+   local pattern="$1"
+   local patternfile="$2"
+
+   local dstfile
+
+   match::patternfile::r_parse "${patternfile}" "${OPTION_POSITION}" "${OPTION_TYPE}" "${OPTION_CATEGORY}"
+   dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${RVAL}"
+
+   etc_setup_from_share_if_needed "${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}" \
+                                  "${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}"
+
+   if [ -f "${dstfile}" -a ! -z "${templatefile}" ]
+   then
+      match::patternfile::copy_template "${templatefile}" "${dstfile}"
+   fi
+
+   etc_make_file_from_symlinked_file "${dstfile}"
+
+   merge_line_into_file "${pattern}" "${dstfile}"
+
+   etc_make_symlink_if_possible "${dstfile}"
+}
+
 
 
 #
@@ -1174,6 +1331,8 @@ match::patternfile::path()
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
    local OPTION_CATEGORY="$1"; shift
 
+   local OPTION_WRITE='NO'
+
    while [ "$#" -ne 0 ]
    do
       case "$1" in
@@ -1201,6 +1360,14 @@ match::patternfile::path()
             shift
 
             OPTION_TYPE="$1"
+         ;;
+
+         -r|--read)
+            OPTION_WRITE='NO'
+         ;;
+
+         -w|--write)
+            OPTION_WRITE='YES'
          ;;
 
          -*)
@@ -1259,7 +1426,7 @@ match::patternfile::path()
 
    etc="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${name}"
    log_fluff "Checking ${etc}"
-   if [ -f "${etc}" ]
+   if [ -f "${etc}" -o "${OPTION_WRITE}" = 'YES' ]
    then
       echo "${etc}"
       return
@@ -1350,24 +1517,24 @@ match::patternfile::main()
    [ $# -ne 0 ] && shift
 
    case "${cmd:-list}" in
-      add|edit|ignore|remove|repair|status)
+      add|edit|ignore|match|remove|repair|status)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
-                                 "${OPTION_CATEGORY}" \
-                                 "$@"
+                                    "${OPTION_CATEGORY}" \
+                                    "$@"
       ;;
 
       cat|path)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
-                                 "${OPTION_CATEGORY}" \
-                                 "$@"
+                                    "${OPTION_CATEGORY}" \
+                                    "$@"
          return $?
       ;;
 
 
       copy|rename)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
-                                 "" \
-                                 "$@"
+                                    "" \
+                                    "$@"
       ;;
 
       list)
