@@ -48,7 +48,7 @@ expect_match_print_filepath()
    shell_disable_glob
    IFS=$'\n'
 
-   if ! result="`match::filename::_match_print_filepath "${format}" "" "" "$@"`"
+   if ! result="`match::filename::match_print_filepath "${format}" "" "" "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filename \"${filename}\""
    fi
@@ -77,15 +77,11 @@ main()
    local ignore
    local match
 
-   local _cache
+   match::filename::r_define_patternfilefunctions "ignore" ""
+   ignore="${RVAL}"
 
-   _cache=
-   match::filename::_define_patternfilefunctions "ignore" ""
-   ignore="${_cache}"
-
-   _cache=
-   match::filename::_define_patternfilefunctions "match" ""
-   match="${_cache}"
+   match::filename::r_define_patternfilefunctions "match" ""
+   match="${RVAL}"
 
    expect_matching_filepath_pattern "1-a--"  "${ignore}" "${match}" "a"
    expect_matching_filepath_pattern "2-b--x" "${ignore}" "${match}" "b"

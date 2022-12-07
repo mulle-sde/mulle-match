@@ -398,7 +398,6 @@ match::patternfile::list()
    log_entry "match::patternfile::list" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_CATEGORY="${1:-all}"; shift
    local OPTION_OUTPUT_FILE_MARKER="DEFAULT"
 
    local OPTION_DUMP='NO'
@@ -446,7 +445,7 @@ match::patternfile::list()
 
    case "${directory}" in
       ${MULLE_MATCH_ETC_DIR}/*)
-         if [ "${OPTION_OUTPUT_FILE_MARKER}" != "NO" ]
+         if [ "${OPTION_OUTPUT_FILE_MARKER}" != 'NO' ]
          then
             filemark='YES'
          fi
@@ -539,7 +538,7 @@ match::patternfile::cat()
 
    if [ -z "${filename}" -o "${filename}" = '*' ]
    then
-      match::patternfile::list "${OPTION_FOLDER_NAME}" "${OPTION_CATEGORY}" --cat
+      match::patternfile::list "${OPTION_FOLDER_NAME}" --cat
    else
       case "${OPTION_FOLDER_NAME}" in
          ignore.d)
@@ -645,7 +644,7 @@ match::patternfile::r_parse()
       ;;
 
       *)
-         type="$s"
+         _type="$s"
       ;;
    esac
 
@@ -658,6 +657,10 @@ match::patternfile::r_parse()
    _category="${_category:-${OPTION_CATEGORY}}"
    # default value
    _category="${_category:-all}"
+
+   log_setting "_position : ${_position}"
+   log_setting "_type     : ${_type}"
+   log_setting "_category : ${_category}"
 
    match::patternfile::is_valid_number   "${_position}" || fail "position should only contain digits"
    match::patternfile::is_valid_typename "${_type}"     || fail "type should only contain a-z _ and digits"
@@ -729,12 +732,13 @@ match::patternfile::add()
    local s="$1"
    local filename="$2"
 
+   local patternfile
+
    match::patternfile::r_parse "$s" "${OPTION_POSITION}" "${OPTION_TYPE}" "${OPTION_CATEGORY}"
    patternfile="${RVAL}"
 
    [ "${filename}" = "-" -o -f "${filename}" ] || fail "\"${filename}\" not found"
 
-   local patternfile
    local contents
    local dstfile
 
@@ -1070,6 +1074,12 @@ match::patternfile::ignore()
    merge_line_into_file "$*" "${dstfile}"
 
    etc_make_symlink_if_possible "${dstfile}"
+   case $? in
+      1)
+         return 1
+      ;;
+   esac
+   return 0
 }
 
 
@@ -1135,6 +1145,12 @@ match::patternfile::match()
    merge_line_into_file "${pattern}" "${dstfile}"
 
    etc_make_symlink_if_possible "${dstfile}"
+   case $? in
+      1)
+         return 1
+      ;;
+   esac
+   return 0
 }
 
 
@@ -1340,7 +1356,6 @@ match::patternfile::path()
             match::patternfile::path_usage
          ;;
 
-
          -c|--category)
             [ $# -eq 1 ] && "${usage}" "missing argument to $1"
             shift
@@ -1545,8 +1560,7 @@ match::patternfile::main()
          then
             OPTION_FOLDER_NAME="ignore.d"
             if ! match::patternfile::list "${OPTION_FOLDER_NAME}" \
-                                       "${OPTION_CATEGORY}" \
-                                       "$@"
+                                          "$@"
             then
                delimit_cmd=":"
             fi
@@ -1560,8 +1574,7 @@ match::patternfile::main()
 
             OPTION_FOLDER_NAME="match.d"
             match::patternfile::list "${OPTION_FOLDER_NAME}" \
-                                  "${OPTION_CATEGORY}" \
-                                  "$@"
+                                     "$@"
          fi
          return $?
       ;;

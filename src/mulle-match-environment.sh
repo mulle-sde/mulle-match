@@ -40,22 +40,12 @@ match::environment::init()
    local directory="$1"
    local cmd="$2"
 
-   if [ -z "${directory}" ]
-   then
-      directory="${MULLE_VIRTUAL_ROOT}"
-   fi
-   if [ -z "${directory}" ]
-   then
-      directory="`pwd -P`"
-   fi
+   directory="${directory:-"${MULLE_VIRTUAL_ROOT}"}"
+   directory="${directory:-"`pwd -P`"}"
 
-   if [ -z "${MULLE_HOSTNAME}" ]
-   then
-      MULLE_HOSTNAME="`hostname -s`"
-   fi
+   MULLE_HOSTNAME="${MULLE_HOSTNAME:-`hostname -s`}"
 
-   [ -z "${MULLE_PATH_SH}" ] && \
-   	. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh"
+   include "path"
 
    r_absolutepath "${directory}"
 
@@ -113,6 +103,7 @@ See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
    log_setting "MULLE_MATCH_SKIP_DIR    : \"${MULLE_MATCH_SKIP_DIR}\""
    log_setting "MULLE_MATCH_USE_DIR     : \"${MULLE_MATCH_USE_DIR}\""
    log_setting "MULLE_MATCH_VAR_DIR     : \"${MULLE_MATCH_VAR_DIR}\""
+   log_setting "PATH                    : \"${PATH}\""
 
    # required!
    shell_enable_extglob || _internal_fail "Can't extglob"

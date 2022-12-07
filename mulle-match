@@ -34,7 +34,7 @@
 
 
 
-MULLE_EXECUTABLE_VERSION=1.0.1
+MULLE_EXECUTABLE_VERSION=1.0.2
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 #
@@ -95,7 +95,7 @@ match::print_flags()
 }
 
 
-match::_usage()
+match::do_usage()
 {
    local verbose="${1:-NO}"
    local error="${2}"
@@ -149,7 +149,7 @@ EOF
 
 match::usage()
 {
-   match::_usage "$@" >&2
+   match::do_usage "$@" >&2
    exit 1
 }
 
@@ -288,6 +288,22 @@ match::main()
          . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
 
          match::patternfile::main "${1:1}" "$@"
+      ;;
+
+      categories)
+         # shellcheck source=src/mulle-match-patternfile.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+
+         MULLE_FLAG_LOG_TERSE='YES'
+         match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-.*--\(.*\)$/\1/p'
+      ;;
+
+      types)
+         # shellcheck source=src/mulle-match-patternfile.sh
+         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+
+         MULLE_FLAG_LOG_TERSE='YES'
+         match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-\(.*\)--.*$/\1/p'
       ;;
 
       uname)

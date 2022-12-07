@@ -40,16 +40,16 @@ main()
    #
    shell_enable_extglob
 
-   local expected
    local ignore
    local match
-   local _cache
 
-   match::filename::_define_patternfilefunctions "ignore.d"
-   ignore="${_cache}"
+   match::filename::r_define_patternfilefunctions "ignore.d"
+   ignore="${RVAL}"
 
-   match::filename::_define_patternfilefunctions "match.d"
-   match="${_cache}"
+   match::filename::r_define_patternfilefunctions "match.d"
+   match="${RVAL}"
+
+   local expected
 
    #-----------
    expected="src/foo.c

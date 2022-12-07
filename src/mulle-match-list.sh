@@ -377,46 +377,46 @@ match::list::parallel_list_filtered_files()
       wait_for_available_job "${maxjobs}"
 
       (
-         match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_0}"
+         match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_0}"
 
-         [ ! -z "${filename_1}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1}"
-         [ ! -z "${filename_2}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_2}"
-         [ ! -z "${filename_3}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_3}"
+         [ ! -z "${filename_1}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1}"
+         [ ! -z "${filename_2}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_2}"
+         [ ! -z "${filename_3}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_3}"
 
-         [ ! -z "${filename_4}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_4}"
-         [ ! -z "${filename_5}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_5}"
-         [ ! -z "${filename_6}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_6}"
-         [ ! -z "${filename_7}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_7}"
+         [ ! -z "${filename_4}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_4}"
+         [ ! -z "${filename_5}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_5}"
+         [ ! -z "${filename_6}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_6}"
+         [ ! -z "${filename_7}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_7}"
 
-         [ ! -z "${filename_8}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_8}"
-         [ ! -z "${filename_9}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_9}"
-         [ ! -z "${filename_a}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_a}"
-         [ ! -z "${filename_b}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_b}"
+         [ ! -z "${filename_8}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_8}"
+         [ ! -z "${filename_9}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_9}"
+         [ ! -z "${filename_a}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_a}"
+         [ ! -z "${filename_b}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_b}"
 
-         [ ! -z "${filename_c}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_c}"
-         [ ! -z "${filename_d}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_d}"
-         [ ! -z "${filename_e}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_e}"
-         [ ! -z "${filename_f}" ]  && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_f}"
+         [ ! -z "${filename_c}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_c}"
+         [ ! -z "${filename_d}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_d}"
+         [ ! -z "${filename_e}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_e}"
+         [ ! -z "${filename_f}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_f}"
 
-         [ ! -z "${filename_10}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_10}"
-         [ ! -z "${filename_11}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_11}"
-         [ ! -z "${filename_12}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_12}"
-         [ ! -z "${filename_13}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_13}"
+         [ ! -z "${filename_10}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_10}"
+         [ ! -z "${filename_11}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_11}"
+         [ ! -z "${filename_12}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_12}"
+         [ ! -z "${filename_13}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_13}"
 
-         [ ! -z "${filename_14}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_14}"
-         [ ! -z "${filename_15}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_15}"
-         [ ! -z "${filename_16}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_16}"
-         [ ! -z "${filename_17}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_17}"
+         [ ! -z "${filename_14}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_14}"
+         [ ! -z "${filename_15}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_15}"
+         [ ! -z "${filename_16}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_16}"
+         [ ! -z "${filename_17}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_17}"
 
-         [ ! -z "${filename_18}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_18}"
-         [ ! -z "${filename_19}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_19}"
-         [ ! -z "${filename_1a}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1a}"
-         [ ! -z "${filename_1b}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1b}"
+         [ ! -z "${filename_18}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_18}"
+         [ ! -z "${filename_19}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_19}"
+         [ ! -z "${filename_1a}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1a}"
+         [ ! -z "${filename_1b}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1b}"
 
-         [ ! -z "${filename_1c}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1c}"
-         [ ! -z "${filename_1d}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1d}"
-         [ ! -z "${filename_1e}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1e}"
-         [ ! -z "${filename_1f}" ] && match::filename::_match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1f}"
+         [ ! -z "${filename_1c}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1c}"
+         [ ! -z "${filename_1d}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1d}"
+         [ ! -z "${filename_1e}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1e}"
+         [ ! -z "${filename_1f}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
    done < <( eval_exekutor find ${flags} ${quoted_filenames} "$@" -print \
@@ -653,19 +653,18 @@ match::list::main()
    [ "$#" -ne 0 ] && match::list::usage "superflous arguments \"$*\""
 
 
-   local _cache
    local skip_patterncache
    local use_patterncache
 
    [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
-   match::filename::_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
-                                "${MULLE_MATCH_VAR_DIR}/cache/match"
-   skip_patterncache="${_cache}"
+   match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+                                                  "${MULLE_MATCH_VAR_DIR}/cache/match"
+   skip_patterncache="${RVAL}"
 
-   match::filename::_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
-                                "${MULLE_MATCH_VAR_DIR}/cache/match"
-   use_patterncache="${_cache}"
+   match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+                                                  "${MULLE_MATCH_VAR_DIR}/cache/match"
+   use_patterncache="${RVAL}"
 
    if [ "${OPTION_SORTED}" = 'YES' ]
    then

@@ -429,7 +429,7 @@ match::filename::pattern_matches_relative_filename()
 
    shell_enable_extglob
 
-   match::filename::_match_assert_filename "${filename}"
+   match::filename::match_assert_filename "${filename}"
 
    match::filename::r_pattern_unique_functionname
    functionname="${RVAL}"
@@ -535,9 +535,9 @@ match::filename::r_patternfile_identifier()
 #
 # !!! Don't backtick this !!!
 #
-match::filename::_patternfilefunction_create()
+match::filename::patternfilefunction_create()
 {
-   # log_entry "match::filename::_patternfilefunction_create" "$@"
+   # log_entry "match::filename::patternfilefunction_create" "$@"
 
    local patternfile="$1"
    local varname="$2"
@@ -589,11 +589,8 @@ match::filename::_patternfilefunction_create()
    bigbody="
    local rval=1
 "
-   shell_disable_glob; IFS=$'\n'
-   for pattern in ${contents}
-   do
-      IFS="${DEFAULT_IFS}"; shell_enable_glob
-
+   .foreachline pattern in ${contents}
+   .do
       # build little cases for each pattern
 #      functionname="`pattern_unique_functionname`"
       casetext="`match::filename::pattern_emit_case "${pattern}"`"
@@ -601,11 +598,8 @@ match::filename::_patternfilefunction_create()
       # construct call of this function in big body
       # need to deal with returnvalue of function here
       # might use ifs if this is faster
-      bigbody="${bigbody}
-${casetext}"
-   done
-
-   IFS="${DEFAULT_IFS}"; shell_enable_glob
+      bigbody="${bigbody}"$'\n'"${casetext}"
+   .done
 
    # finish up the patternfile function
    #
@@ -642,19 +636,18 @@ ${functiontext}"
 # As we are setting global variables here, it is not possible to backtick
 # this function. Which makes things clumsy.
 #
-# The cache is passed back as "_cache".
-#
 # TODO: cache functions in filesystem
 #
 # !!! Don't backtick this !!!
-match::filename::_define_patternfilefunction()
+match::filename::r_define_patternfilefunction()
 {
-   log_entry "match::filename::_define_patternfilefunction" "$@"
+   log_entry "match::filename::r_define_patternfilefunction" "$@"
 
    local patternfile="$1"
    local cachedirectory="$2"
 
    local varname
+   local cache
 
    match::filename::r_patternfile_identifier "${patternfile}"
    varname="__p__${RVAL}"
@@ -662,16 +655,14 @@ match::filename::_define_patternfilefunction()
    log_debug "Function \"${varname}\" for \"${patternfile}\""
    if eval [ -z \$\{${varname}+x\} ]
    then
-      if ! match::filename::_patternfilefunction_create "${patternfile}" \
-                                       "${varname}" \
-                                       "${cachedirectory}" # will add to _cache
+      if ! match::filename::patternfilefunction_create "${patternfile}" \
+                                                       "${varname}" \
+                                                       "${cachedirectory}" # will add to _cache
       then
+         RVAL=
          return 1
       fi
    fi
-
-   r_add_line "${_cache}" "${varname}"
-   _cache="${RVAL}"
 
    local varname_f
 
@@ -680,21 +671,23 @@ match::filename::_define_patternfilefunction()
 
    eval "${varname}_f='${varname_f}'"
 
+   RVAL="${varname}"
    return 0
 }
 
 
-match::filename::_define_patternfilefunctions()
+#
+# local _cache
+#
+match::filename::r_define_patternfilefunctions()
 {
-   log_entry "match::filename::_define_patternfilefunctions" "$@"
+   log_entry "match::filename::r_define_patternfilefunctions" "$@"
 
    local directory="$1"
    local cachedirectory="$2"
 
    local patternfile
-
-   # must be declared externally
-   _cache=""
+   local cache
 
    shell_enable_nullglob
    for patternfile in "${directory}"/[0-9]*
@@ -714,10 +707,15 @@ A valid filename is ${C_RESET_BOLD}00-type--category${C_WARNING}. \
          ;;
       esac
 
-      match::filename::_define_patternfilefunction "${patternfile}" "${cachedirectory}"
+      match::filename::r_define_patternfilefunction "${patternfile}" \
+                                                    "${cachedirectory}"
+      r_add_line "${cache}" "${RVAL}"
+      cache="${RVAL}"
    done
 
    shell_disable_nullglob
+
+   RVAL="${cache}"
 }
 
 
@@ -752,7 +750,7 @@ match::filename::r_patternfilefunctions_match_relative_filename()
 }
 
 
-match::filename::_match_assert_filename()
+match::filename::match_assert_filename()
 {
    local filename="$1"
 
@@ -795,7 +793,7 @@ match::filename::r_match_filepath()
    # if we are strict on text input, we can simplify pattern handling
    # a lot. Note that we only deal with relative paths anyway
    #
-   match::filename::_match_assert_filename "${filename}"
+   match::filename::match_assert_filename "${filename}"
 
    if [ ! -z "${ignore}" ]
    then
@@ -807,7 +805,7 @@ match::filename::r_match_filepath()
    fi
 
    #
-   # nothing matches if there is no matchdir (but return special code)
+   # nothing matches, if there is no matchdir (but return special code)
    # so we can figure out if it was just ignored
    #
    if [ -z "${match}" ]
@@ -830,18 +828,8 @@ match::filename::matching_filepath_pattern()
 {
    log_entry "match::filename::matching_filepath_pattern" "$@"
 
-   local _patternfile
-
-   if [ -z "${MULLE_PATH_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
-   fi
-   if [ -z "${MULLE_FILE_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
-   fi
+   include "path"
+   include "file"
 
    (
       shell_enable_extglob
@@ -939,9 +927,13 @@ match::filename::_match_print_patternfilename()
             format="${format:2}"
          ;;
 
+#         '\\'*)
+#            s="${s}"'\\'
+#            format="${format:2}"
+#         ;;
+
          \\n*)
-            s="${s}
-"
+            s="${s}"$'\n'
             format="${format:2}"
          ;;
 
@@ -963,9 +955,9 @@ match::filename::_match_print_patternfilename()
 #      shell_disable_glob
 #      IFS="
 #"
-match::filename::_match_print_filepath()
+match::filename::match_print_filepath()
 {
-   #   log_entry "match::filename::_match_print_filepath" "$@"
+   #   log_entry "match::filename::match_print_filepath" "$@"
 
    local format="$1" 
    local tfilter="$2" 
@@ -1170,7 +1162,6 @@ match::filename::main()
 
    [ "$#" -ne  0 ] && match::filename::usage "superflous arguments $*"
 
-
    match::filename::match_check_match_filenames "${filename}"
 
    if [ ! -z "${OPTION_PATTERN}" ]
@@ -1184,10 +1175,8 @@ match::filename::main()
       return 1
    fi
 
-
    local ignore_patterncache
    local match_patterncache
-   local _cache
 
    if [ ! -z "${OPTION_PATTERN_FILE}" ]
    then
@@ -1205,28 +1194,28 @@ match::filename::main()
       fi
 
       ignore_patterncache=""
-      match::filename::_define_patternfilefunction "${OPTION_PATTERN_FILE}"
-      match_patterncache="${_cache}"
+      match::filename::r_define_patternfilefunction "${OPTION_PATTERN_FILE}"
+      match_patterncache="${RVAL}"
    else
       [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
-      match::filename::_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
-                                   "${MULLE_MATCH_VAR_DIR}/cache"
-      ignore_patterncache="${_cache}"
+      match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+                                                     "${MULLE_MATCH_VAR_DIR}/cache"
+      ignore_patterncache="${RVAL}"
 
-      match::filename::_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
-                                   "${MULLE_MATCH_VAR_DIR}/cache"
-      match_patterncache="${_cache}"
+      match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+                                                     "${MULLE_MATCH_VAR_DIR}/cache"
+      match_patterncache="${RVAL}"
    fi
 
    local _patternfile
 
-   match::filename::_match_print_filepath "${OPTION_FORMAT}" \
-                         "${OPTION_MATCH_TYPE_FILTER}" \
-                         "${OPTION_MATCH_CATEGORY_FILTER}" \
-                         "${ignore_patterncache}" \
-                         "${match_patterncache}" \
-                         "${filename}"
+   match::filename::match_print_filepath "${OPTION_FORMAT}" \
+                                          "${OPTION_MATCH_TYPE_FILTER}" \
+                                          "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                          "${ignore_patterncache}" \
+                                          "${match_patterncache}" \
+                                          "${filename}"
    rval=$?
 
    if [ "${rval}" -eq 0 ]

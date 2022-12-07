@@ -34,7 +34,7 @@
 #
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
-MULLE_EXECUTABLE_VERSION=1.0.1
+MULLE_EXECUTABLE_VERSION=1.0.2
 
 
 usage()
@@ -186,12 +186,10 @@ r_statements_for_matching_headers()
    local category
    local header
    local filename
+   local type
 
-   IFS=$'\n'
-   shell_disable_glob
-
-   for line in ${categorized_files}
-   do
+   .foreachline line in ${categorized_files}
+   .do
       category="${line%%;*}"
       header="${line##*;}"
 
@@ -203,39 +201,37 @@ r_statements_for_matching_headers()
          ;;
 
          *)
-            continue
+            .continue
          ;;
       esac
 
       # ignore reflected headers
       case "${header}" in
          */reflect/*)
-            continue
+            .continue
          ;;
       esac
 
       r_basename "${header}"
       filename="${RVAL}"
 
-      local type
-
       r_match_type_for_filename "${filename}" "${projectname}"
       case "${RVAL}" in
          'project')
             log_fluff "${filename} ignored as it's the envelope header"
-            continue
+            .continue
          ;;
 
          'ignore')
             log_fluff "${filename} ignored"
-            continue
+            .continue
          ;;
 
          'objc')
             if [ "${match_type}" != "objc" ]
             then
                log_fluff "${filename} looks like Objective-C, we are looking for C though"
-               continue
+               .continue
             fi
          ;;
 
@@ -243,7 +239,7 @@ r_statements_for_matching_headers()
             if [ "${match_type}" != "c" ]
             then
                log_fluff "${filename} looks like C, we are looking for Objective-C though"
-               continue
+               .continue
             fi
          ;;
       esac
@@ -257,10 +253,7 @@ r_statements_for_matching_headers()
          r_add_line "${result}" "#import \"${filename}\""
       fi
       result="${RVAL}"
-   done
-
-   IFS="${DEFAULT_IFS}"
-   shell_enable_glob
+   .done
 
    RVAL="${result}"
 }
@@ -573,12 +566,7 @@ main()
    MULLE_MATCH="${MULLE_MATCH:-`command -v mulle-match`}"
    [ -z "${MULLE_MATCH}" ] && fail "mulle-match not in PATH"
 
-
-   if [ -z "${MULLE_CASE_SH}" ]
-   then
-      # shellcheck source=mulle-case.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-case.sh" || return 1
-   fi
+   include "case"
 
    if [ -z "${PROJECT_NAME}" ]
    then
