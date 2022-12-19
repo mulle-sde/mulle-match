@@ -35,7 +35,7 @@
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=1.0.2
+MULLE_EXECUTABLE_VERSION=1.0.3
 
 
 # TODO: could make this more general, so we specify a list of types

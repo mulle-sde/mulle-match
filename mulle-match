@@ -34,7 +34,7 @@
 
 
 
-MULLE_EXECUTABLE_VERSION=1.0.2
+MULLE_EXECUTABLE_VERSION=1.0.3
 MULLE_EXECUTABLE_BASHFUNCTIONS="1"
 
 #
@@ -85,7 +85,6 @@ match::print_flags()
 
    delimiter="       : "
 
-   echo "   -e   ${delimiter}bypass mulle-env check"
    echo "   -f   ${delimiter}force operation"
    echo "   -P   ${delimiter}specify search start points (separator :)"
    echo "   -I   ${delimiter}specify files and folders to ignore (separator :)"

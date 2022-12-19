@@ -1,3 +1,7 @@
+### 1.0.3
+
+* fix bug with trailing /* path
+
 ### 1.0.2
 
 * Various small improvements

@@ -100,9 +100,9 @@ match::filename::assert_pattern()
 # ** -> *
 # * -> *([^/])
 #
-match::filename::transform_path_pattern()
+match::filename::r_transform_path_pattern()
 {
-   log_entry "match::filename::transform_path_pattern" "$@"
+   log_entry "match::filename::r_transform_path_pattern" "$@"
 
    local pattern="$1"
 
@@ -111,23 +111,26 @@ match::filename::transform_path_pattern()
 
    case "${pattern}" in
       *"/**/"*)
-         prefix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\1|' <<< "${pattern}"`"
-         suffix="`sed -e s'|\(.*\)/\*\*/\(.*\)|\2|' <<< "${pattern}"`"
-         prefix="`match::filename::transform_path_pattern "${prefix}"`"
-         suffix="`match::filename::transform_path_pattern "${suffix}"`"
+         prefix="${pattern%%\*\**}"
+         match::filename::r_transform_path_pattern "${prefix}"
+         prefix="${RVAL}"
+
+         suffix="${pattern#*\*\*}"
+         match::filename::r_transform_path_pattern "${suffix}"
+         suffix="${RVAL}"
 
          log_debug "prefix: $prefix"
          log_debug "suffix: $suffix"
-         printf "%s\n" "${prefix}@(/*/|/)${suffix}"
-         return
+         RVAL="${prefix}@(/*/|/)${suffix}"
       ;;
 
       "**/"*)
-         suffix="`sed -e s'|\(.*\)\*\*\/\(.*\)|\2|' <<< "${pattern}"`"
-         suffix="`match::filename::transform_path_pattern "${suffix}"`"
+         suffix="${pattern#*\*\*}"
+         match::filename::r_transform_path_pattern "${suffix}"
+         suffix="${RVAL}"
 
          log_debug "suffix: $suffix"
-         printf "%s\n" "${suffix}"
+         RVAL="%s\n" "${suffix}"
          return
       ;;
 
@@ -140,23 +143,27 @@ match::filename::transform_path_pattern()
       ;;
 
       *"/*")
-         prefix="`match::filename::transform_path_pattern "${prefix%?}"`"
-         printf "%s\n" "${prefix}*([^/])"
+         match::filename::r_transform_path_pattern "${pattern%?}"
+         prefix="${RVAL}"
+         RVAL="${prefix}*([^/])"
          return
       ;;
 
       *"*"*)
-         prefix="`sed -e s'|\(.*\)\*\(.*\)|\1|' <<< "${pattern}"`"
-         suffix="`sed -e s'|\(.*\)\*\(.*\)|\2|' <<< "${pattern}"`"
-         prefix="`match::filename::transform_path_pattern "${prefix}"`"
-         suffix="`match::filename::transform_path_pattern "${suffix}"`"
+         prefix="${pattern%%\**}"
+         match::filename::r_transform_path_pattern "${prefix}"
+         prefix="${RVAL}"
 
-         printf "%s\n" "${prefix}*([^/])${suffix}"
+         suffix="${pattern#*\*}"
+         match::filename::r_transform_path_pattern "${suffix}"
+         suffix="${RVAL}"
+
+         RVAL="${prefix}*([^/])${suffix}"
          return
       ;;
    esac
 
-   printf "%s\n" "${pattern}"
+   RVAL="${pattern}"
 }
 
 
@@ -230,7 +237,8 @@ match::filename::pattern_emit_matchcode()
 
    case "${pattern}" in
       *"*"*)
-         pattern="`match::filename::transform_path_pattern "${pattern}"`"
+         match::filename::r_transform_path_pattern "${pattern}"
+         pattern="${RVAL}"
       ;;
    esac
 
@@ -339,7 +347,8 @@ match::filename::pattern_emit_case()
 
    case "${pattern}" in
       *"*"*)
-         pattern="`match::filename::transform_path_pattern "${pattern}"`"
+         match::filename::r_transform_path_pattern "${pattern}"
+         pattern="${RVAL}"
       ;;
    esac
 
@@ -455,12 +464,8 @@ match::filename::patternlines_match_relative_filename()
 
    rval=1
 
-   IFS=$'\n'
-   shell_disable_glob
-   for pattern in ${patterns}
-   do
-      IFS="${DEFAULT_IFS}"
-
+   .foreachline pattern in ${patterns}
+   .do
       match::filename::pattern_matches_relative_filename "${pattern}" "${filename}"
       case "$?" in
          0)
@@ -471,10 +476,7 @@ match::filename::patternlines_match_relative_filename()
             rval=1
          ;;
       esac
-   done
-   shell_enable_glob
-
-   IFS="${DEFAULT_IFS}"
+   .done
 
    return $rval
 }
