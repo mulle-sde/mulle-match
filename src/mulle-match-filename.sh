@@ -110,46 +110,47 @@ match::filename::r_transform_path_pattern()
    local suffix
 
    case "${pattern}" in
-      *"/**/"*)
-         prefix="${pattern%%\*\**}"
+      '**/'*)
+         suffix="${pattern#\*\*\/}"
+         match::filename::r_transform_path_pattern "${suffix}"
+         suffix="${RVAL}"
+
+         log_debug "suffix: $suffix"
+         RVAL="?(*/)${suffix}"
+         return
+      ;;
+
+      *'/**/'*)
+         prefix="${pattern%%\/\*\**}"
          match::filename::r_transform_path_pattern "${prefix}"
          prefix="${RVAL}"
 
-         suffix="${pattern#*\*\*}"
+         suffix="${pattern#*\*\*\/}"
          match::filename::r_transform_path_pattern "${suffix}"
          suffix="${RVAL}"
 
          log_debug "prefix: $prefix"
          log_debug "suffix: $suffix"
          RVAL="${prefix}@(/*/|/)${suffix}"
-      ;;
-
-      "**/"*)
-         suffix="${pattern#*\*\*}"
-         match::filename::r_transform_path_pattern "${suffix}"
-         suffix="${RVAL}"
-
-         log_debug "suffix: $suffix"
-         RVAL="%s\n" "${suffix}"
          return
       ;;
 
-      *"**"*)
+      *'**'*)
          fail "Invalid pattern. ** must be followed by /"
       ;;
 
-      *"*("*)
+      *'*('*)
          # do nothing for *()
       ;;
 
-      *"/*")
+      *'/*')
          match::filename::r_transform_path_pattern "${pattern%?}"
          prefix="${RVAL}"
          RVAL="${prefix}*([^/])"
          return
       ;;
 
-      *"*"*)
+      *'*'*)
          prefix="${pattern%%\**}"
          match::filename::r_transform_path_pattern "${prefix}"
          prefix="${RVAL}"
@@ -175,7 +176,7 @@ match::filename::print_case_expression()
    local pattern="$1"
 
    case "${pattern}" in
-      "/"*"/")
+      '/'*'/')
          # support older bashes
          local snip
 
@@ -185,16 +186,16 @@ match::filename::print_case_expression()
          echo "      ${snip}|${pattern:1}*)"
       ;;
 
-      "/"*)
+      '/'*)
          echo "      ${pattern:1})"
       ;;
 
-      *"/")
+      *'/')
          # echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
          echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
       ;;
 
-      *"])/"*)
+      *'])/'*)
          echo "      ${pattern})"
       ;;
 
@@ -409,7 +410,8 @@ match::filename::r_pattern_unique_functionname()
    #
    while :
    do
-      identifier="`uuidgen | tr -d '-'`"
+      r_uuidgen
+      identifier="${RVAL//-/}"
       identifier="${identifier:0:6}" # so
 
       functionname="_m${identifier}"
@@ -1089,17 +1091,6 @@ match::filename::main()
    local OPTION_PATTERN
    local OPTION_PATTERN_FILE
 
-   if [ -z "${MULLE_PATH_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
-   fi
-   if [ -z "${MULLE_FILE_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
-   fi
-
    #
    # handle options
    #
@@ -1213,11 +1204,11 @@ match::filename::main()
    local _patternfile
 
    match::filename::match_print_filepath "${OPTION_FORMAT}" \
-                                          "${OPTION_MATCH_TYPE_FILTER}" \
-                                          "${OPTION_MATCH_CATEGORY_FILTER}" \
-                                          "${ignore_patterncache}" \
-                                          "${match_patterncache}" \
-                                          "${filename}"
+                                         "${OPTION_MATCH_TYPE_FILTER}" \
+                                         "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                         "${ignore_patterncache}" \
+                                         "${match_patterncache}" \
+                                         "${filename}"
    rval=$?
 
    if [ "${rval}" -eq 0 ]
@@ -1229,3 +1220,15 @@ match::filename::main()
 
    return $rval
 }
+
+
+match::filename::initialize()
+{
+   include "path"
+   include "file"
+}
+
+match::filename::initialize
+
+:
+

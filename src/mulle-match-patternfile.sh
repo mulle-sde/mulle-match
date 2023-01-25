@@ -380,14 +380,15 @@ match::patternfile::_list()
    (
       rexekutor cd "${directory}"
 
-      .foreachline file in `rexekutor ls -1 | egrep '[0-9]*-.*--.*'`
+      files="`rexekutor ls -1 *| grep -E '[0-9]*-.*--.*' `"
+      .foreachline file in ${files}
       .do
          printf "%s" "${file}"
          if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
          then
             printf " *"
          fi
-         echo
+         printf "\n"
       .done
    )
 }
@@ -923,7 +924,14 @@ match::patternfile::copy_template()
 
    if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
-      flags="-v"
+      case "${MULLE_UNAME}" in
+         'sunos')
+         ;;
+
+         *)
+            flags=-v
+         ;;
+      esac
    fi
 
    exekutor cp ${flags} "${srcfile}" "${dstfile}" || exit 1
@@ -1297,7 +1305,7 @@ match::patternfile::_status()
       else
          if [ -f "${srcdir}/${patternfile}" ]
          then
-            if diff -q -b "${filename}" "${srcdir}" > /dev/null
+            if diff -b "${filename}" "${srcdir}" > /dev/null
             then
                log_info "\"${patternfile}\" has no user edits, use \`patternfile repair\` to fix"
             fi

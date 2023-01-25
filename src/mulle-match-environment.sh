@@ -43,7 +43,7 @@ match::environment::init()
    directory="${directory:-"${MULLE_VIRTUAL_ROOT}"}"
    directory="${directory:-"`pwd -P`"}"
 
-   MULLE_HOSTNAME="${MULLE_HOSTNAME:-`hostname -s`}"
+   MULLE_HOSTNAME="${MULLE_HOSTNAME:-`hostname`}" # -s not available on solaris
 
    include "path"
 

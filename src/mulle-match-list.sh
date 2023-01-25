@@ -233,10 +233,10 @@ match::list::emit_by_category()
    do
       # https://stackoverflow.com/questions/1773939/how-to-use-sed-to-return-something-from-first-line-which-matches-and-quit-early
       collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q;}' <<< "${remainder}" `"
-      collection="`egrep "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
+      collection="`grep -E "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
       "${emitter}" "${collectname}" "${collection}"
 
-      remainder="`egrep -v "^${collectname};" <<< "${remainder}" `"
+      remainder="`grep -E -v "^${collectname};" <<< "${remainder}" `"
    done
 
    :
@@ -293,8 +293,7 @@ match::list::parallel_list_filtered_files()
 
    shift 7
 
-   [ -z "${MULLE_PARALLEL_SH}" ] && \
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-parallel.sh"
+   include "parallel"
 
    local maxjobs
    local running
@@ -466,8 +465,11 @@ match::list::list_filenames()
 
    .foreachpath name in ${MULLE_MATCH_IGNORE_PATH}
    .do
-      r_concat "${ignore_dirs}" "-path '*/${name}/*'" " -o "
-      ignore_dirs="${RVAL}"
+      if [ -e "${name}" ]
+      then
+         r_concat "${ignore_dirs}" "-path '*/${name}/*'" " -o "
+         ignore_dirs="${RVAL}"
+      fi
    .done
 
    #
@@ -476,7 +478,6 @@ match::list::list_filenames()
    #
    if [ -z "${MULLE_MATCH_FILENAMES}" ]
    then
-      match_files="-name '*'"
       if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
       then
          log_setting "Default MULLE_MATCH_FILENAMES: ${MULLE_MATCH_FILENAMES}"
@@ -501,7 +502,7 @@ match::list::list_filenames()
 
    query="-xtype f"
    case "${MULLE_UNAME}" in
-      darwin|freebsd)
+      darwin|*bsd|sunos|dragonfly)
          query='\( -type f -o -type l \)'
       ;;
    esac
@@ -511,6 +512,25 @@ match::list::list_filenames()
       flags="-L"
    fi
 
+   local li
+   local ri
+   local fi
+   local fo
+
+   if [ ! -z "${ignore_dirs}" ]
+   then
+      li="\\("
+      ri="\\)"
+      fi=-prune
+      fo=-o
+   fi
+
+   if [ ! -z "${match_files}" ]
+   then
+      lp="\\("
+      rp="\\)"
+   fi
+
    match::list::parallel_list_filtered_files "${match_dirs:-.}" \
                                              "${format}" \
                                              "${tfilter}" \
@@ -518,10 +538,9 @@ match::list::list_filenames()
                                              "${ignore}" \
                                              "${match}" \
                                              "${flags}" \
-                                             "\\(" ${ignore_dirs} "\\)" -prune  \
-                                             -o \
+                                             ${li} ${ignore_dirs} $ri $fi ${fo} \
                                              ${query} \
-                                             "\\(" ${match_files} "\\)"
+                                             ${lp} ${match_files} ${rp}
 }
 
 

@@ -5,7 +5,7 @@
 ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
 MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
 export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
-. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh"          || exit 1
 . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
 
@@ -44,6 +44,10 @@ main()
 
    _options_mini_main "$@" && set -x
 
+   if ! shell_is_extglob_enabled
+   then
+      _internal_fail "extglob is not ON!"
+   fi
    #
    # memo: remember we only deal with relative paths w/o leading /!
    # for simplicity it's also assumed that no relative path contain a
@@ -103,6 +107,7 @@ main()
    # new stuff with **
    expect_pattern_matches_text '**/*.c' 'a.c'
    expect_pattern_matches_text '**/*.c' 'b/a.c'
+   expect_pattern_not_matches_text '**/*.c' 'b/a.d'
    expect_pattern_matches_text '**/*.c' 'c/b/a.c'
 
    expect_pattern_matches_text 'a/**/*.c' 'a/a.c'

@@ -92,6 +92,8 @@ emit_cmake_var()
    local contents="$2"
    local comment="$3"
 
+   [ -z "${name}" ] && _internal_fail "empty name"
+
    if [ -z "${contents}" ]
    then
       echo "# No contents in ${name}"
@@ -160,15 +162,17 @@ emit_by_category()
       #
       # https://stackoverflow.com/questions/1773939/how-to-use-sed-to-return-something-from-first-line-which-matches-and-quit-early
       #
-      collectname="`sed -n -e '/\(^[^;]*\).*/{s//\1/p;q;}' <<< "${remainder}" `"
-      collection="`egrep "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
+      collectname="`sed -n -e '/^\([^;]*\).*/{s//\1/p;q;}' <<< "${remainder}" `"
+      [ -z "${collectname}" ] && _internal_fail "garbage in passed in items: \"${remainder}\""
+
+      collection="`grep -E "^${collectname};" <<< "${remainder}" | cut -d ';' -f 2-`"
 
       r_lowercase "${collectname}"
       "${emitter}" "${collectname}" "${collection}" "#
 # contents selected with patternfile ??-${type}--${RVAL//_/-}
 #"
 
-      remainder="`egrep -v "^${collectname};" <<< "${remainder}" `"
+      remainder="`grep -E -v "^${collectname};" <<< "${remainder}" `"
    done
 
    :
@@ -359,7 +363,7 @@ create_resources_file()
             #
             # header only libraries are tricky to do portably
             #
-            text_src="message( STATUS \" No resources found. \
+            text_src="message( STATUS \"No resources found. \
 \`mulle-sde environment set MULLE_MATCH_TO_CMAKE_RESOURCES_FILE NONE\`, \
 to avoid this (harmless) warning\")"
          fi
