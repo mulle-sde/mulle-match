@@ -30,7 +30,7 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #
 
-MULLE_MATCH_CLEAN_SH="included"
+MULLE_MATCH_CLEAN_SH='included'
 
 
 match::clean::usage()

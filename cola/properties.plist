@@ -1,0 +1,12 @@
+{
+   project =
+   {
+      description="💕 Match filenames against a set of .gitignore like patternfiles";
+      domain="github";
+      name="mulle-match";
+      username="mulle-sde";
+      reponame="mulle-match";
+      homepage="https://github.com/mulle-sde/mulle-match";
+      license="BSD-3-Clause"
+   };
+}

@@ -30,7 +30,7 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #
 
-MULLE_MATCH_ENVIRONMENT_SH="included"
+MULLE_MATCH_ENVIRONMENT_SH='included'
 
 
 match::environment::init()

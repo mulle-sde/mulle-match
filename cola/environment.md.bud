@@ -1,0 +1,8 @@
+## Environment
+
+Variable                  | Description
+--------------------------|---------------------------------------------
+`MULLE_MATCH_FILENAMES`   | Filename wildcards separated by ':'. Only files matching these wildcards will be considered for. e.g. *.c:*.m:*.cmake. These values are evaluated with `find`'s `-name`. The default value is `*`
+`MULLE_MATCH_IGNORE_PATH` | Locations to ignore separated by ':'. These values are evaluated with `find`'s `-path` and then pruned. The default value is `addiction:build:dependency:stash:include:lib:libexec:.git`
+`MULLE_MATCH_PATH`        | Locations to search for separated by ':'. These values are passed to `find` as search starts. The default value is `.mulle/etc/sourcetree/config:src`
+

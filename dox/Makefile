@@ -1,10 +1,10 @@
 
-PIX=mulle-match-match.png \
-mulle-match-match-fs.png \
-mulle-sde-overview.png \
+PIX=mulle-match-match.svg \
+mulle-match-match-fs.svg \
+mulle-sde-overview.svg \
 
-%.png: %.dot
-	dot -Tpng -o $*.png $<
+%.svg: %.dot
+	dot -Tsvg -o $*.svg $<
 
 
 all: $(PIX)

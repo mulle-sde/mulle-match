@@ -1,25 +1,3 @@
-# 💕 Match filenames against a set of .gitignore like patternfiles
-
-... for Android, BSDs, Linux, macOS, SunOS, Windows (MinGW, WSL)
-
-mulle-match is the backbone of the mulle-sde reflection mechanism. It matches
-filenames against a set of .gitignore like patternfiles to categorize and type
-files according to their filenames and location. Its like a marriage of
-**find** and **.gitignore**.
-
-| Release Version                                       | Release Notes
-|-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg?branch=release) | [RELEASENOTES](RELEASENOTES.md) |
-
-| Executable             | Description
-|------------------------|----------------------------------------------------------
-| `mulle-match`          | Match filename according to .gitignore like patternfiles
-| `mulle-match-to-cmake` | Use **mulle-match** to create cmake files
-| `mulle-match-to-c`     | Create include files for public headers
-
-
-
-
 ## Commands
 
 ### init
@@ -180,27 +158,3 @@ search space with the environment variables `MULLE_MATCH_FILENAMES`,
 `MULLE_MATCH_IGNORE_PATH`, `MULLE_MATCH_PATH`.
 
 
-
-
-
-
-
-## Install
-
-See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how to
-install mulle-sde, which will also install mulle-match and required
-dependencies.
-
-The command to install only the latest mulle-match into
-`/usr/local` (with **sudo**) is:
-
-``` bash
-curl -L 'https://github.com/mulle-sde/mulle-match/archive/latest.tar.gz' \
- | tar xfz - && cd 'mulle-match-latest' && sudo ./bin/installer /usr/local
-```
-
-
-
-## Author
-
-[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK

@@ -1,0 +1,4 @@
+mulle-match is the backbone of the mulle-sde reflection mechanism. It matches
+filenames against a set of .gitignore like patternfiles to categorize and type
+files according to their filenames and location. Its like a marriage of
+**find** and **.gitignore**.
