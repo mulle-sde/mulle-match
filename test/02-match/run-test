@@ -48,7 +48,7 @@ expect_match_print_filepath()
    shell_disable_glob
    IFS=$'\n'
 
-   if ! result="`match::filename::match_print_filepath "${format}" "" "" "$@"`"
+   if ! result="`match::filename::match_print_filepath "${format}" "" "$@"`"
    then
       fail "Pattern \"${pattern}\" did not match filename \"${filename}\""
    fi

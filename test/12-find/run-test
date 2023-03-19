@@ -64,7 +64,8 @@ main()
 
    expected="a;red
 z/a;red"
-   expect_mulle_match "${expected}" find -f "%f;%c\\n"  -mf type0negative
+   expect_mulle_match "${expected}" find --format "%f;%c\\n" \
+                                         --qualifier "TYPE_MATCHES type0negative"
 
    log_verbose "----- #1 PASSED -----"
 

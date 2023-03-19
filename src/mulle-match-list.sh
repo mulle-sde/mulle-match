@@ -83,54 +83,53 @@ Examples:
 
       MULLE_MATCH_FILENAMES="*.c:*.h" \\
       MULLE_MATCH_PATH="src:foo/src" \\
-         ${MULLE_USAGE_NAME} list -tf source
+         ${MULLE_USAGE_NAME} list --qualifier "TYPE_MATCHES=source"
 
 Options:
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
-   -f <format>    : specify output values
-                    This is like a simplified C printf format:
-                        %b : basename of the file 
-                        %c : category of file (can be empty)
-                        %f : filename that was matched
-                        %m : the patternfile filename
-                        %t : type of file
-                        %I : category of match file as an uppercase identifier
-                        \\n : a linefeed
-                     (e.g. 'category=%c,type=%t\\n')
+   -f <format>      : specify output values
+                      This is like a simplified C printf format:
+                          %b : basename of the file
+                          %c : category of file (can be empty)
+                          %f : filename that was matched
+                          %m : the patternfile filename
+                          %t : type of file
+                          %I : category of match file as an uppercase identifier
+                          \\n : a linefeed
+                       (e.g. 'category=%c,type=%t\\n')
 EOF
    else
      cat <<EOF >&2
-   -f <format>    : specify output values (-v for detailed help)
+   -f <format>      : specify output values (-v for detailed help)
 EOF
    fi
 
    cat <<EOF >&2
-   -l             : use a long format that shows type,category and basename
+   -l               : use a long format that shows type,category and basename
+   --no-follow      : don't follow symlinks
 EOF
    cat <<EOF >&2
 EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
-   -tf <filter>   : specify a filter for matching <type>
-                    A filter is a comma separated list of type expressions.
-                    A type expression is either a type name with wildcard
-                    characters or a negated type expression. An expression is
-                    negated by being prefixed with !.
-                    Example: filter is "source*,!sourcex"
+   -q <qualifier>   : specify a qualifier for matching <type> or <category>
+                      Qualifiers have their own little language.
+                      (expr), NOT expr, expr AND|OR expr, as well as the
+                      operators CATEGORY_MATCHES|TYPE_MATCHES <regex>.
+                      TYPE_MATCHES works exact, wheras CATEGORY_MATCHES matches
+                      parts of the category (separated by '-')
 EOF
    else
      cat <<EOF >&2
-   -tf <filter>   : specify a filter for matching the type (-v for detailed help)
+   -q <qualifier>   : qualifier to match patternfiles (-v for detailed help)
 EOF
    fi
 
      cat <<EOF >&2
-   -cf <filter>   : specify a filter for matching the category (see -tf)
-   --no-follow    : don't follow symlinks
 EOF
 
      cat <<EOF >&2
@@ -285,13 +284,12 @@ match::list::parallel_list_filtered_files()
 
    local quoted_filenames="$1"
    local format="$2" 
-   local tfilter="$3"
-   local cfilter="$4" 
-   local ignore="$5" 
-   local match="$6" 
-   local flags="$7" 
+   local qualifier="$3"
+   local ignore="$4"
+   local match="$5"
+   local flags="$6"
 
-   shift 7
+   shift 6
 
    include "parallel"
 
@@ -376,46 +374,46 @@ match::list::parallel_list_filtered_files()
       wait_for_available_job "${maxjobs}"
 
       (
-         match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_0}"
+         match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_0}"
 
-         [ ! -z "${filename_1}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1}"
-         [ ! -z "${filename_2}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_2}"
-         [ ! -z "${filename_3}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_3}"
+         [ ! -z "${filename_1}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1}"
+         [ ! -z "${filename_2}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_2}"
+         [ ! -z "${filename_3}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_3}"
 
-         [ ! -z "${filename_4}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_4}"
-         [ ! -z "${filename_5}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_5}"
-         [ ! -z "${filename_6}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_6}"
-         [ ! -z "${filename_7}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_7}"
+         [ ! -z "${filename_4}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_4}"
+         [ ! -z "${filename_5}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_5}"
+         [ ! -z "${filename_6}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_6}"
+         [ ! -z "${filename_7}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_7}"
 
-         [ ! -z "${filename_8}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_8}"
-         [ ! -z "${filename_9}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_9}"
-         [ ! -z "${filename_a}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_a}"
-         [ ! -z "${filename_b}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_b}"
+         [ ! -z "${filename_8}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_8}"
+         [ ! -z "${filename_9}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_9}"
+         [ ! -z "${filename_a}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_a}"
+         [ ! -z "${filename_b}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_b}"
 
-         [ ! -z "${filename_c}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_c}"
-         [ ! -z "${filename_d}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_d}"
-         [ ! -z "${filename_e}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_e}"
-         [ ! -z "${filename_f}" ]  && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_f}"
+         [ ! -z "${filename_c}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_c}"
+         [ ! -z "${filename_d}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_d}"
+         [ ! -z "${filename_e}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_e}"
+         [ ! -z "${filename_f}" ]  && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_f}"
 
-         [ ! -z "${filename_10}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_10}"
-         [ ! -z "${filename_11}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_11}"
-         [ ! -z "${filename_12}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_12}"
-         [ ! -z "${filename_13}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_13}"
+         [ ! -z "${filename_10}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_10}"
+         [ ! -z "${filename_11}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_11}"
+         [ ! -z "${filename_12}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_12}"
+         [ ! -z "${filename_13}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_13}"
 
-         [ ! -z "${filename_14}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_14}"
-         [ ! -z "${filename_15}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_15}"
-         [ ! -z "${filename_16}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_16}"
-         [ ! -z "${filename_17}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_17}"
+         [ ! -z "${filename_14}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_14}"
+         [ ! -z "${filename_15}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_15}"
+         [ ! -z "${filename_16}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_16}"
+         [ ! -z "${filename_17}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_17}"
 
-         [ ! -z "${filename_18}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_18}"
-         [ ! -z "${filename_19}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_19}"
-         [ ! -z "${filename_1a}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1a}"
-         [ ! -z "${filename_1b}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1b}"
+         [ ! -z "${filename_18}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_18}"
+         [ ! -z "${filename_19}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_19}"
+         [ ! -z "${filename_1a}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1a}"
+         [ ! -z "${filename_1b}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1b}"
 
-         [ ! -z "${filename_1c}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1c}"
-         [ ! -z "${filename_1d}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1d}"
-         [ ! -z "${filename_1e}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1e}"
-         [ ! -z "${filename_1f}" ] && match::filename::match_print_filepath "${format}" "${tfilter}" "${cfilter}" "${ignore}" "${match}" "${filename_1f}"
+         [ ! -z "${filename_1c}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1c}"
+         [ ! -z "${filename_1d}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1d}"
+         [ ! -z "${filename_1e}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1e}"
+         [ ! -z "${filename_1f}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
    done < <( eval_exekutor find ${flags} ${quoted_filenames} "$@" -print \
@@ -434,13 +432,12 @@ match::list::list_filenames()
 {
    log_entry "match::list::list_filenames" "$@"
 
-   [ $# -ne 5 ] && _internal_fail "API mismatch"
+   [ $# -ne 4 ] && _internal_fail "API mismatch"
 
    local format="$1"
-   local tfilter="$2"
-   local cfilter="$3"
-   local ignore="$4"
-   local match="$5"
+   local qualifier="$2"
+   local ignore="$3"
+   local match="$4"
 
    local name
    local ignore_dirs
@@ -500,7 +497,9 @@ match::list::list_filenames()
    local flags
    local query
 
-   query="-xtype f"
+   # looks stupid, but is needed if we have '-L' set and we have
+   # symlinks of source files
+   query='\( -xtype f -o -xtype l \)'
    case "${MULLE_UNAME}" in
       darwin|*bsd|sunos|dragonfly)
          query='\( -type f -o -type l \)'
@@ -517,6 +516,8 @@ match::list::list_filenames()
    local fi
    local fo
 
+   # for zsh!
+
    if [ ! -z "${ignore_dirs}" ]
    then
       li="\\("
@@ -531,37 +532,25 @@ match::list::list_filenames()
       rp="\\)"
    fi
 
+   shell_disable_glob
    match::list::parallel_list_filtered_files "${match_dirs:-.}" \
                                              "${format}" \
-                                             "${tfilter}" \
-                                             "${cfilter}" \
+                                             "${qualifier}" \
                                              "${ignore}" \
                                              "${match}" \
                                              "${flags}" \
                                              ${li} ${ignore_dirs} $ri $fi ${fo} \
                                              ${query} \
                                              ${lp} ${match_files} ${rp}
+   shell_enable_glob
 }
 
 
 match::list::include()
 {
-   if [ -z "${MULLE_PATH_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
-   fi
-   if [ -z "${MULLE_FILE_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
-   fi
-
-   if [ -z "${MULLE_MATCH_FILENAME_SH}" ]
-   then
-      # shellcheck source=src/mulle-match-filename.sh
-      . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-filename.sh" || exit 1
-   fi
+   include "path"
+   include "file"
+   include "match::filename"
 }
 
 
@@ -575,8 +564,7 @@ match::list::main()
 
    local OPTION_FORMAT="%f\\n"
    local OPTION_SORTED='YES'
-   local OPTION_MATCH_TYPE_FILTER
-   local OPTION_MATCH_CATEGORY_FILTER
+   local OPTION_MATCH_QUALIFIER
    local MATCH_DIR
    local IGNORE_DIR
 
@@ -599,18 +587,11 @@ match::list::main()
             match::list::usage
          ;;
 
-         -mf|--match-filter|-tf|--type-filter)
+         -q|--qualifier)
             [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
-            OPTION_MATCH_TYPE_FILTER="$1"
-         ;;
-
-         -cf|--category-filter)
-            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
-            shift
-
-            OPTION_MATCH_CATEGORY_FILTER="$1"
+            OPTION_MATCH_QUALIFIER="$1"
          ;;
 
          -l)
@@ -688,14 +669,12 @@ match::list::main()
    if [ "${OPTION_SORTED}" = 'YES' ]
    then
       match::list::list_filenames "${OPTION_FORMAT}" \
-                                  "${OPTION_MATCH_TYPE_FILTER}" \
-                                  "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                  "${OPTION_MATCH_QUALIFIER}" \
                                   "${skip_patterncache}" \
                                   "${use_patterncache}" | LC_ALL=C sort
    else
       match::list::list_filenames "${OPTION_FORMAT}" \
-                                  "${OPTION_MATCH_TYPE_FILTER}" \
-                                  "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                  "${OPTION_MATCH_QUALIFIER}" \
                                   "${skip_patterncache}" \
                                   "${use_patterncache}"
    fi

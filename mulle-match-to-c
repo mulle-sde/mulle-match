@@ -34,7 +34,7 @@
 #
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
-MULLE_EXECUTABLE_VERSION=1.0.3
+MULLE_EXECUTABLE_VERSION=2.0.0
 
 
 usage()
@@ -65,20 +65,20 @@ Usage:
 
 Options:
    --c-headers-file <file>    : c header file to create
-   --filter-type <name>       : the patternfile to use (source)
    --objc-headers-file <file> : objc headers file to create
    --serial                   : process headers and sources serially
    --stdout                   : output to stdout
 
 Environment:
-   MULLE_MATCH_TO_C_C_HEADERS_FILE     : C headers file to create
-   MULLE_MATCH_TO_C_OBJC_HEADERS_FILE  : ObjC headers file to create
-   MULLE_MATCH_TO_C_PROJECT_HEADERS    : project headers list, separated by ':'
    MULLE_MATCH_TO_C_C_HEADERS          : C headers
-   MULLE_MATCH_TO_C_OBJC_HEADERS       : Objective-C headers
+   MULLE_MATCH_TO_C_C_HEADERS_FILE     : C headers file to create
    MULLE_MATCH_TO_C_IGNORE_HEADERS     : headers to ignore
-   MULLE_MATCH_TO_C_UNDERSCORE_HEADERS : ignore underscore prefixed headers (NO)
    MULLE_MATCH_TO_C_OBJC_HEADER_REGEX  : pattern to match ObjC headers ([A-Z])
+   MULLE_MATCH_TO_C_OBJC_HEADERS       : Objective-C headers
+   MULLE_MATCH_TO_C_OBJC_HEADERS_FILE  : ObjC headers file to create
+   MULLE_MATCH_TO_C_PATTERNFILETYPE    : header patternfile type (header)
+   MULLE_MATCH_TO_C_PROJECT_HEADERS    : project headers list, separated by ':'
+   MULLE_MATCH_TO_C_UNDERSCORE_HEADERS : ignore underscore prefixed headers (NO)
 
 EOF
    exit 1
@@ -612,7 +612,7 @@ main()
    if ! categorized_headers="`rexekutor "${MULLE_MATCH}" \
                                           ${MULLE_TECHNICAL_FLAGS} \
                                        find --format "%C;%f\\n" \
-                                            --type-filter "${MULLE_MATCH_TO_C_PATTERNFILETYPE}"`"
+                                            --qualifier "TYPE_MATCHES ${MULLE_MATCH_TO_C_PATTERNFILETYPE}"`"
    then
       return 1
    fi

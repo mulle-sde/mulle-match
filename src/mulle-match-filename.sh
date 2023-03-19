@@ -953,6 +953,221 @@ match::filename::_match_print_patternfilename()
 }
 
 
+#
+# A small parser
+#
+match::filename::do_filter_iexpr()
+{
+#   log_entry "match::filename::do_filter_iexpr" "$1" "$2" "(_s=${_s})"
+
+   local type="$1"
+   local category="$2"
+   local expr="$3"
+   local error_hint="$4"
+
+   _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+   case "${_s}" in
+      AND*)
+         _s="${_s:3}"
+         match::filename::do_filter_expr "${type}" "${category}" "${error_hint}"
+         if [ $? -eq 1  ]
+         then
+            return 1
+         fi
+         return $expr
+      ;;
+
+      OR*)
+         _s="${_s:2}"
+         match::filename::do_filter_expr "${type}" "${category}" "${error_hint}"
+         if [ $? -eq 0  ]
+         then
+            return 0
+         fi
+         return $expr
+      ;;
+
+      ")")
+         if [ "${expr}" = "" ]
+         then
+            fail "Missing expression after marks qualifier \"${error_hint}\""
+         fi
+         return $expr
+      ;;
+
+      "")
+         if [ "${expr}" = "" ]
+         then
+            fail "Missing expression after marks qualifier \"${error_hint}\""
+         fi
+         return $expr
+      ;;
+   esac
+
+   fail "Unexpected expression at ${_s} of marks qualifier \"${error_hint}\""
+}
+
+
+
+match::filename::exact_match()
+{
+#   log_entry "match::filename::exact_match" "$@"
+
+   local value="$1"
+   local pattern="$2"
+
+   case "${value}" in
+      ${pattern})
+         return 0
+      ;;
+   esac
+
+   return 1
+}
+
+
+
+match::filename::item_match()
+{
+#   log_entry "match::filename::item_match" "$@"
+
+   local value="$1"
+   local pattern="$2"
+
+   case "-${value}-" in
+      *-${pattern}-*)
+         return 0
+      ;;
+   esac
+
+   return 1
+}
+
+match::filename::do_filter_sexpr()
+{
+#   log_entry "match::filename::do_filter_sexpr" "$1" "(_s=${_s})"
+
+   local type="$1"
+   local category="$2"
+   local error_hint="$3"
+
+   local expr
+   local key
+
+   _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+   case "${_s}" in
+      '('*)
+         _s="${_s:1}"
+         match::filename::do_filter_expr "${type}" "${category}" "${error_hint}"
+         expr=$?
+
+         _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+#         if [ "${_closer}" != 'YES' ]
+#         then
+            if [ "${_s:0:1}" != ")" ]
+            then
+               fail "Closing ) missing at \"${_s}\" of marks qualifier \"${error_hint}\""
+            fi
+            _s="${_s:1}"
+#         fi
+         return $expr
+      ;;
+
+      NOT*)
+         _s="${_s:3}"
+         if match::filename::do_filter_sexpr "${type}" "${category}" "${error_hint}"
+         then
+            return 1
+         fi
+         return 0
+      ;;
+
+      TYPE_MATCHES*)
+         _s="${_s:12}"
+         _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+         key="${_s%%[[:space:])]*}"
+         _s="${_s#"${key}"}"
+         #log_entry match::filename::match "${type}" "${category}"  "${key}"
+         match::filename::exact_match "${type}" "${key}"
+         return $?
+      ;;
+
+      CATEGORY_MATCHES*)
+         _s="${_s:16}"
+         _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+         key="${_s%%[[:space:])]*}"
+         _s="${_s#"${key}"}"
+         #log_entry match::filename::match "${type}" "${category}"  "${key}"
+         match::filename::item_match "${category}" "${key}"
+         return $?
+      ;;
+
+      "")
+         fail "Missing expression after qualifier \"${error_hint}\""
+      ;;
+   esac
+
+   fail "Unknown command at \"${_s}\" of qualifier \"${error_hint}\""
+}
+
+
+#
+# local _s
+#
+# _s contains the currently parsed qualifier
+#
+match::filename::do_filter_expr()
+{
+#   log_entry "match::filename::do_filter_expr" "$@" "(_s=${_s})"
+
+   local type="$1"
+   local category="$2"
+   local error_hint="$3"
+
+   local expr
+
+   match::filename::do_filter_sexpr "${type}" "${category}" "${error_hint}"
+   expr=$?
+
+   while :
+   do
+      _s="${_s#"${_s%%[![:space:]]*}"}" # remove leading whitespace characters
+      case "${_s}" in
+         ")"*|"")
+            break
+         ;;
+      esac
+      match::filename::do_filter_iexpr "${type}" "${category}" "${expr}" "${error_hint}"
+      expr=$?
+   done
+
+   return $expr
+}
+
+
+match::filename::filter_with_qualifier()
+{
+   log_entry "match::filename::filter_with_qualifier" "$@"
+
+   local type="$1"
+   local category="$2"
+   local qualifier="$3"
+
+   if [ -z "${qualifier}" -o "${qualifier}" = "ANY" ]
+   then
+      log_debug "ANY matches all"
+      return 0
+   fi
+
+#   local _closer
+   local _s
+
+   _s="${qualifier}"
+
+   match::filename::do_filter_expr "${type}" "${category}" "${qualifier}"
+}
+
+
 # MUST BE CALLED WITH:
 #
 #      shell_enable_extglob
@@ -964,10 +1179,9 @@ match::filename::match_print_filepath()
    #   log_entry "match::filename::match_print_filepath" "$@"
 
    local format="$1" 
-   local tfilter="$2" 
-   local cfilter="$3" 
+   local qualifier="$2"
    
-   shift 3
+   shift 2
 
 #   local ignore="$1"
 #   local match="$2"
@@ -992,37 +1206,20 @@ match::filename::match_print_filepath()
    patternfile="${RVAL}"
    patternfilename="${patternfile##*/}"
 
-   if [ ! -z "${tfilter}" ]
+   if [ ! -z "${qualifier}" ]
    then
       local matchtype
-
-      matchtype="${patternfilename%--*}"
-      matchtype="${matchtype##*-}"
-      case "${matchtype}" in
-         ${tfilter})
-            # pass
-         ;;
-
-         *)
-            return 1
-         ;;
-      esac
-   fi
-
-   if [ ! -z "${cfilter}" ]
-   then
       local matchcategory
 
+      matchtype="${patternfilename%--*}"
+      matchtype="${matchtype#*-}"
       matchcategory="${patternfilename#*--}"
-      case "${matchcategory}" in
-         ${cfilter})
-            # pass
-         ;;
-
-         *)
-            return 1
-         ;;
-      esac
+      if ! match::filename::filter_with_qualifier "${matchtype}" \
+                                                  "${matchcategory}" \
+                                                  "${qualifier}"
+      then
+         return 1
+      fi
    fi
 
    if [ -z "${format}" ]
@@ -1086,8 +1283,7 @@ match::filename::main()
    log_entry "match::filename::main" "$@"
 
    local OPTION_FORMAT="%m\\n"
-   local OPTION_MATCH_TYPE_FILTER
-   local OPTION_MATCH_CATEGORY_FILTER
+   local OPTION_MATCH_QUALIFIER
    local OPTION_PATTERN
    local OPTION_PATTERN_FILE
 
@@ -1104,20 +1300,6 @@ match::filename::main()
          -q|--quiet)
             OPTION_FORMAT='-'
          ;;
-#
-#         -mf|--match-filter-|-tf|--type-filter)
-#            [ $# -eq 1 ] && match::filename::usage "missing argument to $1"
-#            shift
-#
-#            OPTION_MATCH_TYPE_FILTER="$1"
-#         ;;
-#
-#         -cf|--category-filter)
-#            [ $# -eq 1 ] && match::filename::usage "missing argument to $1"
-#            shift
-#
-#            OPTION_MATCH_CATEGORY_FILTER="$1"
-#         ;;
 
          -p|--pattern)
             [ $# -eq 1 ] && match::filename::usage "missing argument to $1"
@@ -1131,6 +1313,14 @@ match::filename::main()
             shift
 
             OPTION_PATTERN_FILE="$1"
+         ;;
+
+
+         --qualifier)
+            [ $# -eq 1 ] && match::filename::usage "missing argument to $1"
+            shift
+
+            OPTION_MATCH_QUALIFIER="$1"
          ;;
 
          -*)
@@ -1204,8 +1394,7 @@ match::filename::main()
    local _patternfile
 
    match::filename::match_print_filepath "${OPTION_FORMAT}" \
-                                         "${OPTION_MATCH_TYPE_FILTER}" \
-                                         "${OPTION_MATCH_CATEGORY_FILTER}" \
+                                         "${OPTION_MATCH_QUALIFIER}" \
                                          "${ignore_patterncache}" \
                                          "${match_patterncache}" \
                                          "${filename}"

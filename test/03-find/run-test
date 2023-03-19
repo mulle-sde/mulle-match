@@ -58,19 +58,19 @@ src/main.c"
    MULLE_MATCH_PATH="src:foo"
    export MULLE_MATCH_PATH
 
-   expect_find_filenames "${expected}" "%f\\n" "source" "" "${ignore}" "${match}"
+   expect_find_filenames "${expected}" "%f\\n" "TYPE_MATCHES source" "${ignore}" "${match}"
    log_verbose "----- #1 PASSED -----"
 
    #-----------
    expected="src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "header" "" "${ignore}" "${match}"
+   expect_find_filenames "${expected}" "%f\\n" "TYPE_MATCHES header" "${ignore}" "${match}"
 
    log_verbose "----- #2 PASSED -----"
 
    #-----------
    expected="foo/wrong.h
 src/foo.h"
-   expect_find_filenames "${expected}" "%f\\n" "header" "" "" "${match}"
+   expect_find_filenames "${expected}" "%f\\n" "TYPE_MATCHES header" "" "${match}"
 
    log_verbose "----- #3 PASSED -----"
 
