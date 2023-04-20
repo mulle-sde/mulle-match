@@ -1,3 +1,10 @@
+# 2.0.0
+
+* separate filters --category-filter and --type-filter have been replaced with a single --qualifier. Now you can combine category and type queries. The qualifier can do the usual AND OR NOT operations. Use `TYPE_MATCHES` and `CATEGORY_MATCHES` to match either or.
+* fix pattern matching problem
+* fix cross-platform bugs
+
+
 ### 1.0.3
 
 * fix bug with trailing /* path
