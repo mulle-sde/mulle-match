@@ -35,7 +35,7 @@
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=2.0.0
+MULLE_EXECUTABLE_VERSION=2.1.0
 
 
 # TODO: could make this more general, so we specify a list of types
@@ -179,6 +179,12 @@ emit_by_category()
 }
 
 
+reflect_diff()
+{
+   rexekutor diff "$1" "$2" | sed -n -e 's/^>/A/p' -e 's/^</D/p'
+}
+
+
 output_file()
 {
    log_entry "output_file" "$@"
@@ -192,6 +198,18 @@ output_file()
    if [ -f "${filename}" ] 
    then 
       exekutor chmod a+w "${filename}" || _fatal "Can't unprotect \"${filename}\"" 
+      if [ "${OPTION_DIFF}" != 'NO' ]
+      then
+         reflect_diff <( grep -E -v '^#|^$|\(|\)' "${filename}" ) \
+                      <( grep -E -v '^#|^$|\(|\)' <<<  "${text}" ) >&2
+      fi
+   else
+      if [ "${OPTION_DIFF}" != 'NO' ]
+      then
+         # fake add
+         rexekutor grep -E -v '^#|^$|\(|\)' <<< "${text}" \
+         | rexekutor sed -e 's/^/A /' >&2
+      fi
    fi
 
    if ! redirect_exekutor "${filename}" printf "%s\n" "${text}"
@@ -396,28 +414,11 @@ main()
 {
    log_entry "main" "$@"
 
-   # technical flags
-   local MULLE_TRACE
-   local MULLE_FLAG_DONT_DEFER='NO'
-   local MULLE_FLAG_EXEKUTOR_DRY_RUN='NO'
-   local MULLE_FLAG_FOLLOW_SYMLINKS='YES'
-   local MULLE_FLAG_LOG_CACHE='NO'
-   local MULLE_FLAG_LOG_DEBUG='NO'
-   local MULLE_FLAG_LOG_EXEKUTOR='NO'
-   local MULLE_FLAG_LOG_FLUFF='NO'
-   local MULLE_FLAG_LOG_MERGE='NO'
-   local MULLE_FLAG_LOG_SCRIPTS='NO'
-   local MULLE_FLAG_LOG_SETTINGS='NO'
-   local MULLE_FLAG_LOG_VERBOSE='NO'
-   local MULLE_TRACE_PATHS_FLIP_X='NO'
-   local MULLE_TRACE_POSTPONE='NO'
-   local MULLE_TRACE_RESOLVER_FLIP_X='NO'
-   local MULLE_TRACE_SETTINGS_FLIP_X='NO'
-
    local OPTION_PARALLEL='YES'
    local OPTION_HEADERS='YES'
    local OPTION_SOURCES='YES'
    local OPTION_RESOURCES='YES'
+   local OPTION_DIFF='DEFAULT'
 
    if [ "${MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE}" != 'NONE' ]
    then
@@ -453,6 +454,14 @@ main()
 
          --serial|--no-parallel)
             OPTION_PARALLEL='NO'
+         ;;
+
+         --diff)
+            OPTION_DIFF='YES'
+         ;;
+
+         --no-diff)
+            OPTION_DIFF='NO'
          ;;
 
          --no-headers)
@@ -540,6 +549,11 @@ main()
    MULLE_MATCH="${MULLE_MATCH:-`command -v mulle-match`}"
    [ -z "${MULLE_MATCH}" ] && fail "mulle-match not in PATH"
 
+   # in terse mode don't diff
+   if [ "${MULLE_FLAG_LOG_TERSE}" = 'YES' -a "${OPTION_DIFF}" = 'DEFAULT' ]
+   then
+      OPTION_DIFF='NO'
+   fi
 
    #
    # With 1000 header and 1000 source files, a full update takes ~7s on

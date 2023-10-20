@@ -105,7 +105,7 @@ Usage:
    named 80-source--fooblet to match "*.fooblet" files use:
 
       echo "*.fooblet" | \\
-        ${MULLE_USAGE_NAME} patternfile add -p 80 -c fooblet source -
+        ${MULLE_USAGE_NAME} patternfile add -p 80 -t source -c fooblet  -
 
    If you are using mulle-match inside mulle-sde, be sure to also increase the
    filename search for *.fooblet files:
@@ -128,6 +128,7 @@ Tip:
 
 Options:
    -i           : use as ignore patternfile
+   -t <type>    : You can also give type as an option _instead_
    -c <name>    : give this patternfile category. The defaults are "all" or
                   "none" for match.d/ignore.d patternfiles respectively.
    -p <digits>  : position, the default is 50. Patternfiles with lower numbers
@@ -641,7 +642,10 @@ match::patternfile::r_parse()
       ;;
 
       "")
-         fail "patternfile type must not be empty"
+         if  [ -z "${OPTION_TYPE}" ]
+         then
+            fail "patternfile type must not be empty"
+         fi
       ;;
 
       *)
@@ -716,6 +720,10 @@ match::patternfile::add()
             OPTION_TYPE="$1"
          ;;
 
+         -)
+            break
+         ;;
+
          -*)
             match::patternfile::add_usage "Unknown option \"$1\""
          ;;
@@ -728,10 +736,25 @@ match::patternfile::add()
       shift
    done
 
-   [ "$#" -ne 2 ] && match::patternfile::add_usage
+   local s
+   local filename
 
-   local s="$1"
-   local filename="$2"
+   if [ ! -z "${OPTION_TYPE}" ]
+   then
+      [ "$#" -gt 2 ] && match::patternfile::add_usage
+      if [ $# -eq 2 ]
+      then
+         s="$1"
+         shift
+      fi
+   else
+      [ "$#" -ne 2 ] && match::patternfile::add_usage
+
+      s="$1"
+      shift
+   fi
+
+   filename="$1"
 
    local patternfile
 

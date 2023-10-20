@@ -34,7 +34,7 @@
 #
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
-MULLE_EXECUTABLE_VERSION=2.0.0
+MULLE_EXECUTABLE_VERSION=2.1.0
 
 
 usage()
@@ -288,8 +288,19 @@ write_header_file()
    local projectname="$3"
    local varname="$4"
 
+   local shield_identifier
+
+   r_basename "${filename}"
+   r_smart_downcase_identifier "${RVAL}"
+   shield_identifier="${RVAL##+(_)}__"
+
    r_text_info_on "${varname}"
+   r_add_line "${RVAL}" "#ifndef ${shield_identifier}"
+   r_add_line "${RVAL}" "#define ${shield_identifier}"
+   r_add_line "${RVAL}" $'\n'
    r_add_line "${RVAL}" "${text_hdr}"
+   r_add_line "${RVAL}" $'\n'
+   r_add_line "${RVAL}" "#endif"
    text_hdr="${RVAL}"
 
    log_verbose "mulle-match-to-c writes ${C_RESET_BOLD}${filename}"
