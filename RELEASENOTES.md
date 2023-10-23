@@ -1,3 +1,10 @@
+## 2.1.0
+
+* mulle-match-to-c now output better include shields
+* emit was has changed during a cmake reflect
+* improved header inclusion code generation
+
+
 # 2.0.0
 
 * separate filters --category-filter and --type-filter have been replaced with a single --qualifier. Now you can combine category and type queries. The qualifier can do the usual AND OR NOT operations. Use `TYPE_MATCHES` and `CATEGORY_MATCHES` to match either or.

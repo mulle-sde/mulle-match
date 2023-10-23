@@ -86,6 +86,8 @@ EOF
 
 
 #
+# filename is the basename
+#
 r_match_type_for_filename()
 {
    log_entry "r_match_type_for_filename" "$@"
@@ -291,8 +293,8 @@ write_header_file()
    local shield_identifier
 
    r_basename "${filename}"
-   r_smart_downcase_identifier "${RVAL}"
-   shield_identifier="${RVAL##+(_)}__"
+   r_smart_file_downcase_identifier "${RVAL}"
+   shield_identifier="${RVAL}__"
 
    r_text_info_on "${varname}"
    r_add_line "${RVAL}" "#ifndef ${shield_identifier}"

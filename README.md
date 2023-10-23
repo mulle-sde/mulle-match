@@ -20,6 +20,7 @@ files according to their filenames and location. Its like a marriage of
 
 
 
+
 ## Commands
 
 ### init
@@ -116,7 +117,7 @@ echo ".git/" > pattern.txt
 echo "build/" >> pattern.txt
 mulle-match patternfile install -i folders pattern.txt
 ```
-> But see [Environment](#environmet) for an even better and more efficient way of ignoring files
+> But see [Environment](#Environment) for an even better and more efficient way of ignoring files
 > and subdirectories.
 
 Remove a *patternfile*:
@@ -182,13 +183,22 @@ search space with the environment variables `MULLE_MATCH_FILENAMES`,
 
 
 
+## Environment
+
+Variable                  | Description
+--------------------------|---------------------------------------------
+`MULLE_MATCH_FILENAMES`   | Filename wildcards separated by ':'. Only files matching these wildcards will be considered for. e.g. *.c:*.m:*.cmake. These values are evaluated with `find`'s `-name`. The default value is `*`
+`MULLE_MATCH_IGNORE_PATH` | Locations to ignore separated by ':'. These values are evaluated with `find`'s `-path` and then pruned. The default value is `addiction:build:dependency:stash:include:lib:libexec:.git`
+`MULLE_MATCH_PATH`        | Locations to search for separated by ':'. These values are passed to `find` as search starts. The default value is `.mulle/etc/sourcetree/config:src`
+
+
 
 
 
 ## Install
 
 See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how to
-install mulle-sde, which will also install mulle-match and required
+install mulle-sde, which will also install mulle-match with required
 dependencies.
 
 The command to install only the latest mulle-match into
@@ -204,3 +214,5 @@ curl -L 'https://github.com/mulle-sde/mulle-match/archive/latest.tar.gz' \
 ## Author
 
 [Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
+
+

@@ -94,7 +94,7 @@ echo ".git/" > pattern.txt
 echo "build/" >> pattern.txt
 mulle-match patternfile install -i folders pattern.txt
 ```
-> But see [Environment](#environmet) for an even better and more efficient way of ignoring files
+> But see [Environment](#Environment) for an even better and more efficient way of ignoring files
 > and subdirectories.
 
 Remove a *patternfile*:
