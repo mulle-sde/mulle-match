@@ -1343,7 +1343,7 @@ match::filename::main()
    filename="$1"
    shift
 
-   [ "$#" -ne  0 ] && match::filename::usage "superflous arguments $*"
+   [ "$#" -ne  0 ] && match::filename::usage "superfluous arguments $*"
 
    match::filename::match_check_match_filenames "${filename}"
 

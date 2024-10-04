@@ -60,8 +60,8 @@ Usage:
    accomplished with:
       ${MULLE_USAGE_NAME} --stdout
 
-   If the outpuz is not to your liking and tweaking the patternfiles seems
-   to tedious, try the environment variable options.
+   If the output is not to your liking and tweaking the patternfiles seems
+   too tedious, try the environment variable options.
 
 Options:
    --c-headers-file <file>    : c header file to create
@@ -453,6 +453,139 @@ create_objc_headers_file()
 }
 
 
+create_c_project_headers_file()
+{
+   log_entry "create_c_project_headers_file" "$@"
+
+   local categorized_files="$1"
+   local projectname="$2"
+
+   local text_hdr
+
+   case "${MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE}" in
+      DISABLE*)
+         log_verbose "C Header generation disabled by MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE=DISABLE"
+         return
+      ;;
+
+      NONE)
+         log_verbose "C Header file generation disabled by MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE=DISABLE"
+         text_hdr="# C Header output disabled by MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE=NONE"
+         MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE=""
+      ;;
+
+      *)
+         r_statements_for_matching_headers "${categorized_files}" \
+                                           "PUBLIC_HEADERS" \
+                                           "c" \
+                                           "${projectname}"
+         text_hdr="${RVAL}"
+
+         if [ -z "${text_hdr}" ]
+         then
+            text_hdr="// no headers"
+         fi
+      ;;
+   esac
+
+   if [ ! -z "${MULLE_MATCH_TO_C_IGNORE_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_IGNORE_HEADERS=${MULLE_MATCH_TO_C_IGNORE_HEADERS}"
+   fi
+   if [ ! -z "${MULLE_MATCH_TO_C_C_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_C_HEADERS=${MULLE_MATCH_TO_C_C_HEADERS}"
+   fi
+
+   if [ "${MULLE_MATCH_TO_C_C_HEADERS_FILE}" = '-' ]
+   then
+      log_info "C Project Headers"
+      printf "%s\n" "${text_hdr}"
+      return 0
+   fi
+
+   MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-include-project.h}"
+
+   log_fluff "Create project C header files (${PWD})"
+
+   write_header_file "${MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE}" \
+                     "${text_hdr}" \
+                     "${projectname}" \
+                     'MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE'
+}
+
+
+create_objc_project_headers_file()
+{
+   log_entry "create_objc_project_headers_file" "$@"
+
+   local categorized_files="$1"
+   local projectname="$2"
+
+   local text_hdr
+
+   case "${MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE}" in
+      DISABLE*)
+         log_verbose "Objective-C Header file generation disabled by MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE=DISABLE"
+         return
+      ;;
+
+      NONE)
+         log_verbose "Objective-C Header output disabled by MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE=NONE"
+         text_hdr="# Objective-C Header output disabled by MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE=NONE"
+         MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE=""
+      ;;
+
+      *)
+         r_statements_for_matching_headers "${categorized_files}" \
+                                           "PUBLIC_HEADERS" \
+                                           "objc" \
+                                           "${projectname}"
+         text_hdr="${RVAL}"
+
+         if [ -z "${text_hdr}" ]
+         then
+            text_hdr="// no headers"
+         fi
+      ;;
+   esac
+
+   if [ ! -z "${MULLE_MATCH_TO_C_IGNORE_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_IGNORE_HEADERS=${MULLE_MATCH_TO_C_IGNORE_HEADERS}"
+   fi
+   if [ ! -z "${MULLE_MATCH_TO_C_OBJC_HEADERS}" ]
+   then
+      text_hdr="${text_hdr}
+//
+// MULLE_MATCH_TO_C_OBJC_HEADERS=${MULLE_MATCH_TO_C_OBJC_HEADERS}"
+   fi
+
+   if [ "${MULLE_MATCH_TO_C_OBJC_HEADERS_FILE}" = '-' ]
+   then
+      log_info "Objective-C Project Headers"
+      printf "%s\n" "${text_hdr}"
+      return 0
+   fi
+
+   MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-import-project.h}"
+
+   log_fluff "Create project Objective-C header files (${PWD})"
+
+   write_header_file "${MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE}" \
+                     "${text_hdr}" \
+                     "${projectname}" \
+                     'MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE'
+}
+
+
+
 main()
 {
    log_entry "main" "$@"
@@ -478,6 +611,8 @@ main()
    local OPTION_PARALLEL='YES'
    local OPTION_C_PUBLIC_HEADERS='DEFAULT'
    local OPTION_OBJC_PUBLIC_HEADERS='DEFAULT'
+   local OPTION_C_PROJECT_HEADERS='DEFAULT'
+   local OPTION_OBJC_PROJECT_HEADERS='DEFAULT'
 
    MULLE_MATCH_TO_C_PATTERNFILETYPE="${MULLE_MATCH_TO_C_PATTERNFILETYPE:-header}"
    MULLE_MATCH_TO_C_UNDERSCORE_HEADERS="${MULLE_MATCH_TO_C_UNDERSCORE_HEADERS:-NO}"
@@ -511,12 +646,28 @@ main()
 				OPTION_C_PUBLIC_HEADERS='NO'
 			;;
 
+         --c-project-headers)
+            OPTION_C_PROJECT_HEADERS='YES'
+         ;;
+
+         --no-c-project-headers)
+            OPTION_C_PROJECT_HEADERS='NO'
+         ;;
+
          --objc-headers)
             OPTION_OBJC_PUBLIC_HEADERS='YES'
          ;;
 
          --no-objc-headers)
             OPTION_OBJC_PUBLIC_HEADERS='NO'
+         ;;
+
+         --objc-project-headers)
+            OPTION_OBJC_PROJECT_HEADERS='YES'
+         ;;
+
+         --no-objc-project-headers)
+            OPTION_OBJC_PROJECT_HEADERS='NO'
          ;;
 
          --underscore-headers)
@@ -534,11 +685,25 @@ main()
 				MULLE_MATCH_TO_C_C_HEADERS_FILE="$1"
 			;;
 
+         --c-project-headers-file)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE="$1"
+         ;;
+
          --objc-headers-file)
             [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             MULLE_MATCH_TO_C_OBJC_HEADERS_FILE="$1"
+         ;;
+
+         --objc-project-headers-file)
+            [ $# -eq 1 ] && usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE="$1"
          ;;
 
          --header-filter-type)
@@ -553,6 +718,8 @@ main()
 
             MULLE_MATCH_TO_C_C_HEADERS_FILE="-"
             MULLE_MATCH_TO_C_OBJC_HEADERS_FILE="-"
+            MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE="-"
+            MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE="-"
          ;;
 
          --version)
@@ -615,6 +782,21 @@ main()
       OPTION_OBJC_PUBLIC_HEADERS='YES'
    fi
 
+
+# TODO: enable this "soonish"
+#
+#   if [ "${OPTION_C_PROJECT_HEADERS}" = 'DEFAULT' ]
+#   then
+#      OPTION_C_PROJECT_HEADERS='YES'
+#   fi
+#
+#   # if nothing set use objc as default
+#   if [ "${OPTION_OBJC_PROJECT_HEADERS}" = 'DEFAULT' -a "${PROJECT_DIALECT}" = "objc" ]
+#   then
+#      OPTION_OBJC_PROJECT_HEADERS='YES'
+#   fi
+
+
    #
    # With 1000 header and 1000 source files, a full update takes ~7s on
    # my machine. It certainly would be interesting to make this properly
@@ -640,9 +822,20 @@ main()
    	then
       	create_c_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
       fi
+
       if [ "${OPTION_OBJC_PUBLIC_HEADERS}" = 'YES' ]
       then
          create_objc_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
+      fi
+
+      if [ "${OPTION_C_PROJECT_HEADERS}" = 'YES' ]
+      then
+         create_c_project_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
+      fi
+
+      if [ "${OPTION_OBJC_PROJECT_HEADERS}" = 'YES' ]
+      then
+         create_objc_project_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
       fi
 
       log_fluff "waiting..."
@@ -657,6 +850,16 @@ main()
       if [ "${OPTION_OBJC_PUBLIC_HEADERS}" = 'YES' ]
       then
          create_objc_headers_file "${categorized_headers}" "${PROJECT_NAME}"
+      fi
+
+      if [ "${OPTION_C_PROJECT_HEADERS}" = 'YES' ]
+      then
+         create_c_project_headers_file "${categorized_headers}" "${PROJECT_NAME}"
+      fi
+
+      if [ "${OPTION_OBJC_PROJECT_HEADERS}" = 'YES' ]
+      then
+         create_objc_project_headers_file "${categorized_headers}" "${PROJECT_NAME}"
       fi
    fi
 }

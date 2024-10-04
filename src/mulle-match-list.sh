@@ -650,7 +650,7 @@ match::list::main()
       shift
    done
 
-   [ "$#" -ne 0 ] && match::list::usage "superflous arguments \"$*\""
+   [ "$#" -ne 0 ] && match::list::usage "superfluous arguments \"$*\""
 
 
    local skip_patterncache

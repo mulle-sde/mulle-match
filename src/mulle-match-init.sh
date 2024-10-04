@@ -106,7 +106,7 @@ match::init::main()
 
    local rval
 
-   [ $# -ne 0 ] && match::init::usage "superflous parameters \"$*\""
+   [ $# -ne 0 ] && match::init::usage "superfluous parameters \"$*\""
 
    [ -z "${MULLE_MATCH_PATTERNFILE_SH}" ] &&
       . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh" || exit 1
