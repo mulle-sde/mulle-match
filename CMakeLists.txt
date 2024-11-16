@@ -1,9 +1,9 @@
 cmake_minimum_required( VERSION 3.15)
 
-project( mulle-match NONE)
+project( mulle-match VERSION 2.1.1 LANGUAGES NONE)
 
 execute_process( COMMAND ./mulle-match version
-                 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                  OUTPUT_VARIABLE MULLE_MATCH_VERSION
                  OUTPUT_STRIP_TRAILING_WHITESPACE)
 message( STATUS "MULLE_MATCH_VERSION is ${MULLE_MATCH_VERSION} according to mulle-match")

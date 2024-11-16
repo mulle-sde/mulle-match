@@ -9,7 +9,7 @@ files according to their filenames and location. Its like a marriage of
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg?branch=release) | [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg?branch=release)  | [RELEASENOTES](RELEASENOTES.md) |
 
 | Executable             | Description
 |------------------------|----------------------------------------------------------
