@@ -1,3 +1,8 @@
+## 2.2.0
+
+* fixed wrong intro text, added --type-matches and --category-matches for easier qualifier generation
+
+
 ### 2.1.1
 
 

@@ -34,7 +34,7 @@
 
 
 
-MULLE_EXECUTABLE_VERSION=2.1.1
+MULLE_EXECUTABLE_VERSION=2.2.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 #
@@ -113,7 +113,7 @@ Usage:
 
    Lists all file matching those patternfiles with the "list" command. For
    example:
-      mulle-match list -tf header    # list all headers in mulle-objc projects
+      mulle-match list --type-matches header
 
    You can use the "filename" command, to test, which patternfile matches a 
    given filename. This command can also check, if a specific patternfile 

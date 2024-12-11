@@ -122,10 +122,14 @@ EOF
                       operators CATEGORY_MATCHES|TYPE_MATCHES <regex>.
                       TYPE_MATCHES works exact, wheras CATEGORY_MATCHES matches
                       parts of the category (separated by '-')
+   -cq <qualifier>  : shortcut qualifier to match categories
+   -tq <qualifier>  : shortcut qualifier to match types
 EOF
    else
      cat <<EOF >&2
    -q <qualifier>   : qualifier to match patternfiles (-v for detailed help)
+   -cq <qualifier>  : shortcut qualifier to match categories
+   -tq <qualifier>  : shortcut qualifier to match types
 EOF
    fi
 
@@ -591,7 +595,24 @@ match::list::main()
             [ $# -eq 1 ] && match::list::usage "missing argument to $1"
             shift
 
-            OPTION_MATCH_QUALIFIER="$1"
+            r_concat "${OPTION_MATCH_QUALIFIER}" "$1" " OR "
+            OPTION_MATCH_QUALIFIER="${RVAL}"
+         ;;
+
+         -tq|--type-matches)
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
+            shift
+
+            r_concat "${OPTION_MATCH_QUALIFIER}" "TYPE_MATCHES $1" " AND "
+            OPTION_MATCH_QUALIFIER="${RVAL}"
+         ;;
+
+         -cq|--category-matches)
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
+            shift
+
+            r_concat "${OPTION_MATCH_QUALIFIER}" "CATEGORY_MATCHES $1" " AND "
+            OPTION_MATCH_QUALIFIER="${RVAL}"
          ;;
 
          -l)
