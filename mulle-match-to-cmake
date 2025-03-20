@@ -35,7 +35,7 @@
 [ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=2.2.0
+MULLE_EXECUTABLE_VERSION=2.2.1
 
 
 # TODO: could make this more general, so we specify a list of types
@@ -124,18 +124,50 @@ emit_common_directories()
 
    local collection
 
-   collection="`rexekutor sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | LC_ALL=C sort -u`"
+   # we gotta take MULLE_MATCH_PATH into account to sort the collection in the
+   # proper order
+   collection="`rexekutor sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | awk '!seen[$0]++'`"
 
-   if [ ! -z "${collection}" ]
+   #
+   # assume MULLE_MATCH_PATH is src:../src we want the incoming collection to
+   # keep this order, but mulle-match will have sorted the files by name
+   # (because it does its job in parallel and can't keep the order intact)
+   #
+   local sorted_collection 
+
+   if [ ! -z "${MULLE_MATCH_PATH}" ]
+   then
+      local item 
+      local directory 
+
+      .foreachpath directory in ${MULLE_MATCH_PATH}
+      .do
+         .foreachline item in ${collection}
+         .do
+            if filepath_contains_filepath "${directory}" "${item}" 
+            then
+               r_add_line "${sorted_collection}" "${item}"
+               sorted_collection="${RVAL}"
+            fi
+         .done
+      .done
+
+      # paranoia, remove duplicates if any
+      sorted_collection=$( LC_ALL=C awk '!seen[$0]++' <<< "${sorted_collection}" )
+   else 
+      sorted_collection="${collection}"
+   fi
+
+   if [ ! -z "${sorted_collection}" ]
    then
       if [ "${PROJECT_SOURCE_DIR}" = '.' ]
       then
-         r_add_line "." "${collection}"
-         collection="${RVAL}"
+         r_add_line "." "${sorted_collection}"
+         sorted_collection="${RVAL}"
       fi
    fi
 
-   "${emitter}" "${parameter}" "${collection}" "#
+   "${emitter}" "${parameter}" "${sorted_collection}" "#
 # contents are derived from the file locations
 "
 }

@@ -686,7 +686,7 @@ match::patternfile::add()
    local OPTION_POSITION=""
    local OPTION_TYPE=""
 
-   while :
+   while [ $# -ne 0 ]
    do
       case "$1" in
          -h*|--help|help)
@@ -801,7 +801,7 @@ match::patternfile::rename()
 
    operation="mv"
 
-   while :
+   while [ $# -ne 0 ]
    do
       case "$1" in
          -h*|--help|help)
@@ -1519,7 +1519,7 @@ match::patternfile::main()
    local ONLY_IGNORE='NO'
    local ONLY_MATCH='NO'
 
-   while :
+   while [ $# -ne 0 ]
    do
       case "$1" in
          -h*|--help|help)

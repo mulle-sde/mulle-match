@@ -207,7 +207,10 @@ match::list::emit_common_directories()
 
    local collection
 
-   collection="`sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | LC_ALL=C sort -u`"
+   # MEMO: don't sort -u anymore, the order of the files is important later
+   #       for the directory inclusion for example
+   #
+   collection="`sed -n -e 's|^[^;]*;\(.*\)/[^/]*\.h|\1|p' <<< "${items}" | LC_ALL=C awk '!seen[$0]++'`"
 
    if [ ! -z "${collection}" ]
    then
@@ -584,7 +587,7 @@ match::list::main()
    #
    # handle options
    #
-   while :
+   while [ $# -ne 0 ]
    do
       case "$1" in
          -h*|--help|help)
