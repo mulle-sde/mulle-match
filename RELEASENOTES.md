@@ -1,3 +1,7 @@
+### 2.2.2
+
+Various small improvements
+
 ### 2.2.1
 
 * mulle-match now orders the output according to the `MULLE_MATCH_PATH` so the file order is as one would expect
