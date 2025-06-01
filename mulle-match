@@ -34,7 +34,7 @@
 
 
 
-MULLE_EXECUTABLE_VERSION=2.2.2
+MULLE_EXECUTABLE_VERSION=2.3.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 #
@@ -86,9 +86,9 @@ match::print_flags()
    delimiter="       : "
 
    echo "   -f   ${delimiter}force operation"
-   echo "   -P   ${delimiter}specify search start points (separator :)"
-   echo "   -I   ${delimiter}specify files and folders to ignore (separator :)"
-   echo "   -F   ${delimiter}specify file pattern to match (separator :)"
+   echo "   -P   ${delimiter}specify search start points (separator ':')"
+   echo "   -I   ${delimiter}specify files and folders to ignore (separator ':')"
+   echo "   -F   ${delimiter}specify file patterns to match (separator ':'')"
 
    options_technical_flags_usage "${delimiter}"
 }
@@ -194,6 +194,10 @@ match::main()
             shift
 
             MULLE_MATCH_PATH="$1"
+         ;;
+
+         --serial)
+            MULLE_CORES=1
          ;;
 
          --version)

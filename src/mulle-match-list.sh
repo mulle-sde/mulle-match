@@ -110,6 +110,8 @@ EOF
    cat <<EOF >&2
    -l               : use a long format that shows type,category and basename
    --no-follow      : don't follow symlinks
+   --gitignore      : use root .gitignore file to prune search tree
+   --gitignore-only : ignore patternfiles, use .gitignore file to list only
 EOF
    cat <<EOF >&2
 EOF
@@ -153,7 +155,7 @@ match::list::set_match_path()
 {
    if [ -z "${MULLE_MATCH_PATH}" ]
    then
-      MULLE_MATCH_PATH="src:.mulle/etc/sourcetree:"
+      MULLE_MATCH_PATH="src:.mulle/etc/sourcetree"
       log_setting "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
    else
       log_setting "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
@@ -294,7 +296,7 @@ match::list::parallel_list_filtered_files()
    local qualifier="$3"
    local ignore="$4"
    local match="$5"
-   local flags="$6"
+   local quoted_find_flags="$6"
 
    shift 6
 
@@ -439,17 +441,26 @@ match::list::list_filenames()
 {
    log_entry "match::list::list_filenames" "$@"
 
-   [ $# -ne 4 ] && _internal_fail "API mismatch"
+   [ $# -lt 6 ] && _internal_fail "API mismatch"
 
    local format="$1"
    local qualifier="$2"
    local ignore="$3"
    local match="$4"
+   local quoted_find_options="$5"
+   local type="$6"
+
+   shift 6
 
    local name
    local ignore_dirs
    local match_files
    local match_dirs
+
+   log_setting "MULLE_MATCH_PATH:           ${MULLE_MATCH_PATH}"
+   log_setting "MULLE_MATCH_IGNORE_PATH:    ${MULLE_MATCH_IGNORE_PATH}"
+   log_setting "MULLE_MATCH_FILENAMES:      ${MULLE_MATCH_FILENAMES}"
+   log_setting "MULLE_MATCH_FOLLOW_SYMLINK: ${MULLE_MATCH_FOLLOW_SYMLINK}"
 
    #
    # MULLE_MATCH_PATH: This is where the find search starts
@@ -501,21 +512,27 @@ match::list::list_filenames()
 
    # use xtype to also catch symlinks to files
 
-   local flags
    local query
 
-   # looks stupid, but is needed if we have '-L' set and we have
-   # symlinks of source files
-   query='\( -xtype f -o -xtype l \)'
-   case "${MULLE_UNAME}" in
-      darwin|*bsd|sunos|dragonfly)
-         query='\( -type f -o -type l \)'
+   case "${type}" in
+      files)
+         # looks stupid, but is needed if we have '-L' set and we have
+         # symlinks of source files
+         query='\( -xtype f -o -xtype l \)'
+         case "${MULLE_UNAME}" in
+            darwin|*bsd|sunos|dragonfly)
+               query='\( -type f -o -type l \)'
+            ;;
+         esac
       ;;
    esac
 
+   local find_flags
+
    if [ "${MULLE_MATCH_FOLLOW_SYMLINK}" = 'YES' ]
    then
-      flags="-L"
+      r_concat "${find_flags}" "-L"
+      find_flags="${RVAL}"
    fi
 
    local li
@@ -539,16 +556,28 @@ match::list::list_filenames()
       rp="\\)"
    fi
 
+   local quoted_args
+   local arg
+
+   for arg in "$@"
+   do
+      printf -v escaped "%q" "${arg}"
+      r_concat "${quoted_args}" "${arg}"
+   done
+
    shell_disable_glob
    match::list::parallel_list_filtered_files "${match_dirs:-.}" \
                                              "${format}" \
                                              "${qualifier}" \
                                              "${ignore}" \
                                              "${match}" \
-                                             "${flags}" \
+                                             "${find_flags}" \
+                                             "${quoted_find_options}" \
                                              ${li} ${ignore_dirs} $ri $fi ${fo} \
                                              ${query} \
-                                             ${lp} ${match_files} ${rp}
+                                             ${lp} ${match_files} ${rp} \
+                                             "${quoted_args}"
+
    shell_enable_glob
 }
 
@@ -561,6 +590,123 @@ match::list::include()
 }
 
 
+match_all()
+{
+   return 0
+}
+
+match_all_f="all"
+
+
+match_git()
+{
+   case "$1" in
+      */.git/*|.git/*|*/.git|.git)
+         return 0
+      ;;
+   esac
+
+   return 1
+}
+
+match_git_f="git"
+
+
+#
+# this is running in subshell, so we can override the various global variables
+# temporarily.
+#
+match::list::prune_match_path_with_gitignore()
+(
+   local gitignore_file="$1"
+
+   match::list::set_match_path
+   match::list::set_ignore_path
+
+   local skip_patternfilefunctions
+   local use_patternfilefunctions
+
+   match::filename::r_define_patternfilefunction "${gitignore_file}"
+   skip_patternfilefunctions="${RVAL}"
+
+   r_concat "match_git" "${skip_patternfilefunctions}"
+   skip_patternfilefunctions="${RVAL}"
+
+   use_patternfilefunctions="match_all"
+
+   local path
+   local keepers
+   local initial_roots
+
+   #
+   # need to get "." or absolute $PWD from the PATH as well as PWD/x which
+   # would be in the roots, split this off into two arrays
+   #
+   # log_debug "PWD:     ${PWD}"
+
+   .foreachpath path in ${MULLE_MATCH_PATH}
+   .do
+      r_simplified_absolutepath "${path}"
+      r_relative_path_between "${RVAL}" "${PWD}"
+     # log_debug "relative: ${RVAL}"
+     # log_debug "path:     ${path}"
+      case "${RVAL}" in
+         */*)
+            r_colon_concat_if_missing "${keepers}" "${RVAL}"
+            keepers="${RVAL}"
+         ;;
+
+         *)
+            r_colon_concat_if_missing "${initial_roots}" "${RVAL}"
+            initial_roots="${RVAL}"
+         ;;
+      esac
+   .done
+
+   MULLE_MATCH_PATH="${initial_roots}"
+   MULLE_MATCH_FILENAMES=
+   MULLE_MATCH_FOLLOW_SYMLINK='NO'
+
+   r_colon_concat_if_missing "${MULLE_MATCH_IGNORE_PATH}" ".git"
+   MULLE_MATCH_IGNORE_PATH="${RVAL}"
+
+   #
+   # so now we do a little optimization, we run it only for the root folder
+   # then we have use the output as the new MULLE_MATCH_PATH. This way
+   # we do not search .gitignored folders with find...
+   #
+   local roots
+
+   roots=$(match::list::list_filenames "%f\n" \
+                                       "" \
+                                       "${skip_patternfilefunctions}" \
+                                       "${use_patternfilefunctions}" \
+                                       "-mindepth 1 -maxdepth 1" \
+                                       "all")
+
+   local line
+
+   .foreachline line in ${roots}
+   .do
+      r_colon_concat_if_missing "${keepers}" "${line}"
+      keepers="${RVAL}"
+   .done
+
+   log_setting
+   if [ -z "${keepers}" ]
+   then
+      return 1
+   fi
+
+   # MEMO: for bonus points we could now find .gitignore in the tree and
+   #       prepend the relative path to the contained rules. We'd need to
+   #       push this path to match::filename::r_define_patternfilefunction
+   #       and do a little rewrite there
+   #
+   printf "%s\n" "${keepers}"
+   return 0
+)
+
 ###
 ###  MAIN
 ###
@@ -572,17 +718,19 @@ match::list::main()
    local OPTION_FORMAT="%f\\n"
    local OPTION_SORTED='YES'
    local OPTION_MATCH_QUALIFIER
-   local MATCH_DIR
-   local IGNORE_DIR
+   local OPTION_GITIGNORE='NO'
+   local OPTION_FIND_FLAGS
+   local OPTION_TYPE="file"
 
    # backwards compatibility
 
    MULLE_MATCH_PATH="${MULLE_MATCH_PATH:-${MULLE_MATCH_FIND_LOCATIONS}}"
    MULLE_MATCH_IGNORE_PATH="${MULLE_MATCH_IGNORE_PATH:-${MULLE_MATCH_FIND_IGNORE_PATH}}"
-   MULLE_MATCH_FILENAMES="${MULLE_MATCH_FILENAMES:-${MULLE_MATCH_FILENAMES}}"
    MULLE_MATCH_FOLLOW_SYMLINK="${MULLE_MATCH_FOLLOW_SYMLINK:-YES}"
 
    match::list::include
+
+   local escaped
 
    #
    # handle options
@@ -592,6 +740,19 @@ match::list::main()
       case "$1" in
          -h*|--help|help)
             match::list::usage
+         ;;
+
+         --gitignore)
+            OPTION_GITIGNORE='YES'
+         ;;
+
+         --no-gitignore)
+            OPTION_GITIGNORE='NO'
+         ;;
+
+         --gitignore-only)
+            OPTION_GITIGNORE='ONLY'
+            OPTION_FORMAT="%f\\n"
          ;;
 
          -q|--qualifier)
@@ -650,6 +811,10 @@ match::list::main()
             OPTION_FORMAT="$1"
          ;;
 
+         -a|--all)
+            OPTION_TYPE="all"
+         ;;
+
          -u|--unsorted)
             OPTION_SORTED='NO'
          ;;
@@ -660,6 +825,15 @@ match::list::main()
 
          --no-follow|--no-follow-symlink)
             MULLE_MATCH_FOLLOW_SYMLINK='NO'
+         ;;
+
+         --find-option|--find-flag)
+            [ $# -eq 1 ] && match::list::usage "missing argument to $1"
+            shift
+
+            printf -v escaped "%q" "$1"
+            r_concat "${OPTION_FIND_FLAGS}" "${escaped}"
+            OPTION_FIND_FLAGS="${RVAL}"
          ;;
 
          -*)
@@ -674,32 +848,90 @@ match::list::main()
       shift
    done
 
-   [ "$#" -ne 0 ] && match::list::usage "superfluous arguments \"$*\""
+   # [ "$#" -ne 0 ] && match::list::usage "superfluous arguments \"$*\""
 
+   #
+   # check if we have not gitignore, if we do we can update MULLE_MATCH_PATH
+   if [ "${OPTION_GITIGNORE}" != 'NO' ]
+   then
+      if [ -f .gitignore ]
+      then
+         local roots
 
-   local skip_patterncache
-   local use_patterncache
+         # empty .gitignore will return 1
+         if roots=$(match::list::prune_match_path_with_gitignore ".gitignore")
+         then
+            MULLE_MATCH_PATH="${roots}"
+         fi
+      else
+         if [ "${OPTION_GITIGNORE}" = 'ONLY' ]
+         then
+            OPTION_GITIGNORE='ONLY-BUT-MISSING'
+         fi
+      fi
+   fi
 
-   [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
+   local skip_patternfilefunctions
+   local use_patternfilefunctions
 
-   match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
-                                                  "${MULLE_MATCH_VAR_DIR}/cache/match"
-   skip_patterncache="${RVAL}"
+   case "${OPTION_GITIGNORE}" in
+      ONLY)
+         log_debug "gitignore list"
 
-   match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
-                                                  "${MULLE_MATCH_VAR_DIR}/cache/match"
-   use_patterncache="${RVAL}"
+         match::filename::r_define_patternfilefunction ".gitignore"
+         skip_patternfilefunctions="${RVAL}"
+
+         r_concat "match_git" "${skip_patternfilefunctions}"
+         skip_patternfilefunctions="${RVAL}"
+
+         use_patternfilefunctions="match_all"
+      ;;
+
+      ONLY-BUT-MISSING)
+         log_debug "missing gitgnore, lista all"
+
+         log_warning "There is no .gitignore file here, will match all"
+
+         skip_patternfilefunctions=""
+         use_patternfilefunctions="match_all"
+      ;;
+
+      *)
+         log_debug "default list"
+         [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
+
+         match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
+                                                        "${MULLE_MATCH_VAR_DIR}/cache/match"
+         skip_patternfilefunctions="${RVAL}"
+
+         match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
+                                                        "${MULLE_MATCH_VAR_DIR}/cache/match"
+         use_patternfilefunctions="${RVAL}"
+      ;;
+   esac
+
+   local rc
 
    if [ "${OPTION_SORTED}" = 'YES' ]
    then
       match::list::list_filenames "${OPTION_FORMAT}" \
                                   "${OPTION_MATCH_QUALIFIER}" \
-                                  "${skip_patterncache}" \
-                                  "${use_patterncache}" | LC_ALL=C sort
+                                  "${skip_patternfilefunctions}" \
+                                  "${use_patternfilefunctions}" \
+                                  "${OPTION_FIND_FLAGS}" \
+                                  "${OPTION_TYPE}" \
+                                  "$@" | LC_ALL=C sort
+      rc=$?
    else
       match::list::list_filenames "${OPTION_FORMAT}" \
                                   "${OPTION_MATCH_QUALIFIER}" \
-                                  "${skip_patterncache}" \
-                                  "${use_patterncache}"
+                                  "${skip_patternfilefunctions}" \
+                                  "${use_patternfilefunctions}" \
+                                  "${OPTION_FIND_FLAGS}" \
+                                  "${OPTION_TYPE}" \
+                                  "$@"
+      rc=$?
    fi
+
+   return $rc
 }

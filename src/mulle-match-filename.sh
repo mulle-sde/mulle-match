@@ -542,7 +542,6 @@ match::filename::r_patternfile_identifier()
 match::filename::patternfilefunction_create()
 {
    # log_entry "match::filename::patternfilefunction_create" "$@"
-
    local patternfile="$1"
    local varname="$2"
    local cachedirectory="$3"
@@ -949,7 +948,7 @@ match::filename::_match_print_patternfilename()
    done
 
    # don't use exekutor for speediness
-   exekutor printf "%s" "${s}"
+   printf "%s" "${s}"
 }
 
 
