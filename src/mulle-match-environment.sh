@@ -40,7 +40,6 @@ match::environment::init()
    local directory="$1"
    local cmd="$2"
 
-   directory="${directory:-"${MULLE_VIRTUAL_ROOT}"}"
    directory="${directory:-"`pwd -P`"}"
 
    MULLE_HOSTNAME="${MULLE_HOSTNAME:-`hostname`}" # -s not available on solaris
@@ -107,4 +106,51 @@ See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
 
    # required!
    shell_enable_extglob || _internal_fail "Can't extglob"
+}
+
+
+
+
+match::environment::set_match_path()
+{
+   if [ -z "${MULLE_MATCH_PATH}" ]
+   then
+      MULLE_MATCH_PATH="src:.mulle/etc/sourcetree"
+      log_setting "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+   else
+      log_setting "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
+   fi
+}
+
+
+match::environment::set_ignore_path()
+{
+   #
+   # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
+   # ignored. This can be important for acceptable performance and easier
+   # setup
+   #
+   if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
+   then
+      MULLE_MATCH_IGNORE_PATH="\
+${MULLE_CRAFT_ADDICTION_DIRNAME:-addiction}:\
+${MULLE_CRAFT_KITCHEN_DIRNAME:-kitchen}:\
+${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}:\
+${MULLE_SOURCETREE_STASH_DIRNAME:-stash}:\
+[Bb]uild:\
+tmp:\
+old:\
+*.old:\
+.mulle:\
+.git"
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_setting "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
+   else
+      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
+      then
+         log_setting "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
+      fi
+   fi
 }

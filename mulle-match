@@ -34,7 +34,7 @@
 
 
 
-MULLE_EXECUTABLE_VERSION=2.3.0
+MULLE_EXECUTABLE_VERSION=3.0.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 #
@@ -228,18 +228,7 @@ match::main()
       shift
    fi
 
-   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
-   then
-      MULLE_VIRTUAL_ROOT="`pwd -P`"
-      [ "${MULLE_VIRTUAL_ROOT}" = "/" ] && fail "Can't run with root folder as starting place"
-      log_fluff "mulle-fetch sets MULLE_VIRTUAL_ROOT to \"${MULLE_VIRTUAL_ROOT}\""
-   else
-      rexekutor cd "${MULLE_VIRTUAL_ROOT}" || fail "Could not cd to \"${MULLE_VIRTUAL_ROOT}\""
-   fi
-
-   . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-environment.sh" || exit 1
-
-   match::environment::init "" "${cmd}"
+   include "match::environment"
 
    case "${cmd:-list}" in
       help)
@@ -248,15 +237,17 @@ match::main()
 
       clean)
          # shellcheck source=src/mulle-match-clean.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-clean.sh"
+         include "match::clean"
 
+         match::environment::init "" "${cmd}"
          match::clean::main "$@"
       ;;
 
       init)
          # shellcheck source=src/mulle-match-list.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-init.sh"
+         include "match::init"
 
+         match::environment::init "" "${cmd}"
          match::init::main "$@"
       ;;
 
@@ -266,45 +257,50 @@ match::main()
 
       list|find)
          # shellcheck source=src/mulle-match-list.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-list.sh"
+         include "match::list"
 
          match::list::main "$@"
       ;;
 
       filename|match)
          # shellcheck source=src/mulle-match-filename.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-filename.sh"
+         include "match::filename"
 
+         match::environment::init "" "${cmd}"
          match::filename::main "$@"
       ;;
 
       patternfile|patternfiles)
          # shellcheck source=src/mulle-match-patternfile.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+         include "match::patternfile"
 
+         match::environment::init "" "${cmd}"
          match::patternfile::main "$@"
       ;;
 
       # commands like 'padd' are "expanded" into "patternfile add"
       p*)
          # shellcheck source=src/mulle-match-patternfile.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+         include "match::patternfile"
 
+         match::environment::init "" "${cmd}"
          match::patternfile::main "${1:1}" "$@"
       ;;
 
       categories)
          # shellcheck source=src/mulle-match-patternfile.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+         include "match::patternfile"
 
+         match::environment::init "" "${cmd}"
          MULLE_FLAG_LOG_TERSE='YES'
          match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-.*--\(.*\)$/\1/p'
       ;;
 
       types)
          # shellcheck source=src/mulle-match-patternfile.sh
-         . "${MULLE_MATCH_LIBEXEC_DIR}/mulle-match-patternfile.sh"
+         include "match::patternfile"
 
+         match::environment::init "" "${cmd}"
          MULLE_FLAG_LOG_TERSE='YES'
          match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-\(.*\)--.*$/\1/p'
       ;;

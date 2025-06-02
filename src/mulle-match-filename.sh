@@ -881,9 +881,32 @@ match::filename::_match_print_patternfilename()
             format="${format:2}"
          ;;
 
+         \%i*)
+            r_basename "${filename}"
+            r_identifier "${RVAL}"
+            s="${s}${RVAL}"
+            format="${format:2}"
+         ;;
+
+         \%I*)
+            r_basename "${filename}"
+            r_identifier "${RVAL}"
+            r_uppercase "${RVAL}"
+            s="${s}${RVAL}"
+            format="${format:2}"
+         ;;
+
          \%c*)
             matchcategory="${matchname##*--}"
             s="${s}${matchcategory}"
+            format="${format:2}"
+         ;;
+
+         \%C*)
+            matchcategory="${matchname##*--}"
+            r_identifier "${matchcategory}"
+            r_uppercase "${RVAL}"
+            s="${s}${RVAL}"
             format="${format:2}"
          ;;
 
@@ -915,18 +938,12 @@ match::filename::_match_print_patternfilename()
             format="${format:2}"
          ;;
 
-         \%C*)
-            matchcategory="${matchname##*--}"
-            r_uppercase "${matchcategory}"
-            s="${s}${RVAL//-/_}"
-            format="${format:2}"
-         ;;
-
          \%T*)
             matchtype="${matchname%--*}"
             matchtype="${matchtype##*-}"
-            r_uppercase "${matchtype}"
-            s="${s}${RVAL//-/_}"
+            r_extended_identifier "${matchtype}"
+            r_uppercase "${RVAL}"
+            s="${s}${RVAL}"
             format="${format:2}"
          ;;
 

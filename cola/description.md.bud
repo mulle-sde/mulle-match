@@ -2,3 +2,17 @@ mulle-match is the backbone of the mulle-sde reflection mechanism. It matches
 filenames against a set of .gitignore like patternfiles to categorize and type
 files according to their filenames and location. Its like a marriage of
 **find** and **.gitignore**.
+
+Here's an example of mulle-match in action to categorize files:
+
+``` bash
+$ mulle-match list -f "%t,%c : %f\n"
+header,private-generated-headers : src/reflect/_mulle-testallocator-include-private.h
+header,public-generated-headers : src/reflect/_mulle-testallocator-include.h
+header,public-generic-headers : src/generic/include.h
+header,public-headers : src/mulle-testallocator-struct.h
+header,public-headers : src/pointerarray.h
+header,public-headers : src/pointerset.h
+source,sources : src/mulle-testallocator.c
+sourcetree,all : .mulle/etc/sourcetree/config
+```

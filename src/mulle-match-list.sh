@@ -39,8 +39,8 @@ match::list::usage()
       log_error "$*"
    fi
 
-   match::list::set_match_path
-   match::list::set_ignore_path
+   match::environment::set_match_path
+   match::environment::set_ignore_path
 
    cat <<EOF >&2
 Usage:
@@ -90,14 +90,13 @@ EOF
    if [ "${MULLE_FLAG_LOG_VERBOSE}" = 'YES' ]
    then
      cat <<EOF >&2
-   -f <format>      : specify output values
-                      This is like a simplified C printf format:
-                          %b : basename of the file
-                          %c : category of file (can be empty)
-                          %f : filename that was matched
-                          %m : the patternfile filename
-                          %t : type of file
-                          %I : category of match file as an uppercase identifier
+   -f <format>      : specify output value, this is like a simplified C printf
+                      format:
+                          %b    : basename of the file
+                          %c/%C : category of file (can be empty)
+                          %f    : filename that was matched
+                          %m    : the patternfile filename
+                          %t/%T : type of file
                           \\n : a linefeed
                        (e.g. 'category=%c,type=%t\\n')
 EOF
@@ -110,8 +109,10 @@ EOF
    cat <<EOF >&2
    -l               : use a long format that shows type,category and basename
    --no-follow      : don't follow symlinks
-   --gitignore      : use root .gitignore file to prune search tree
-   --gitignore-only : ignore patternfiles, use .gitignore file to list only
+   --gitignore      : use root .gitignore file to prune search tree, ignores
+                      MULLE_MATCH_IGNORE_PATH and MULLE_MATCH_PATH
+   --gitignore-only : ignores patternfiles, lists filenames only
+
 EOF
    cat <<EOF >&2
 EOF
@@ -148,51 +149,6 @@ Environment:
 
 EOF
    exit 1
-}
-
-
-match::list::set_match_path()
-{
-   if [ -z "${MULLE_MATCH_PATH}" ]
-   then
-      MULLE_MATCH_PATH="src:.mulle/etc/sourcetree"
-      log_setting "Default MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-   else
-      log_setting "MULLE_MATCH_PATH: ${MULLE_MATCH_PATH}"
-   fi
-}
-
-
-match::list::set_ignore_path()
-{
-   #
-   # MULLE_MATCH_IGNORE_PATH: These are subdirectories that get
-   # ignored. This can be important for acceptable performance and easier
-   # setup
-   #
-   if [ -z "${MULLE_MATCH_IGNORE_PATH}" ]
-   then
-      MULLE_MATCH_IGNORE_PATH="\
-${MULLE_CRAFT_ADDICTION_DIRNAME:-addiction}:\
-${MULLE_CRAFT_KITCHEN_DIRNAME:-kitchen}:\
-${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}:\
-${MULLE_SOURCETREE_STASH_DIRNAME:-stash}:\
-[Bb]uild:\
-tmp:\
-old:\
-*.old:\
-.mulle:\
-.git"
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_setting "Default MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
-      fi
-   else
-      if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-      then
-         log_setting "MULLE_MATCH_IGNORE_PATH: ${MULLE_MATCH_IGNORE_PATH}"
-      fi
-   fi
 }
 
 
@@ -452,20 +408,17 @@ match::list::list_filenames()
 
    shift 6
 
-   local name
-   local ignore_dirs
-   local match_files
-   local match_dirs
-
-   log_setting "MULLE_MATCH_PATH:           ${MULLE_MATCH_PATH}"
-   log_setting "MULLE_MATCH_IGNORE_PATH:    ${MULLE_MATCH_IGNORE_PATH}"
    log_setting "MULLE_MATCH_FILENAMES:      ${MULLE_MATCH_FILENAMES}"
    log_setting "MULLE_MATCH_FOLLOW_SYMLINK: ${MULLE_MATCH_FOLLOW_SYMLINK}"
 
-   #
-   # MULLE_MATCH_PATH: This is where the find search starts
-   #
-   match::list::set_match_path
+   local name
+
+
+   log_setting "MULLE_MATCH_PATH:           ${MULLE_MATCH_PATH}"
+   log_setting "MULLE_MATCH_IGNORE_PATH:    ${MULLE_MATCH_IGNORE_PATH}"
+
+   local name
+   local match_dirs
 
    .foreachpath name in ${MULLE_MATCH_PATH}
    .do
@@ -476,7 +429,8 @@ match::list::list_filenames()
       fi
    .done
 
-   match::list::set_ignore_path
+
+   local ignore_dirs
 
    .foreachpath name in ${MULLE_MATCH_IGNORE_PATH}
    .do
@@ -486,6 +440,8 @@ match::list::list_filenames()
          ignore_dirs="${RVAL}"
       fi
    .done
+
+   local match_files
 
    #
    # MULLE_MATCH_FILENAMES: Even more important for acceptable perfomance is
@@ -515,7 +471,7 @@ match::list::list_filenames()
    local query
 
    case "${type}" in
-      files)
+      'file')
          # looks stupid, but is needed if we have '-L' set and we have
          # symlinks of source files
          query='\( -xtype f -o -xtype l \)'
@@ -524,6 +480,12 @@ match::list::list_filenames()
                query='\( -type f -o -type l \)'
             ;;
          esac
+      ;;
+      all)
+      ;;
+
+      *)
+         _internal_fail "unknown type \"${type}\""
       ;;
    esac
 
@@ -620,9 +582,6 @@ match::list::prune_match_path_with_gitignore()
 (
    local gitignore_file="$1"
 
-   match::list::set_match_path
-   match::list::set_ignore_path
-
    local skip_patternfilefunctions
    local use_patternfilefunctions
 
@@ -636,39 +595,41 @@ match::list::prune_match_path_with_gitignore()
 
    local path
    local keepers
-   local initial_roots
 
+   # local initial_roots
+   #
    #
    # need to get "." or absolute $PWD from the PATH as well as PWD/x which
    # would be in the roots, split this off into two arrays
    #
    # log_debug "PWD:     ${PWD}"
+   #
+   # .foreachpath path in ${MULLE_MATCH_PATH}
+   # .do
+   #    r_simplified_absolutepath "${path}"
+   #    r_relative_path_between "${RVAL}" "${PWD}"
+   #   # log_debug "relative: ${RVAL}"
+   #   # log_debug "path:     ${path}"
+   #    case "${RVAL}" in
+   #       */*)
+   #          r_colon_concat_if_missing "${keepers}" "${RVAL}"
+   #          keepers="${RVAL}"
+   #       ;;
+   #
+   #       *)
+   #          r_colon_concat_if_missing "${initial_roots}" "${RVAL}"
+   #          initial_roots="${RVAL}"
+   #       ;;
+   #    esac
+   # .done
 
-   .foreachpath path in ${MULLE_MATCH_PATH}
-   .do
-      r_simplified_absolutepath "${path}"
-      r_relative_path_between "${RVAL}" "${PWD}"
-     # log_debug "relative: ${RVAL}"
-     # log_debug "path:     ${path}"
-      case "${RVAL}" in
-         */*)
-            r_colon_concat_if_missing "${keepers}" "${RVAL}"
-            keepers="${RVAL}"
-         ;;
+   log_debug "initial_roots:     ${initial_roots}"
+   log_debug "keepers:           ${keepers}"
 
-         *)
-            r_colon_concat_if_missing "${initial_roots}" "${RVAL}"
-            initial_roots="${RVAL}"
-         ;;
-      esac
-   .done
-
-   MULLE_MATCH_PATH="${initial_roots}"
+   MULLE_MATCH_PATH='.'
    MULLE_MATCH_FILENAMES=
    MULLE_MATCH_FOLLOW_SYMLINK='NO'
-
-   r_colon_concat_if_missing "${MULLE_MATCH_IGNORE_PATH}" ".git"
-   MULLE_MATCH_IGNORE_PATH="${RVAL}"
+   MULLE_MATCH_IGNORE_PATH='.git'
 
    #
    # so now we do a little optimization, we run it only for the root folder
@@ -692,7 +653,6 @@ match::list::prune_match_path_with_gitignore()
       keepers="${RVAL}"
    .done
 
-   log_setting
    if [ -z "${keepers}" ]
    then
       return 1
@@ -713,7 +673,6 @@ match::list::prune_match_path_with_gitignore()
 match::list::main()
 {
    log_entry "match::list::main" "$@"
-
 
    local OPTION_FORMAT="%f\\n"
    local OPTION_SORTED='YES'
@@ -752,6 +711,12 @@ match::list::main()
 
          --gitignore-only)
             OPTION_GITIGNORE='ONLY'
+            OPTION_FORMAT="%f\\n"
+         ;;
+
+         # for debugging
+         --gitignore-roots-only)
+            OPTION_GITIGNORE='ROOTS-ONLY'
             OPTION_FORMAT="%f\\n"
          ;;
 
@@ -851,7 +816,7 @@ match::list::main()
    # [ "$#" -ne 0 ] && match::list::usage "superfluous arguments \"$*\""
 
    #
-   # check if we have not gitignore, if we do we can update MULLE_MATCH_PATH
+   # check if we have .gitignore, if we do we can update MULLE_MATCH_PATH
    if [ "${OPTION_GITIGNORE}" != 'NO' ]
    then
       if [ -f .gitignore ]
@@ -871,12 +836,28 @@ match::list::main()
       fi
    fi
 
+
    local skip_patternfilefunctions
    local use_patternfilefunctions
 
    case "${OPTION_GITIGNORE}" in
-      ONLY)
+      'ROOTS-ONLY')
+         log_verbose "Roots"
+
+         local path
+
+         .foreachpath path in ${MULLE_MATCH_PATH}
+         .do
+            printf "   %s\n" "${path}"
+         .done
+         return 0
+      ;;
+
+      'ONLY')
          log_debug "gitignore list"
+
+         MULLE_MATCH_PATH='.'
+         MULLE_MATCH_IGNORE_PATH=
 
          match::filename::r_define_patternfilefunction ".gitignore"
          skip_patternfilefunctions="${RVAL}"
@@ -887,10 +868,13 @@ match::list::main()
          use_patternfilefunctions="match_all"
       ;;
 
-      ONLY-BUT-MISSING)
-         log_debug "missing gitgnore, lista all"
+      'ONLY-BUT-MISSING')
+         log_debug "missing .gitignore, list all"
 
-         log_warning "There is no .gitignore file here, will match all"
+         MULLE_MATCH_PATH="."
+         MULLE_MATCH_IGNORE_PATH=
+
+         log_warning "There is no .gitignore file here (${PWD#${MULLE_USER_PWD}/}), will match all"
 
          skip_patternfilefunctions=""
          use_patternfilefunctions="match_all"
@@ -898,6 +882,14 @@ match::list::main()
 
       *)
          log_debug "default list"
+
+         match::environment::init
+         #
+         # MULLE_MATCH_PATH: This is where the find search starts
+         #
+         match::environment::set_match_path
+         match::environment::set_ignore_path
+
          [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
          match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
@@ -910,7 +902,6 @@ match::list::main()
       ;;
    esac
 
-   local rc
 
    if [ "${OPTION_SORTED}" = 'YES' ]
    then

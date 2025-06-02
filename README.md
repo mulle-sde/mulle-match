@@ -7,9 +7,23 @@ filenames against a set of .gitignore like patternfiles to categorize and type
 files according to their filenames and location. Its like a marriage of
 **find** and **.gitignore**.
 
+Here's an example of mulle-match in action to categorize files:
+
+``` bash
+$ mulle-match list -f "%t,%c : %f\n"
+header,private-generated-headers : src/reflect/_mulle-testallocator-include-private.h
+header,public-generated-headers : src/reflect/_mulle-testallocator-include.h
+header,public-generic-headers : src/generic/include.h
+header,public-headers : src/mulle-testallocator-struct.h
+header,public-headers : src/pointerarray.h
+header,public-headers : src/pointerset.h
+source,sources : src/mulle-testallocator.c
+sourcetree,all : .mulle/etc/sourcetree/config
+```
+
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg?branch=release)  | [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-match.svg)  | [RELEASENOTES](RELEASENOTES.md) |
 
 | Executable             | Description
 |------------------------|----------------------------------------------------------
@@ -181,6 +195,10 @@ search space with the environment variables `MULLE_MATCH_FILENAMES`,
 `MULLE_MATCH_IGNORE_PATH`, `MULLE_MATCH_PATH`.
 
 
+#### .gitignore modes
+
+With the `list` option `--gitignore` the `.gitignore` file will be used to
+prune the search space.
 
 
 ## Environment
