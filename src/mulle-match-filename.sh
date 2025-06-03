@@ -563,13 +563,13 @@ match::filename::patternfile_test()
    # Now Compile contents into function, execute each function immediately
    # against testfilename
    #
-   local bigbody
+   local ored_rval
    local functiontext
    local pattern
    local casetext
+   local rval=1
 
    # of the big function this is the start
-   bigbody="local rval=1"$'\n'
 
    .foreachline pattern in ${contents}
    .do
@@ -577,34 +577,41 @@ match::filename::patternfile_test()
 #      functionname="`pattern_unique_functionname`"
       casetext="`match::filename::pattern_emit_case "${pattern}"`"
 
-      # construct call of this function in big body
-      # need to deal with returnvalue of function here
-      # might use ifs if this is faster
-      bigbody="${bigbody}"$'\n'"${casetext}"
-   .done
-
-   # finish up the patternfile function
-   #
-   bigbody="${bigbody}"$'\n'$'\n'"   return \${rval}"
-
-   functiontext="compiled_match_test_function()
+      functiontext="compiled_match_test_function()
 {
-   ${bigbody}
+   local rval=2
+
+   ${casetext}
+
+   return \${rval}
 }"
 
-   log_setting "${functiontext}"
+      log_setting "${pattern}: ${functiontext}"
 
-   if ( \
-      eval "${functiontext}" || _internal_fail "failed to produce functions"
-      compiled_match_test_function "${testfilename}"
-   )
-   then
-      printf "%s: %s matches\n" "${patternfile#${MULLE_USER_PWD}/}" "${pattern}"
-      return 0
-   fi
+      ( \
+         eval "${functiontext}" || _internal_fail "failed to produce function"
+         compiled_match_test_function "${testfilename}"
+      )
+      rc=$?
 
-   printf "%s: %s does not match\n" "${patternfile#${MULLE_USER_PWD}/}" "${pattern}"
-   return 1
+      case $rc in
+         0)
+            printf "MATCH : \"%s\" matches \"%s\"\n" "${pattern}" "${testfilename}"
+            rval=$rc
+         ;;
+
+         1)
+            printf "IGNORE: \"%s\" matches \"%s\"\n" "${pattern}" "${testfilename}"
+            rval=$rc
+         ;;
+
+         2)
+            printf "      : \"%s\" no match\n"  "${pattern}"
+         ;;
+      esac
+   .done
+
+   return ${rval}
 }
 
 

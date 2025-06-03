@@ -297,10 +297,31 @@ match::patternfile::test_usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} patternfile test [options] <filename> <test-filename>
+   ${MULLE_USAGE_NAME} patternfile test <filename>
 
-   Test a patternfile with <test-filename>. This command will walk through the
-   patterns and log if it matches or or not..
+   Test all patternfiles against <filename> to see if they match or not. This
+   command will walk through each pattern of the patternfile and explain if it
+   matches or not..
+
+EOF
+   exit 1
+}
+
+
+match::patternfile::test_file_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile test-file <patternfile> <filename>
+
+   Test a patternfile against <filename> to see if it matches or not. This
+   command will walk through each pattern of the patternfile and explain if it
+   matches or not..
 
 EOF
    exit 1
@@ -383,6 +404,25 @@ EOF
 }
 
 
+
+match::patternfile::ls()
+{
+   log_entry "match::patternfile::ls" "$@"
+
+   local directory="$1"
+
+   if ! [ -d "${directory}" ]
+   then
+      return
+   fi
+
+   (
+      rexekutor cd "${directory}" ;
+      rexekutor ls -1 * | grep -E '[0-9]*-.*--.*'
+   )
+}
+
+
 #
 #
 #
@@ -392,26 +432,19 @@ match::patternfile::_list()
 
    local directory="$1"
    local filemark="$2"
+   local prefix="$3"
 
-   if ! [ -d "${directory}" ]
-   then
-      return
-   fi
+   files="`match::patternfile::ls "${directory}" `"
 
-   (
-      rexekutor cd "${directory}"
-
-      files="`rexekutor ls -1 *| grep -E '[0-9]*-.*--.*' `"
-      .foreachline file in ${files}
-      .do
-         printf "%s" "${file}"
-         if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
-         then
-            printf " *"
-         fi
-         printf "\n"
-      .done
-   )
+   .foreachline file in ${files}
+   .do
+      printf "%s%s" "${prefix}" "${file}"
+      if [ "${filemark}" = 'YES' ] && [ ! -L "${file}" ]
+      then
+         printf " *"
+      fi
+      printf "\n"
+   .done
 }
 
 
@@ -634,19 +667,15 @@ match::patternfile::r_get_type()
 }
 
 
-match::patternfile::r_parse()
+match::patternfile::__parse()
 {
-   log_entry "match::patternfile::r_parse" "$@"
+   log_entry "match::patternfile::__parse" "$@"
 
    local s="$1"
-
    local OPTION_POSITION="$2"
    local OPTION_TYPE="$3"
    local OPTION_CATEGORY="$4"
 
-   local _position
-   local _type
-   local _category
 
    case "${s}" in
       *-*--*)
@@ -690,6 +719,19 @@ match::patternfile::r_parse()
    match::patternfile::is_valid_number   "${_position}" || fail "position should only contain digits"
    match::patternfile::is_valid_typename "${_type}"     || fail "type should only contain a-z _ and digits"
    match::patternfile::is_valid_category "${_category}" || fail "category should only contain a-z _- and digits"
+}
+
+
+
+match::patternfile::r_parse()
+{
+   log_entry "match::patternfile::r_parse" "$@"
+
+   local _position
+   local _type
+   local _category
+
+   match::patternfile::__parse "$@"
 
    RVAL="${_position}-${_type}--${_category}"
 
@@ -1391,15 +1433,71 @@ match::patternfile::doctor()
 }
 
 
-match::patternfile::test()
+match::patternfile::test_file()
 {
-   log_entry "match::patternfile::test" "$@"
+   log_entry "match::patternfile::test_file" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
    local OPTION_CATEGORY="${1:-all}"; shift
    local OPTION_ADD=''
 
    local templatefile=""
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            match::patternfile::test_file_usage
+         ;;
+
+         -*)
+            match::patternfile::test_file_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ $# -lt 2 ] && match::patternfile::test_file_usage "Too few arguments: $*"
+   [ $# -gt 2 ] && match::patternfile::test_file_usage "Too many arguments: $*"
+
+   local filename="$1"
+   local testfilename="$2"
+
+   local templatefile
+
+   templatefile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+   if [ ! -f "${templatefile}" ]
+   then
+      templatefile="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+      if [ ! -f "${templatefile}" ]
+      then
+         fail "Unknown patternfile \"${filename}\" for ${OPTION_FOLDER_NAME}"
+      fi
+   fi
+
+   include "match::filename"
+
+   log_info "${OPTION_FOLDER_NAME}/${filename}"
+
+   if ! match::filename::patternfile_test "${templatefile}" "${testfilename}"
+   then
+      log_verbose "${OPTION_FOLDER_NAME}/${filename} does not match"
+      return 1
+   fi
+
+   log_verbose "${OPTION_FOLDER_NAME}/${filename} matches \"${testfilename}\""
+   return 0
+}
+
+
+match::patternfile::test()
+{
+   log_entry "match::patternfile::test" "$@"
 
    while [ "$#" -ne 0 ]
    do
@@ -1420,38 +1518,69 @@ match::patternfile::test()
       shift
    done
 
-   [ "$#" -lt 2 ] && match::patternfile::test_usage "Too few arguments: $*"
-   [ "$#" -gt 2 ] && match::patternfile::test_usage "Too many arguments: $*"
+   [ "$#" -eq 0 ] && match::patternfile::test_usage "Missing filename"
 
-   local filename="$1"
-   local test_filename="$2"
+   local testfilename="$1"
 
-   local templatefile
+   shift
 
-   templatefile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
-   if [ ! -f "${templatefile}" ]
+   [ "$#" -ne 0 ] && match::patternfile::test_usage "Superfluous arguments $*"
+
+   local directory
+
+   directory="${MULLE_MATCH_ETC_DIR}/ignore.d"
+   if [ ! -d "${directory}" ]
    then
-      templatefile="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}/${filename}"
-      if [ ! -f "${templatefile}" ]
+      directory="${MULLE_MATCH_SHARE_DIR}/ignore.d"
+   fi
+
+   local ignore_files
+
+   ignore_files="`match::patternfile::_list "${directory}" 'NO'  `"
+   log_setting "ignore_files: ${ignore_files}"
+
+   .foreachline patternfile in ${ignore_files}
+   .do
+      if match::patternfile::test_file "ignore.d" "unused" "${patternfile}" "${testfilename}"
       then
-         fail "Unknown patternfile \"${filename}\" for ${OPTION_FOLDER_NAME}"
+         log_info "${C_RESET_BOLD}${testfilename}${C_INFO} will be ignored"
+         return
       fi
-   fi
+   .done
 
-   include "match::filename"
-
-   if match::filename::patternfile_test "${templatefile}" "${test_filename}"
+   directory="${MULLE_MATCH_ETC_DIR}/match.d"
+   if [ ! -d "${directory}" ]
    then
-      log_info "${OPTION_FOLDER_NAME}/${filename} matches \"${test_filename}\""
-   else
-      log_info "${OPTION_FOLDER_NAME}/${filename} does not match \"${test_filename}\""
+      directory="${MULLE_MATCH_SHARE_DIR}/match.d"
    fi
+
+   local match_files
+
+   match_files="`match::patternfile::_list "${directory}" 'NO'  `"
+   log_setting "match_files: ${match_files}"
+
+   .foreachline patternfile in ${match_files}
+   .do
+      if match::patternfile::test_file "match.d" "unused" "${patternfile}" "${testfilename}"
+      then
+         local _position
+         local _type
+         local _category
+
+         match::patternfile::__parse "${patternfile}"
+
+         _log_info "${C_RESET_BOLD}${testfilename}${C_INFO} will match as \
+type ${C_MAGENTA}${C_BOLD}${_type}${C_INFO} of \
+category ${C_MAGENTA}${C_BOLD}${_category}"
+         return
+      fi
+   .done
 }
 
 
 match::patternfile::path()
 {
-   log_entry "file_patternfile_main" "$@"
+   log_entry "match::patternfile::path" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
    local OPTION_CATEGORY="$1"; shift
@@ -1507,7 +1636,7 @@ match::patternfile::path()
    done
 
    [ "$#" -eq 0 ] && match::patternfile::path_usage "Missing filename"
-   [ "$#" -gt 1 ] && match::patternfile::path_usage "Superflous arguments $*"
+   [ "$#" -gt 1 ] && match::patternfile::path_usage "Superfluous arguments $*"
 
    local  name
 
@@ -1636,13 +1765,18 @@ match::patternfile::main()
       ;;
 
       # these don't clean cache
-      cat|path|test)
+      cat|path|test_file)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
                                     "${OPTION_CATEGORY}" \
                                     "$@"
          return $?
       ;;
 
+
+      test)
+         match::patternfile::test "$@"
+         return $?
+      ;;
 
       copy|rename)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
