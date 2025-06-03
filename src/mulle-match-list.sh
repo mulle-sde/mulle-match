@@ -93,6 +93,7 @@ EOF
    -f <format>      : specify output value, this is like a simplified C printf
                       format:
                           %b    : basename of the file
+                          %i/%I : %b as an identifier
                           %c/%C : category of file (can be empty)
                           %f    : filename that was matched
                           %m    : the patternfile filename
@@ -381,7 +382,7 @@ match::list::parallel_list_filtered_files()
          [ ! -z "${filename_1f}" ] && match::filename::match_print_filepath "${format}" "${qualifier}" "${ignore}" "${match}" "${filename_1f}"
       ) &
 
-   done < <( eval_exekutor find ${flags} ${quoted_filenames} "$@" -print \
+   done < <( eval_exekutor find ${quoted_find_flags} ${quoted_filenames} "$@" -print \
                | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
                | LC_ALL="C" rexekutor sort -u )
 
@@ -429,13 +430,21 @@ match::list::list_filenames()
       fi
    .done
 
-
    local ignore_dirs
 
    .foreachpath name in ${MULLE_MATCH_IGNORE_PATH}
    .do
       if [ -e "${name}" ]
       then
+         r_concat "${ignore_dirs}" "-path '${name}'" " -o "
+         ignore_dirs="${RVAL}"
+
+         r_concat "${ignore_dirs}" "-path '*/${name}'" " -o "
+         ignore_dirs="${RVAL}"
+
+         r_concat "${ignore_dirs}" "-path '${name}/*'" " -o "
+         ignore_dirs="${RVAL}"
+
          r_concat "${ignore_dirs}" "-path '*/${name}/*'" " -o "
          ignore_dirs="${RVAL}"
       fi

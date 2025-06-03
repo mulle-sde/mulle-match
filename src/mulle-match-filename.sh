@@ -531,6 +531,83 @@ match::filename::r_patternfile_identifier()
    r_identifier "${RVAL}"
 }
 
+
+
+#
+# This "compiles" the patterns into little bash functions. The functionnames
+# are then put as a list into the variable <varname>.
+#
+# Match code will then just execute the list of functions.
+#
+# !!! Don't backtick this !!!
+#
+match::filename::patternfile_test()
+{
+   # log_entry "match::filename::patternfile_test" "$@"
+   local patternfile="$1"
+   local testfilename="$2"
+
+   if ! contents="`match::filename::patternfile_read "${patternfile}"`"
+   then
+      log_warning "\"${patternfile#"${MULLE_USER_PWD}/"}\" is broken. Run \`mulle-match patternfile repair\`"
+      return 1
+   fi
+
+   if [ -z "${contents}" ]
+   then
+      log_fluff "\"${patternfile#"${MULLE_USER_PWD}/"}}\" is empty"
+      return 0
+   fi
+
+   #
+   # Now Compile contents into function, execute each function immediately
+   # against testfilename
+   #
+   local bigbody
+   local functiontext
+   local pattern
+   local casetext
+
+   # of the big function this is the start
+   bigbody="local rval=1"$'\n'
+
+   .foreachline pattern in ${contents}
+   .do
+      # build little cases for each pattern
+#      functionname="`pattern_unique_functionname`"
+      casetext="`match::filename::pattern_emit_case "${pattern}"`"
+
+      # construct call of this function in big body
+      # need to deal with returnvalue of function here
+      # might use ifs if this is faster
+      bigbody="${bigbody}"$'\n'"${casetext}"
+   .done
+
+   # finish up the patternfile function
+   #
+   bigbody="${bigbody}"$'\n'$'\n'"   return \${rval}"
+
+   functiontext="compiled_match_test_function()
+{
+   ${bigbody}
+}"
+
+   log_setting "${functiontext}"
+
+   if ( \
+      eval "${functiontext}" || _internal_fail "failed to produce functions"
+      compiled_match_test_function "${testfilename}"
+   )
+   then
+      printf "%s: %s matches\n" "${patternfile#${MULLE_USER_PWD}/}" "${pattern}"
+      return 0
+   fi
+
+   printf "%s: %s does not match\n" "${patternfile#${MULLE_USER_PWD}/}" "${pattern}"
+   return 1
+}
+
+
 #
 # This "compiles" the patterns into little bash functions. The functionnames
 # are then put as a list into the variable <varname>.
@@ -583,15 +660,16 @@ match::filename::patternfilefunction_create()
    # Afterwards compile everything into one big function
    #
    local bigbody
-   local functiontext
-   local alltext
 #   local functionname
-   local pattern
 
    # of the big function this is the start
    bigbody="
    local rval=1
 "
+
+   local pattern
+   local casetext
+
    .foreachline pattern in ${contents}
    .do
       # build little cases for each pattern
@@ -609,6 +687,9 @@ match::filename::patternfilefunction_create()
    bigbody="${bigbody}
    return \${rval}"
 
+   local functiontext
+   local alltext
+
    functiontext="`match::filename::_pattern_function_header "${varname}"`
 ${bigbody}
 }"
@@ -618,10 +699,7 @@ ${functiontext}"
    #
    # we use the patternfile as the identifier, so we can cache it in memory
    #
-   if [ "${MULLE_FLAG_LOG_SETTINGS}" = 'YES' ]
-   then
-      log_setting "${alltext}"
-   fi
+   log_setting "${alltext}"
 
    eval "${alltext}" || _internal_fail "failed to produce functions"
 

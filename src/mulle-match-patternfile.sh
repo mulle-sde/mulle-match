@@ -288,6 +288,26 @@ EOF
 }
 
 
+match::patternfile::test_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} patternfile test [options] <filename> <test-filename>
+
+   Test a patternfile with <test-filename>. This command will walk through the
+   patterns and log if it matches or or not..
+
+EOF
+   exit 1
+}
+
+
+
 match::patternfile::ignore_usage()
 {
    if [ "$#" -ne 0 ]
@@ -1371,6 +1391,64 @@ match::patternfile::doctor()
 }
 
 
+match::patternfile::test()
+{
+   log_entry "match::patternfile::test" "$@"
+
+   local OPTION_FOLDER_NAME="${1:-match.d}"; shift
+   local OPTION_CATEGORY="${1:-all}"; shift
+   local OPTION_ADD=''
+
+   local templatefile=""
+
+   while [ "$#" -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            match::patternfile::test_usage
+         ;;
+
+         -*)
+            match::patternfile::test_usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   [ "$#" -lt 2 ] && match::patternfile::test_usage "Too few arguments: $*"
+   [ "$#" -gt 2 ] && match::patternfile::test_usage "Too many arguments: $*"
+
+   local filename="$1"
+   local test_filename="$2"
+
+   local templatefile
+
+   templatefile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+   if [ ! -f "${templatefile}" ]
+   then
+      templatefile="${MULLE_MATCH_SHARE_DIR}/${OPTION_FOLDER_NAME}/${filename}"
+      if [ ! -f "${templatefile}" ]
+      then
+         fail "Unknown patternfile \"${filename}\" for ${OPTION_FOLDER_NAME}"
+      fi
+   fi
+
+   include "match::filename"
+
+   if match::filename::patternfile_test "${templatefile}" "${test_filename}"
+   then
+      log_info "${OPTION_FOLDER_NAME}/${filename} matches \"${test_filename}\""
+   else
+      log_info "${OPTION_FOLDER_NAME}/${filename} does not match \"${test_filename}\""
+   fi
+}
+
+
 match::patternfile::path()
 {
    log_entry "file_patternfile_main" "$@"
@@ -1498,21 +1576,9 @@ match::patternfile::main()
 {
    log_entry "match::patternfile::main" "$@"
 
-   if [ -z "${MULLE_PATH_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
-   fi
-   if [ -z "${MULLE_FILE_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
-   fi
-   if [ -z "${MULLE_ETC_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-etc.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-etc.sh" || exit 1
-   fi
+   include "path"
+   include "file"
+   include "etc"
 
    local OPTION_CATEGORY="all"
    local OPTION_FOLDER_NAME="match.d"
@@ -1569,7 +1635,8 @@ match::patternfile::main()
                                     "$@"
       ;;
 
-      cat|path)
+      # these don't clean cache
+      cat|path|test)
          match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
                                     "${OPTION_CATEGORY}" \
                                     "$@"
