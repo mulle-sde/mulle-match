@@ -72,9 +72,9 @@ Options:
    --sources-file : source definitions file to create (cmake/_Sources.cmake)
 
 Environment:
-   MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE   : the patternfile type to use (source)
-   MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE   : the patternfile type to use (header)
-   MULLE_MATCH_TO_CMAKE_RESOURCE_PATTERNFILETYPE : the patternfile type to use (resource)
+   MULLE_MATCH_TO_CMAKE_SOURCE_PATTERNFILETYPE   : patternfile type to use (source)
+   MULLE_MATCH_TO_CMAKE_HEADER_PATTERNFILETYPE   : patternfile type to use (header)
+   MULLE_MATCH_TO_CMAKE_RESOURCE_PATTERNFILETYPE : patternfile type to use (resource)
    MULLE_MATCH_TO_CMAKE_HEADERS_FILE             : headers file to create
    MULLE_MATCH_TO_CMAKE_SOURCES_FILE             : sources file to create
    MULLE_MATCH_TO_CMAKE_RESOURCES_FILE           : resources file to create

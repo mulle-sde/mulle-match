@@ -1486,7 +1486,7 @@ match::patternfile::test_file()
 
    if ! match::filename::patternfile_test "${templatefile}" "${testfilename}"
    then
-      log_verbose "${OPTION_FOLDER_NAME}/${filename} does not match"
+      log_verbose "${OPTION_FOLDER_NAME}/${filename} does not match \"${testfilename}\""
       return 1
    fi
 
@@ -1569,12 +1569,14 @@ match::patternfile::test()
 
          match::patternfile::__parse "${patternfile}"
 
-         _log_info "${C_RESET_BOLD}${testfilename}${C_INFO} will match as \
-type ${C_MAGENTA}${C_BOLD}${_type}${C_INFO} of \
+         _log_info "${C_RESET_BOLD}${testfilename}${C_INFO} will be \
+typed as ${C_MAGENTA}${C_BOLD}${_type}${C_INFO} of \
 category ${C_MAGENTA}${C_BOLD}${_category}"
          return
       fi
    .done
+
+   _log_info "Will skip ${C_RESET_BOLD}${testfilename}${C_INFO} as it doesn't match."
 }
 
 
@@ -1765,10 +1767,10 @@ match::patternfile::main()
       ;;
 
       # these don't clean cache
-      cat|path|test_file)
-         match::patternfile::${cmd} "${OPTION_FOLDER_NAME}" \
-                                    "${OPTION_CATEGORY}" \
-                                    "$@"
+      cat|path|test-file)
+         match::patternfile::${cmd//-/_} "${OPTION_FOLDER_NAME}" \
+                                         "${OPTION_CATEGORY}" \
+                                         "$@"
          return $?
       ;;
 

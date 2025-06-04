@@ -48,6 +48,8 @@ Usage:
    pattern or a specific patternfile to match. This can be useful during the 
    development of your own patternfiles.
 
+   Use '**' to match paths of any depth. Use '*' to match a single path dept.
+
 Examples:
    Which patternfile matches "foo.c" ?
 
@@ -136,7 +138,10 @@ match::filename::r_transform_path_pattern()
       ;;
 
       *'**'*)
-         fail "Invalid pattern. ** must be followed by /"
+         match::filename::r_transform_path_pattern "${pattern%?}"
+         prefix="${RVAL}"
+         RVAL="${prefix}*"
+         return
       ;;
 
       *'*('*)
@@ -347,7 +352,7 @@ match::filename::pattern_emit_case()
    match::filename::assert_pattern "${pattern}"
 
    case "${pattern}" in
-      *"*"*)
+      *'*'*)
          match::filename::r_transform_path_pattern "${pattern}"
          pattern="${RVAL}"
       ;;
