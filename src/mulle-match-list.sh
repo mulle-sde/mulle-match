@@ -411,10 +411,6 @@ match::list::list_filenames()
 
    log_setting "MULLE_MATCH_FILENAMES:      ${MULLE_MATCH_FILENAMES}"
    log_setting "MULLE_MATCH_FOLLOW_SYMLINK: ${MULLE_MATCH_FOLLOW_SYMLINK}"
-
-   local name
-
-
    log_setting "MULLE_MATCH_PATH:           ${MULLE_MATCH_PATH}"
    log_setting "MULLE_MATCH_IGNORE_PATH:    ${MULLE_MATCH_IGNORE_PATH}"
 

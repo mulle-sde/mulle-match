@@ -97,7 +97,7 @@ emit_cmake_var()
    if [ -z "${contents}" ]
    then
       echo "# No contents in ${name}"
-      return
+      return 1
    fi
 
    if [ ! -z "${comment}" ]
