@@ -40,17 +40,24 @@ match::environment::init()
    local directory="$1"
    local cmd="$2"
 
-   directory="${directory:-"`pwd -P`"}"
+   if [ -z "${directory}" ]
+   then
+      eval `("${MULLE_ENV:-mulle-env}" --search-as-is mulle-tool-env match )` || exit 1
+   else
+      MULLE_MATCH_USE_DIR="${directory}/match.d"
+      if [ ! -d "${MULLE_MATCH_USE_DIR}" ]
+      then
+         MULLE_MATCH_USE_DIR='NO'
+      fi
+      MULLE_MATCH_SKIP_DIR="${directory}/ignore.d"
+      if [ ! -d "${MULLE_MATCH_SKIP_DIR}" ]
+      then
+         MULLE_MATCH_SKIP_DIR='NO'
+      fi
 
-   MULLE_HOSTNAME="${MULLE_HOSTNAME:-`hostname`}" # -s not available on solaris
-
-   include "path"
-
-   r_absolutepath "${directory}"
-
-   MULLE_MATCH_PROJECT_DIR="${RVAL}"
-
-   eval `( cd "${MULLE_MATCH_PROJECT_DIR}" ; "${MULLE_ENV:-mulle-env}" --search-as-is mulle-tool-env match )` || exit 1
+      MULLE_MATCH_ETC_DIR=
+      MULLE_MATCH_VAR_DIR=
+   fi
 
    case "${MULLE_MATCH_USE_DIR}" in
       NO)
@@ -97,18 +104,29 @@ See ${C_RESET_BOLD}mulle-match patternfile add -h${C_VERBOSE} for help."
    esac
 
    log_setting "MULLE_MATCH_ETC_DIR     : \"${MULLE_MATCH_ETC_DIR}\""
-   log_setting "MULLE_MATCH_PROJECT_DIR : \"${MULLE_MATCH_PROJECT_DIR}\""
    log_setting "MULLE_MATCH_SHARE_DIR   : \"${MULLE_MATCH_SHARE_DIR}\""
    log_setting "MULLE_MATCH_SKIP_DIR    : \"${MULLE_MATCH_SKIP_DIR}\""
    log_setting "MULLE_MATCH_USE_DIR     : \"${MULLE_MATCH_USE_DIR}\""
    log_setting "MULLE_MATCH_VAR_DIR     : \"${MULLE_MATCH_VAR_DIR}\""
-   log_setting "PATH                    : \"${PATH}\""
 
    # required!
    shell_enable_extglob || _internal_fail "Can't extglob"
 }
 
 
+
+match::environment::set_cache_path()
+{
+   if [ -z "${MULLE_MATCH_CACHE_PATH}" ]
+   then
+      [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "empty MULLE_MATCH_VAR_DIR"
+
+      MULLE_MATCH_CACHE_PATH="${MULLE_MATCH_VAR_DIR}/cache"
+      log_setting "Default MULLE_MATCH_CACHE_PATH: ${MULLE_MATCH_CACHE_PATH}"
+   else
+      log_setting "MULLE_MATCH_CACHE_PATH: ${MULLE_MATCH_CACHE_PATH}"
+   fi
+}
 
 
 match::environment::set_match_path()

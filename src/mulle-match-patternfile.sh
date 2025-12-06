@@ -76,6 +76,7 @@ Commands:
    cat    : show contents of patternfile
    copy   : copy a patternfile
    edit   : edit a patternfile
+   editor : run patternfile editor (needs node.js)
    ignore : create a rule to ignore a specific sourcefile
    match  : add a rule to match a specific sourcefile
    list   : list patternfiles currently in use
@@ -398,7 +399,8 @@ Usage:
    Repair symlinks to original patternfiles.
 
 Options:
-   --add      : add new (or previously deleted) patternfiles
+   --add        : add new (or previously deleted) patternfiles
+
 EOF
    exit 1
 }
@@ -453,7 +455,7 @@ match::patternfile::list()
    log_entry "match::patternfile::list" "$@"
 
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
-   local OPTION_OUTPUT_FILE_MARKER="DEFAULT"
+   local OPTION_OUTPUT_FILE_MARKER='DEFAULT'
 
    local OPTION_DUMP='NO'
 
@@ -1259,6 +1261,7 @@ match::patternfile::_repair()
    local OPTION_FOLDER_NAME="${1:-match.d}"; shift
 
    local OPTION_ADD='NO'
+#   local OPTION_AGGRESSIVE
 
    while [ "$#" -ne 0 ]
    do
@@ -1270,6 +1273,10 @@ match::patternfile::_repair()
          -a|--add)
             OPTION_ADD='YES'
          ;;
+
+#         --aggressive)
+#            OPTION_AGGRESSIVE='YES'
+#         ;;
 
          -*)
             match::patternfile::repair_usage "Unknown option \"$1\""
@@ -1300,7 +1307,7 @@ match::patternfile::_repair()
       return
    fi
 
-   etc_repair_files "${srcdir}" "${dstdir}" "*-" "${OPTION_ADD}"
+   etc_repair_files "${srcdir}" "${dstdir}" "*-" "${OPTION_ADD}" "${OPTION_AGGRESSIVE}"
 }
 
 
@@ -1774,6 +1781,9 @@ match::patternfile::main()
          return $?
       ;;
 
+      'editor')
+         exekutor npx mulle-sde/mulle-patternfile-editor
+      ;;
 
       test)
          match::patternfile::test "$@"

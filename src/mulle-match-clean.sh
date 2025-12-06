@@ -59,16 +59,8 @@ match::clean::main()
 {
    log_entry "match::clean::main" "$@"
 
-   if [ -z "${MULLE_PATH_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-path.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-path.sh" || exit 1
-   fi
-   if [ -z "${MULLE_FILE_SH}" ]
-   then
-      # shellcheck source=../../mulle-bashfunctions/src/mulle-file.sh
-      . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-file.sh" || exit 1
-   fi
+   include 'path'
+   include 'file'
 
    while [ $# -ne 0 ]
    do
@@ -91,12 +83,14 @@ match::clean::main()
 
    [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "empty MULLE_MATCH_VAR_DIR"
 
+   match::environment::set_cache_path
+
    #
    # why another /match ?
    # because MULLE_MATCH_DIR could be shared with other MULLE tools
    # like mulle-sde and we don't want to wipe their stuff
    #
    log_verbose "Cleaning match cache"
-   rmdir_safer "${MULLE_MATCH_VAR_DIR}/cache/match"
+   rmdir_safer "${MULLE_MATCH_CACHE_PATH}"
 }
 

@@ -59,6 +59,7 @@ match::print_commands()
    SHOWN_COMMANDS="\
    init        : setup some initial patternfiles
    clean       : remove cached patternfiles
+   editor      : run patternfile editor (needs node.js)
    list        : list files that match patternfiles (default)
    filename    : find the patternfile that matches a filename
    patternfile : manage patternfiles"
@@ -182,6 +183,21 @@ match::main()
             MULLE_MATCH_FILENAMES="$1"
          ;;
 
+         --cache-dir)
+            [ $# -eq 1 ] && match::usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_CACHE_PATH="$1"
+         ;;
+
+         --root-dir)
+            [ $# -eq 1 ] && match::usage "missing argument to $1"
+            shift
+
+            MULLE_MATCH_ROOT_PATH="$1"
+         ;;
+
+
          -I|--ignore-path)
             [ $# -eq 1 ] && match::usage "missing argument to $1"
             shift
@@ -195,6 +211,7 @@ match::main()
 
             MULLE_MATCH_PATH="$1"
          ;;
+
 
          --serial)
             MULLE_CORES=1
@@ -230,6 +247,7 @@ match::main()
 
    include "match::environment"
 
+
    case "${cmd:-list}" in
       help)
          match::usage "${MULLE_TRACE}"
@@ -239,15 +257,19 @@ match::main()
          # shellcheck source=src/mulle-match-clean.sh
          include "match::clean"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::clean::main "$@"
+      ;;
+
+      'editor')
+         exekutor npx mulle-sde/mulle-patternfile-editor
       ;;
 
       init)
          # shellcheck source=src/mulle-match-list.sh
          include "match::init"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::init::main "$@"
       ;;
 
@@ -266,7 +288,7 @@ match::main()
          # shellcheck source=src/mulle-match-filename.sh
          include "match::filename"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::filename::main "$@"
       ;;
 
@@ -274,7 +296,7 @@ match::main()
          # shellcheck source=src/mulle-match-patternfile.sh
          include "match::patternfile"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::patternfile::main "$@"
       ;;
 
@@ -283,7 +305,7 @@ match::main()
          # shellcheck source=src/mulle-match-patternfile.sh
          include "match::patternfile"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::patternfile::main "${1:1}" "$@"
       ;;
 
@@ -291,7 +313,7 @@ match::main()
          # shellcheck source=src/mulle-match-patternfile.sh
          include "match::patternfile"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          MULLE_FLAG_LOG_TERSE='YES'
          match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-.*--\(.*\)$/\1/p'
       ;;
@@ -300,7 +322,7 @@ match::main()
          # shellcheck source=src/mulle-match-patternfile.sh
          include "match::patternfile"
 
-         match::environment::init "" "${cmd}"
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          MULLE_FLAG_LOG_TERSE='YES'
          match::patternfile::list match.d --no-output-file-marker | sed -n -e 's/[0-9]*-\(.*\)--.*$/\1/p'
       ;;

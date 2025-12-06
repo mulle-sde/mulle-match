@@ -246,7 +246,7 @@ match::list::_toplevel_files()
 
 match::list::parallel_list_filtered_files()
 {
-   log_entry "match::list::parallel_list_filtered_files" "$@"
+#   log_entry "match::list::parallel_list_filtered_files" "$@"
 
    local quoted_filenames="$1"
    local format="$2" 
@@ -298,7 +298,7 @@ match::list::parallel_list_filtered_files()
    local filename_1e
    local filename_1f
 
-   log_debug "Search locations: ${quoted_filenames}"
+   # log_debug "Search locations: ${quoted_filenames}"
 
    shell_enable_extglob
    shell_disable_glob
@@ -383,8 +383,8 @@ match::list::parallel_list_filtered_files()
       ) &
 
    done < <( eval_exekutor find ${quoted_find_flags} ${quoted_filenames} "$@" -print \
-               | LC_ALL="C" rexekutor sed -e 's|^\./||g' \
-               | LC_ALL="C" rexekutor sort -u )
+               | LC_ALL="C" sed -e 's|^\./||g' \
+               | LC_ALL="C" sort -u )
 
    shell_enable_glob
 
@@ -409,10 +409,10 @@ match::list::list_filenames()
 
    shift 6
 
-   log_setting "MULLE_MATCH_FILENAMES:      ${MULLE_MATCH_FILENAMES}"
-   log_setting "MULLE_MATCH_FOLLOW_SYMLINK: ${MULLE_MATCH_FOLLOW_SYMLINK}"
-   log_setting "MULLE_MATCH_PATH:           ${MULLE_MATCH_PATH}"
-   log_setting "MULLE_MATCH_IGNORE_PATH:    ${MULLE_MATCH_IGNORE_PATH}"
+   log_setting "MULLE_MATCH_FILENAMES      : ${MULLE_MATCH_FILENAMES}"
+   log_setting "MULLE_MATCH_FOLLOW_SYMLINK : ${MULLE_MATCH_FOLLOW_SYMLINK}"
+   log_setting "MULLE_MATCH_PATH           : ${MULLE_MATCH_PATH}"
+   log_setting "MULLE_MATCH_IGNORE_PATH    : ${MULLE_MATCH_IGNORE_PATH}"
 
    local name
    local match_dirs
@@ -888,21 +888,23 @@ match::list::main()
       *)
          log_debug "default list"
 
-         match::environment::init
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}"
+
          #
          # MULLE_MATCH_PATH: This is where the find search starts
          #
          match::environment::set_match_path
          match::environment::set_ignore_path
+         match::environment::set_cache_path
 
-         [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
+         [ -z "${MULLE_MATCH_CACHE_PATH}" ] && _internal_fail "MULLE_MATCH_CACHE_PATH not set"
 
          match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
-                                                        "${MULLE_MATCH_VAR_DIR}/cache/match"
+                                                        "${MULLE_MATCH_CACHE_PATH}"
          skip_patternfilefunctions="${RVAL}"
 
          match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
-                                                        "${MULLE_MATCH_VAR_DIR}/cache/match"
+                                                        "${MULLE_MATCH_CACHE_PATH}"
          use_patternfilefunctions="${RVAL}"
       ;;
    esac

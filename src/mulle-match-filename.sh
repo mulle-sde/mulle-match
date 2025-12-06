@@ -1464,6 +1464,8 @@ match::filename::main()
       return 1
    fi
 
+   match::environment::set_cache_path
+
    local ignore_patterncache
    local match_patterncache
 
@@ -1489,11 +1491,11 @@ match::filename::main()
       [ -z "${MULLE_MATCH_VAR_DIR}" ] && _internal_fail "MULLE_MATCH_VAR_DIR not set"
 
       match::filename::r_define_patternfilefunctions "${MULLE_MATCH_SKIP_DIR}" \
-                                                     "${MULLE_MATCH_VAR_DIR}/cache"
+                                                     "${MULLE_MATCH_CACHE_PATH}"
       ignore_patterncache="${RVAL}"
 
       match::filename::r_define_patternfilefunctions "${MULLE_MATCH_USE_DIR}" \
-                                                     "${MULLE_MATCH_VAR_DIR}/cache"
+                                                     "${MULLE_MATCH_CACHE_PATH}"
       match_patterncache="${RVAL}"
    fi
 
