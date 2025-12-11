@@ -1417,7 +1417,7 @@ match::patternfile::_status()
       patternfile="${RVAL}"
       if [ ! -e "${dstdir}/${patternfile}" ]
       then
-         log_warning "\"${patternfile}\" is not used. Use \`repair --add\` to add it."
+         log_warning "\"${patternfile}\" (default) is not linked. Use \`repair --add\` to link it."
       fi
    done
    shell_disable_nullglob
