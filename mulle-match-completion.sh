@@ -3,8 +3,8 @@ _mulle_match_complete() {
    local cur prev words cword
    _get_comp_words_by_ref -n : cur prev words cword
 
-   local global_options="-h --help -f -F --filename-patterns -I --ignore-path -P --path --serial --version"
-   local commands="clean filename init libexec-dir list match patternfile types uname version categories"
+   local global_options="-h --help -f -F --filename-patterns -I --ignore-path -P --path --serial --version --cache-dir --root-dir"
+   local commands="clean editor filename init libexec-dir list match patternfile types uname version categories"
 
    if [[ $cur == -* ]]; then
        COMPREPLY=($(compgen -W "$global_options" -- "$cur"))
@@ -16,14 +16,14 @@ _mulle_match_complete() {
             clean)
                COMPREPLY=($(compgen -W "-h --help" -- "$cur"))
                ;;
-            filename)
+            filename|match)
                case "$cur" in
                   -*)
-                     COMPREPLY=($(compgen -W "-h --help -p --pattern -f -pf --pattern-file -q --quiet" -- "$cur"))
+                     COMPREPLY=($(compgen -W "-h --help -p --pattern -f -pf --pattern-file -q --quiet --qualifier" -- "$cur"))
                      ;;
                   *)
                      case "$prev" in
-                        -p|--pattern|-f|-pf|--pattern-file)
+                        -p|--pattern|-f|-pf|--pattern-file|--qualifier)
                            COMPREPLY=($(compgen -f -- "$cur"))
                            ;;
                         *)
@@ -46,13 +46,13 @@ _mulle_match_complete() {
                      esac
                esac
                ;;
-            list)
-               local list_options="-h --help -f --format -l -q --qualifier --no-follow --no-gitignore --gitignore --gitignore-only --gitignore-roots-only -tq --type-matches -cq --category-matches --locations --ignore-path --match-names -a --all -u --unsorted --follow --follow-symlink --no-follow --no-follow-symlink --find-option --find-flag"
+            list|find)
+               local list_options="-h --help -f --format -l -q --qualifier --no-follow --no-gitignore --gitignore --gitignore-only --gitignore-roots-only -tq --type-matches -cq --category-matches --locations --ignore-path --match-names -a --all -u --unsorted --follow --follow-symlink --no-follow-symlink --find-option --find-flag"
                if [[ $cur == -* ]]; then
                   COMPREPLY=($(compgen -W "$list_options" -- "$cur"))
                else
                   case "$prev" in
-                     -f|--format|-q|--qualifier|-tq|--type-matches|-cq|--category-matches|--locations|--ignore-path|--match-names|--find-option|--find-flag|--gitignore)
+                     -f|--format|-q|--qualifier|-tq|--type-matches|-cq|--category-matches|--locations|--ignore-path|--match-names|--find-option|--find-flag)
                         COMPREPLY=()
                         ;;
                      *)
@@ -60,9 +60,9 @@ _mulle_match_complete() {
                   esac
                fi
                ;;
-            patternfile)
+            patternfile|patternfiles)
                if [ $cword -eq 2 ]; then
-                  local subcommands="add cat copy edit ignore match list path remove rename repair status test test-file"
+                  local subcommands="add cat copy edit editor ignore match list path remove rename repair status test test-file"
                   COMPREPLY=($(compgen -W "$subcommands" -- "$cur"))
                else
                   local pf_options="-h --help -i --ignore-only -m --match-only"
@@ -106,6 +106,9 @@ _mulle_match_complete() {
                               esac
                            fi
                            ;;
+                        editor)
+                           COMPREPLY=()
+                           ;;
                         ignore)
                            local ignore_options="-h --help -t --template --template-file"
                            if [[ $cur == -* ]]; then
@@ -115,11 +118,17 @@ _mulle_match_complete() {
                            fi
                            ;;
                         match)
-                           local match_options="-h --help -t --template --template-file"
+                           local match_options="-h --help -t --template --template-file -c --category -p --position -t --type"
                            if [[ $cur == -* ]]; then
                               COMPREPLY=($(compgen -W "$match_options" -- "$cur"))
                            else
-                              COMPREPLY=()
+                              case "$prev" in
+                                 -t|--type|-c|--category|-p|--position|--template|--template-file)
+                                    COMPREPLY=()
+                                    ;;
+                                 *)
+                                    COMPREPLY=()
+                              esac
                            fi
                            ;;
                         rename)
@@ -165,7 +174,10 @@ _mulle_match_complete() {
                   COMPREPLY=()
                fi
                ;;
-            libexec-dir|uname|version)
+            editor)
+               COMPREPLY=()
+               ;;
+            libexec-dir|library-path|uname|version)
                COMPREPLY=()
                ;;
             categories|types)
