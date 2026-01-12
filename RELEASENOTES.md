@@ -1,3 +1,46 @@
+# 3.0.0
+
+
+
+
+feat: add editor command and improve environment handling
+
+* Add editor command
+  - New 'editor' command in main mulle-match tool
+  - New 'editor' command in patternfile subcommand
+  - Both launch mulle-patternfile-editor via npx (requires node.js)
+
+* Improve environment initialization
+  - Add --cache-dir option to specify cache directory
+  - Add --root-dir option to specify root directory
+  - Simplify environment::init to support standalone directory mode
+  - Add `set_cache_path` function for better cache directory handling
+  - Remove `MULLE_MATCH_PROJECT_DIR` logging (redundant)
+  - Remove PATH logging (not relevant)
+
+* Improve patternfile repair
+  - Add `OPTION_AGGRESSIVE` parameter support (commented out for future use)
+  - Fix option alignment in repair usage text
+
+* Other improvements
+  - Pass root directory to environment::init in all commands
+  - Change `OPTION_OUTPUT_FILE_MARKER` to use single quotes for consistency
+
+* added completion
+
+* now allows '**' at the end of a pattern
+
+* mulle-patternfile test is now even more useful, by checking against all patternfiles and shows which patterns match and which don't
+
+
+* **BREAKING** mulle-match no longer uses `MULLE_VIRTUAL_ROOT` and instead depends on the current working directory to be correctly set
+* mulle-match list can now operate with multiple .gitignore options to a) prune search roots and b) facilitate copying of projects using tar
+* properly implement %C and %T format characters
+* added %i and %I format characters for fun
+
+* added support for .gitignore (in root)
+
+
 ### 2.2.2
 
 Various small improvements
