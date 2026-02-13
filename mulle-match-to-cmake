@@ -632,7 +632,7 @@ main()
 
       if [ -z "${categorized_resources}" ]
       then
-         log_verbose "No matching resource files found. "
+         log_fluff "No matching resource files found. "
          # exit 0 # but still create empty files, otherwise cmake is unhappy
       fi
 

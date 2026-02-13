@@ -104,7 +104,7 @@ match::init::main()
       shift
    done
 
-   local rval
+   local rc
 
    [ $# -ne 0 ] && match::init::usage "superfluous parameters \"$*\""
 

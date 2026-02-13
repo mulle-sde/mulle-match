@@ -376,7 +376,7 @@ match::filename::pattern_emit_case()
          cat <<EOF
          if [ -${testchar} "\$1" ]
          then
-            rval=$YES
+            rc=$YES
          fi
       ;;
    esac
@@ -395,7 +395,7 @@ EOF
    match::filename::print_case_expression "${pattern}"
 
    cat <<EOF
-         rval=$YES
+         rc=$YES
       ;;
    esac
 EOF
@@ -467,25 +467,25 @@ match::filename::patternlines_match_relative_filename()
    local filename="$2"
 
    local pattern
-   local rval
+   local rc
 
-   rval=1
+   rc=1
 
    .foreachline pattern in ${patterns}
    .do
       match::filename::pattern_matches_relative_filename "${pattern}" "${filename}"
       case "$?" in
          0)
-            rval=0
+            rc=0
          ;;
 
          2)  # 2 is correct here (not 4)
-            rval=1
+            rc=1
          ;;
       esac
    .done
 
-   return $rval
+   return $rc
 }
 
 
@@ -572,7 +572,7 @@ match::filename::patternfile_test()
    local functiontext
    local pattern
    local casetext
-   local rval=1
+   local rc=1
 
    # of the big function this is the start
 
@@ -584,11 +584,11 @@ match::filename::patternfile_test()
 
       functiontext="compiled_match_test_function()
 {
-   local rval=2
+   local rc=2
 
    ${casetext}
 
-   return \${rval}
+   return \${rc}
 }"
 
       log_setting "${pattern}: ${functiontext}"
@@ -602,12 +602,12 @@ match::filename::patternfile_test()
       case $rc in
          0)
             printf "MATCH : \"%s\" matches \"%s\"\n" "${pattern}" "${testfilename}"
-            rval=$rc
+            rc=$rc
          ;;
 
          1)
             printf "IGNORE: \"%s\" matches \"%s\"\n" "${pattern}" "${testfilename}"
-            rval=$rc
+            rc=$rc
          ;;
 
          2)
@@ -616,7 +616,7 @@ match::filename::patternfile_test()
       esac
    .done
 
-   return ${rval}
+   return ${rc}
 }
 
 
@@ -676,7 +676,7 @@ match::filename::patternfilefunction_create()
 
    # of the big function this is the start
    bigbody="
-   local rval=1
+   local rc=1
 "
 
    local pattern
@@ -697,7 +697,7 @@ match::filename::patternfilefunction_create()
    # finish up the patternfile function
    #
    bigbody="${bigbody}
-   return \${rval}"
+   return \${rc}"
 
    local functiontext
    local alltext
@@ -1441,7 +1441,7 @@ match::filename::main()
       shift
    done
 
-   local rval
+   local rc
    local filename
 
    [ "$#" -eq  0 ] && match::filename::usage "missing filename"
@@ -1506,16 +1506,16 @@ match::filename::main()
                                          "${ignore_patterncache}" \
                                          "${match_patterncache}" \
                                          "${filename}"
-   rval=$?
+   rc=$?
 
-   if [ "${rval}" -eq 0 ]
+   if [ "${rc}" -eq 0 ]
    then
       log_info "Match"
    else
       log_warning "No match"
    fi
 
-   return $rval
+   return $rc
 }
 
 

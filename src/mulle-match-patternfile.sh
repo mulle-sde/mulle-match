@@ -1166,7 +1166,11 @@ match::patternfile::ignore()
 
    etc_make_file_from_symlinked_file "${dstfile}"
 
-   merge_line_into_file "$*" "${dstfile}"
+   local pattern
+   for pattern in "$@"
+   do
+      merge_line_into_file "${pattern}" "${dstfile}"
+   done
 
    etc_make_symlink_if_possible "${dstfile}"
    case $? in
