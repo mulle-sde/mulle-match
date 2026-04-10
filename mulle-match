@@ -59,6 +59,7 @@ match::print_commands()
    SHOWN_COMMANDS="\
    init        : setup some initial patternfiles
    clean       : remove cached patternfiles
+   doctor      : check for stale cache entries and clean if found
    editor      : run patternfile editor (needs node.js)
    list        : list files that match patternfiles (default)
    filename    : find the patternfile that matches a filename
@@ -259,6 +260,14 @@ match::main()
 
          match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
          match::clean::main "$@"
+      ;;
+
+      doctor)
+         include "match::clean"
+         include "match::filename"
+
+         match::environment::init "${MULLE_MATCH_ROOT_PATH}" "${cmd}"
+         match::clean::doctor "$@"
       ;;
 
       'editor')

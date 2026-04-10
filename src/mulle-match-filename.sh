@@ -180,24 +180,37 @@ match::filename::print_case_expression()
 
    local pattern="$1"
 
+   # backslash-escape spaces so eval doesn't word-split the case pattern
+   local escaped_pattern="${pattern// /\\ }"
+
    case "${pattern}" in
       '/'*'/')
          # support older bashes
          local snip
 
+         snip="${escaped_pattern:1}"
+         snip="${snip%??}"  # remove trailing '\ ' ... wait, no trailing space here
+
          snip="${pattern:1}"
          snip="${snip%?}"
+         local escaped_snip="${snip// /\\ }"
+         local escaped_p1="${pattern:1}"
+         escaped_p1="${escaped_p1// /\\ }"
 
-         echo "      ${snip}|${pattern:1}*)"
+         echo "      ${escaped_snip}|${escaped_p1}*)"
       ;;
 
       '/'*)
-         echo "      ${pattern:1})"
+         local escaped_p="${pattern:1}"
+         escaped_p="${escaped_p// /\\ }"
+         echo "      ${escaped_p})"
       ;;
 
       *'/')
          # echo "      ${pattern%?}|${pattern}*|*/${pattern%?}|*/${pattern}*)"
-         echo "      ${pattern%?}|${pattern}*|*/${pattern}*)"
+         local escaped_base="${pattern%?}"
+         escaped_base="${escaped_base// /\\ }"
+         echo "      ${escaped_base}|${escaped_pattern}*|*/${escaped_pattern}*)"
       ;;
 
       *'])/'*)
@@ -205,7 +218,7 @@ match::filename::print_case_expression()
       ;;
 
       *)
-         echo "      ${pattern}|*/${pattern})"
+         echo "      ${escaped_pattern}|*/${escaped_pattern})"
       ;;
    esac
 }
@@ -306,7 +319,7 @@ match::filename::_pattern_function_header()
 {"
 #   if [ "${MULLE_FLAG_LOG_DEBUG}" = 'YES' -a "${MULLE_FLAG_LOG_SETTINGS}" != 'YES' ]
 #   then
-#      echo "   log_entry ${functionname} \"\$@\""
+#      echo "   _log_entry ${functionname} \"\$@\""
 #   fi
 }
 
@@ -1282,7 +1295,7 @@ match::filename::filter_with_qualifier()
 #"
 match::filename::match_print_filepath()
 {
-   #   log_entry "match::filename::match_print_filepath" "$@"
+   log_entry "match::filename::match_print_filepath" "$@"
 
    local format="$1" 
    local qualifier="$2"
@@ -1291,6 +1304,7 @@ match::filename::match_print_filepath()
 
 #   local ignore="$1"
 #   local match="$2"
+   # filename is quasi-global: used by _match_print_patternfilename via dynamic scoping
    local filename="$3"
 
    filename="${filename#./}"
@@ -1345,6 +1359,8 @@ match::filename::match_print_filepath()
 
 match::filename::match_check_match_filenames()
 {
+   log_entry "match::filename::match_check_match_filenames" "$@"
+
    local filename="$1"
 
    local extension

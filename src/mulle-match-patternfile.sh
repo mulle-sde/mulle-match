@@ -935,22 +935,20 @@ match::patternfile::rename()
    match::patternfile::r_parse "${dstpatternfile}" "${OPTION_POSITION}" "${OPTION_TYPE}" "${OPTION_CATEGORY}"
    dstpatternfile="${RVAL}"
 
-   local dstfile
-   local srcfile
-
    if [ "${dstpatternfile}" = "${patternfile}" ]
    then
       log_warning "No change in filename"
       return 0
    fi
 
-   local srcfile
+   local dstfile
 
    dstfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${dstpatternfile}"
 
    [ -e "${dstfile}" -a "${MULLE_FLAG_MAGNUM_FORCE}" = 'NO' ] \
       && fail "\"${dstfile}\" already exists. Use -f to clobber"
 
+   local srcfile
 
    srcfile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${patternfile}"
 

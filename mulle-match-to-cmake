@@ -415,7 +415,7 @@ create_resources_file()
             #
             text_src="message( STATUS \"No resources found. \
 \`mulle-sde environment set MULLE_MATCH_TO_CMAKE_RESOURCES_FILE NONE\`, \
-to avoid this (harmless) warning\")"
+to avoid this (harmless) notice\")"
          fi
       ;;
    esac

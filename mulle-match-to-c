@@ -68,6 +68,7 @@ Options:
    --objc-headers-file <file> : objc headers file to create
    --serial                   : process headers and sources serially
    --stdout                   : output to stdout
+   --enable-files-deps        : emit files.deps.inc for ObjC source files
 
 Environment:
    MULLE_MATCH_TO_C_C_HEADERS          : C headers
@@ -79,6 +80,7 @@ Environment:
    MULLE_MATCH_TO_C_PATTERNFILETYPE    : header patternfile type (header)
    MULLE_MATCH_TO_C_PROJECT_HEADERS    : project headers list, separated by ':'
    MULLE_MATCH_TO_C_UNDERSCORE_HEADERS : ignore underscore prefixed headers (NO)
+   MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE : files.deps.inc output path
 
 EOF
    exit 1
@@ -278,6 +280,118 @@ r_text_info_on()
  *
  *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
  */"
+}
+
+
+r_includes_for_objc_source_deps()
+{
+   log_entry "r_includes_for_objc_source_deps" "$@"
+
+   local categorized_files="$1"
+
+   local line
+   local result
+   local category
+   local filepath
+   local filename
+   local basename
+
+   .foreachline line in ${categorized_files}
+   .do
+      category="${line%%;*}"
+      filepath="${line##*;}"
+
+      # only source files
+      case "${category}" in
+         *[Ss][Oo][Uu][Rr][Cc][Ee]*)
+         ;;
+         *)
+            .continue
+         ;;
+      esac
+
+      # only .m and .aam files
+      case "${filepath}" in
+         *.m|*.aam)
+         ;;
+         *)
+            .continue
+         ;;
+      esac
+
+      # skip reflect directory
+      case "${filepath}" in
+         */reflect/*)
+            .continue
+         ;;
+      esac
+
+      r_basename "${filepath}"
+      filename="${RVAL}"
+
+      # skip sentinel files (MulleObjCDeps*.m)
+      case "${filename}" in
+         MulleObjCDeps*.m)
+            .continue
+         ;;
+      esac
+
+      basename="${filename%.m}"
+      basename="${basename%.aam}"
+      r_add_line "${result}" "#include \"${basename}.deps.inc\""
+      result="${RVAL}"
+   .done
+
+   RVAL="${result}"
+}
+
+
+create_objc_files_deps_file()
+{
+   log_entry "create_objc_files_deps_file" "$@"
+
+   local categorized_files="$1"
+   local projectname="$2"
+
+   case "${MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE}" in
+      ON|YES)
+         MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE=""
+      ;;
+   esac
+
+   case "${MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE}" in
+      DISABLE*)
+         log_verbose "files.deps.inc generation disabled"
+         return
+      ;;
+   esac
+
+   MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE="${MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE:-\
+${PROJECT_SOURCE_DIR:-src}/reflect/files.deps.inc}"
+
+   local categorized_sources
+   local text_hdr
+
+   if ! categorized_sources="`rexekutor "${MULLE_MATCH}" \
+                                          ${MULLE_TECHNICAL_FLAGS} \
+                                       find --format "%C;%f\\n" \
+                                            --qualifier "TYPE_MATCHES source"`"
+   then
+      return 1
+   fi
+
+   r_includes_for_objc_source_deps "${categorized_sources}"
+   text_hdr="${RVAL}"
+
+   if [ -z "${text_hdr}" ]
+   then
+      text_hdr="/* no ObjC source files */"
+   fi
+
+   write_header_file "${MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE}" \
+                     "${text_hdr}" \
+                     "${projectname}" \
+                     'MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE'
 }
 
 
@@ -613,6 +727,7 @@ main()
    local OPTION_OBJC_PUBLIC_HEADERS='DEFAULT'
    local OPTION_C_PROJECT_HEADERS='DEFAULT'
    local OPTION_OBJC_PROJECT_HEADERS='DEFAULT'
+   local OPTION_OBJC_FILES_DEPS="${MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE}"
 
    MULLE_MATCH_TO_C_PATTERNFILETYPE="${MULLE_MATCH_TO_C_PATTERNFILETYPE:-header}"
    MULLE_MATCH_TO_C_UNDERSCORE_HEADERS="${MULLE_MATCH_TO_C_UNDERSCORE_HEADERS:-NO}"
@@ -668,6 +783,10 @@ main()
 
          --no-objc-project-headers)
             OPTION_OBJC_PROJECT_HEADERS='NO'
+         ;;
+
+         --enable-files-deps)
+            OPTION_OBJC_FILES_DEPS="${OPTION_OBJC_FILES_DEPS:-YES}"
          ;;
 
          --underscore-headers)
@@ -838,6 +957,12 @@ main()
          create_objc_project_headers_file "${categorized_headers}" "${PROJECT_NAME}" &
       fi
 
+      if [ ! -z "${OPTION_OBJC_FILES_DEPS}" ]
+      then
+         MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE="${OPTION_OBJC_FILES_DEPS}" \
+            create_objc_files_deps_file "${categorized_headers}" "${PROJECT_NAME}" &
+      fi
+
       log_fluff "waiting..."
       wait
       log_fluff 'done!'
@@ -860,6 +985,12 @@ main()
       if [ "${OPTION_OBJC_PROJECT_HEADERS}" = 'YES' ]
       then
          create_objc_project_headers_file "${categorized_headers}" "${PROJECT_NAME}"
+      fi
+
+      if [ ! -z "${OPTION_OBJC_FILES_DEPS}" ]
+      then
+         MULLE_MATCH_TO_C_OBJC_FILES_DEPS_FILE="${OPTION_OBJC_FILES_DEPS}" \
+            create_objc_files_deps_file "${categorized_headers}" "${PROJECT_NAME}"
       fi
    fi
 }

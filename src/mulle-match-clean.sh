@@ -52,6 +52,80 @@ EOF
 
 
 
+match::clean::doctor_usage()
+{
+   if [ "$#" -ne 0 ]
+   then
+      log_error "$*"
+   fi
+
+   cat <<EOF >&2
+Usage:
+   ${MULLE_USAGE_NAME} doctor
+
+   Check if the patternfile cache is stale and clean it if so.
+EOF
+   exit 1
+}
+
+
+match::clean::doctor()
+{
+   log_entry "match::clean::doctor" "$@"
+
+   include 'path'
+   include 'file'
+
+   match::environment::set_cache_path
+
+   if [ -z "${MULLE_MATCH_CACHE_PATH}" ] || [ ! -d "${MULLE_MATCH_CACHE_PATH}" ]
+   then
+      log_verbose "No cache directory found, nothing to check"
+      return 0
+   fi
+
+   local patternfile
+   local cachefile
+   local stale='NO'
+
+   local dir
+
+   for dir in "${MULLE_MATCH_USE_DIR}" "${MULLE_MATCH_SKIP_DIR}"
+   do
+      [ -z "${dir}" ] && continue
+
+      shell_enable_nullglob
+      for patternfile in "${dir}"/[0-9]*
+      do
+         shell_disable_nullglob
+
+         [ -f "${patternfile}" ] || continue
+
+         # derive cache varname the same way r_define_patternfilefunction does
+         local varname
+
+         match::filename::r_patternfile_identifier "${patternfile}"
+         cachefile="${MULLE_MATCH_CACHE_PATH}/__p__${RVAL}"
+
+         if [ -f "${cachefile}" ] && [ "${patternfile}" -nt "${cachefile}" ]
+         then
+            log_warning "Stale cache entry for \"${patternfile#"${MULLE_USER_PWD}/"}\""
+            stale='YES'
+         fi
+      done
+      shell_disable_nullglob
+   done
+
+   if [ "${stale}" = 'YES' ]
+   then
+      log_info "Stale cache entries found, cleaning cache"
+      rmdir_safer "${MULLE_MATCH_CACHE_PATH}"
+   else
+      log_verbose "Cache is up to date"
+   fi
+}
+
+
 ###
 ###  MAIN
 ###
