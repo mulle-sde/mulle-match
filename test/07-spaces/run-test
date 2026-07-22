@@ -1,0 +1,79 @@
+#! /bin/sh
+
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+
+
+run_mulle_match()
+{
+   echo "####################################" >&2
+   echo mulle-match ${MULLE_MATCH_FLAGS} "$@"  >&2
+   echo "####################################" >&2
+
+   "${MULLE_MATCH}" ${MULLE_MATCH_FLAGS} "$@" || fail "\`mulle-match $*\` failed"
+}
+
+
+expect_mulle_match()
+{
+   log_entry "expect_mulle_match" "$@"
+
+   local expected="$1"; shift
+
+   local result
+
+   result="`run_mulle_match "$@"`" || exit 1
+
+   if [ "${result}" != "${expected}" ]
+   then
+      fail "Result \"${result}\" was expected to be \"${expected}\""
+   fi
+}
+
+
+main()
+{
+   MULLE_MATCH_FLAGS="$@"
+
+   _options_mini_main "$@" && set -x
+
+   # patternfile 01-spaces--all contains:
+   #   src/Model Objects/
+   #   src/Test + Plus/
+   # Directory patterns with spaces/special chars must not break eval
+   # and must match files inside those directories
+
+   expect_mulle_match "01-spaces--all" match "src/Model Objects/Foo.m"
+
+   log_verbose "----- #1 PASSED -----"
+
+   expect_mulle_match "01-spaces--all" match "src/Test + Plus/Bar.m"
+
+   log_verbose "----- #2 PASSED -----"
+
+   expect_mulle_match "01-spaces--all" match "My File.m"
+
+   log_verbose "----- #3 PASSED -----"
+
+   expect_mulle_match "01-spaces--all" match "src/Another File.h"
+
+   log_verbose "----- #4 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+}
+
+
+init()
+{
+   MULLE_MATCH="${MULLE_MATCH:-${PWD}/../../mulle-match}"
+}
+
+
+init "$@"
+main "$@"

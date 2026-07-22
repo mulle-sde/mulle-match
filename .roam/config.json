@@ -1,0 +1,7 @@
+{
+  "h-language": "objc",
+  "exclude": [
+    ".github/**",
+    ".mulle/**"
+  ]
+}
