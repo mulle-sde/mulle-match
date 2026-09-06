@@ -90,19 +90,20 @@ match::clean::doctor()
 
    local dir
 
+   # derive cache varname the same way r_define_patternfilefunction does
+   local varname
+
    for dir in "${MULLE_MATCH_USE_DIR}" "${MULLE_MATCH_SKIP_DIR}"
    do
       [ -z "${dir}" ] && continue
 
       shell_enable_nullglob
+
       for patternfile in "${dir}"/[0-9]*
       do
          shell_disable_nullglob
 
          [ -f "${patternfile}" ] || continue
-
-         # derive cache varname the same way r_define_patternfilefunction does
-         local varname
 
          match::filename::r_patternfile_identifier "${patternfile}"
          cachefile="${MULLE_MATCH_CACHE_PATH}/__p__${RVAL}"

@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.13...99.99)
 
-project( mulle-match VERSION 3.0.0 LANGUAGES NONE)
+project( mulle-match VERSION 3.0.1 LANGUAGES NONE)
 
 execute_process( COMMAND ./mulle-match version
                  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

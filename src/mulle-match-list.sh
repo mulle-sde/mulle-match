@@ -222,7 +222,6 @@ match::list::_toplevel_files()
    # and drop all ignored stuff
    #
    local quoted_filenames
-   local filename
    local _patternfile # needed for _match_filepath
 
    for filename in .* *
@@ -598,7 +597,7 @@ match::list::prune_match_path_with_gitignore()
 
    use_patternfilefunctions="match_all"
 
-   local path
+   local filepath
    local keepers
 
    # local initial_roots
@@ -849,11 +848,11 @@ match::list::main()
       'ROOTS-ONLY')
          log_verbose "Roots"
 
-         local path
+         local filepath
 
-         .foreachpath path in ${MULLE_MATCH_PATH}
+         .foreachpath filepath in ${MULLE_MATCH_PATH}
          .do
-            printf "   %s\n" "${path}"
+            printf "   %s\n" "${filepath}"
          .done
          return 0
       ;;

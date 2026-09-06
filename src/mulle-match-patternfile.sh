@@ -1005,8 +1005,6 @@ match::patternfile::copy_template()
       fail "Patternfile \"${dstfile}\" already exists. Use -f to clobber"
    fi
 
-   local flags
-
    if [ "${MULLE_FLAG_LOG_FLUFF}" = 'YES' ]
    then
       case "${MULLE_UNAME}" in
@@ -1376,6 +1374,9 @@ match::patternfile::_status()
    # files away
    #
    shell_enable_nullglob
+
+   local globtest
+
    for filename in "${dstdir}"/* # dstdir is etc
    do
       shell_disable_nullglob
@@ -1386,8 +1387,6 @@ match::patternfile::_status()
       then
          if ! ( cd "${dstdir}" && [ -f "`readlink "${patternfile}"`" ] )
          then
-            local globtest
-
             globtest="*-${patternfile#*-}"
             if [ -f "${srcdir}"/${globtest} ]
             then
@@ -1476,8 +1475,6 @@ match::patternfile::test_file()
 
    local filename="$1"
    local testfilename="$2"
-
-   local templatefile
 
    templatefile="${MULLE_MATCH_ETC_DIR}/${OPTION_FOLDER_NAME}/${filename}"
    if [ ! -f "${templatefile}" ]
@@ -1568,14 +1565,14 @@ match::patternfile::test()
    match_files="`match::patternfile::_list "${directory}" 'NO'  `"
    log_setting "match_files: ${match_files}"
 
+   local _position
+   local _type
+   local _category
+
    .foreachline patternfile in ${match_files}
    .do
       if match::patternfile::test_file "match.d" "unused" "${patternfile}" "${testfilename}"
       then
-         local _position
-         local _type
-         local _category
-
          match::patternfile::__parse "${patternfile}"
 
          _log_info "${C_RESET_BOLD}${testfilename}${C_INFO} will be \
