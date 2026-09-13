@@ -312,7 +312,7 @@ ${text_hdr2}"
    	return 0
    fi
 
-   MULLE_MATCH_TO_CMAKE_HEADERS_FILE="${MULLE_MATCH_TO_CMAKE_HEADERS_FILE:-cmake/reflect/_Headers.cmake}"
+   MULLE_MATCH_TO_CMAKE_HEADERS_FILE="${MULLE_MATCH_TO_CMAKE_HEADERS_FILE:-cmake/${MULLE_SDE_REFLECT_DIR:-reflect}/_Headers.cmake}"
 
    text_hdr="${MULLE_MATCH_TO_CMAKE_BLURB}
 # This file will be included by cmake/share/Headers.cmake
@@ -358,7 +358,7 @@ create_sources_file()
             # header only libraries are tricky to do portably
             #
             text_src="message( FATAL_ERROR \" No sources found. \
-\`mulle-sde environment set MULLE_MATCH_TO_CMAKE_SOURCES_FILE NONE\`, \
+\`mulle-sde environment --global set MULLE_MATCH_TO_CMAKE_SOURCES_FILE NONE\`, \
 if this is intentional\")"
          fi
       ;;
@@ -371,7 +371,7 @@ if this is intentional\")"
    	return 0
    fi
 
-   MULLE_MATCH_TO_CMAKE_SOURCES_FILE="${MULLE_MATCH_TO_CMAKE_SOURCES_FILE:-cmake/reflect/_Sources.cmake}"
+   MULLE_MATCH_TO_CMAKE_SOURCES_FILE="${MULLE_MATCH_TO_CMAKE_SOURCES_FILE:-cmake/${MULLE_SDE_REFLECT_DIR:-reflect}/_Sources.cmake}"
 
    text_src="${MULLE_MATCH_TO_CMAKE_BLURB}
 # This file will be included by cmake/share/sources.cmake
@@ -414,7 +414,7 @@ create_resources_file()
             # header only libraries are tricky to do portably
             #
             text_src="message( STATUS \"No resources found. \
-\`mulle-sde environment set MULLE_MATCH_TO_CMAKE_RESOURCES_FILE NONE\`, \
+\`mulle-sde environment --global set MULLE_MATCH_TO_CMAKE_RESOURCES_FILE NONE\`, \
 to avoid this (harmless) notice\")"
          fi
       ;;
@@ -427,7 +427,7 @@ to avoid this (harmless) notice\")"
       return 0
    fi
 
-   MULLE_MATCH_TO_CMAKE_RESOURCES_FILE="${MULLE_MATCH_TO_CMAKE_RESOURCES_FILE:-cmake/reflect/_Resources.cmake}"
+   MULLE_MATCH_TO_CMAKE_RESOURCES_FILE="${MULLE_MATCH_TO_CMAKE_RESOURCES_FILE:-cmake/${MULLE_SDE_REFLECT_DIR:-reflect}/_Resources.cmake}"
 
    text_src="${MULLE_MATCH_TO_CMAKE_BLURB}
 # This file will be included by cmake/share/resources.cmake

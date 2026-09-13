@@ -274,11 +274,11 @@ r_text_info_on()
  *   \`mulle-sde reflect\` and any edits will be lost.
  *   Suppress generation of this file with:
  *
- *      mulle-sde environment set ${key} DISABLE
+ *      mulle-sde environment --global set ${key} DISABLE
  *
  *   To not let mulle-match-to-c generate any header files:
  *
- *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
+ *      mulle-sde environment --global set MULLE_MATCH_TO_C_RUN DISABLE
  */"
 }
 
@@ -490,7 +490,7 @@ create_c_headers_file()
    	return 0
    fi
 
-   MULLE_MATCH_TO_C_C_HEADERS_FILE="${MULLE_MATCH_TO_C_C_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-provide.h}"
+   MULLE_MATCH_TO_C_C_HEADERS_FILE="${MULLE_MATCH_TO_C_C_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/${MULLE_SDE_REFLECT_DIR:-reflect}/_${projectname}-provide.h}"
 
    log_fluff "Create public C header files (${PWD})"
 
@@ -556,7 +556,7 @@ create_objc_headers_file()
       return 0
    fi
 
-   MULLE_MATCH_TO_C_OBJC_HEADERS_FILE="${MULLE_MATCH_TO_C_OBJC_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-export.h}"
+   MULLE_MATCH_TO_C_OBJC_HEADERS_FILE="${MULLE_MATCH_TO_C_OBJC_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/${MULLE_SDE_REFLECT_DIR:-reflect}/_${projectname}-export.h}"
 
    log_fluff "Create public Objective-C header files (${PWD})"
 
@@ -622,7 +622,7 @@ create_c_project_headers_file()
       return 0
    fi
 
-   MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-include-project.h}"
+   MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_C_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/${MULLE_SDE_REFLECT_DIR:-reflect}/_${projectname}-include-project.h}"
 
    log_fluff "Create project C header files (${PWD})"
 
@@ -688,7 +688,7 @@ create_objc_project_headers_file()
       return 0
    fi
 
-   MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/reflect/_${projectname}-import-project.h}"
+   MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE="${MULLE_MATCH_TO_C_OBJC_PROJECT_HEADERS_FILE:-${PROJECT_SOURCE_DIR:-src}/${MULLE_SDE_REFLECT_DIR:-reflect}/_${projectname}-import-project.h}"
 
    log_fluff "Create project Objective-C header files (${PWD})"
 
