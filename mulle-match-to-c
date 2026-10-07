@@ -346,6 +346,92 @@ r_includes_for_objc_source_deps()
 }
 
 
+#
+# Sort categorized headers so that a base header "X.h" is emitted before a
+# category header "X+Y.h" (or "X-Y.h") that depends on it. A plain
+# `sort -d` orders '+' and '-' before '.', which emits the category header
+# before its base header and produces an umbrella header that won't compile.
+#
+# The sort key is extended to
+#    <category>;<dir><stem>;<rank>;<suffix>;<header>
+# where rank is 0 for a base header and 1 for a category header. Consumers
+# only look at the first (category) and last (header) field, so the extra
+# fields are harmless. Since the sort uses -d, punctuation is ignored and the
+# rank does the real work.
+#
+r_sorted_categorized_headers()
+{
+   log_entry "r_sorted_categorized_headers" "$@"
+
+   local categorized_headers="$1"
+
+   local line
+   local category
+   local header
+   local directory
+   local file
+   local stem
+   local prefix
+   local plus_prefix
+   local minus_prefix
+   local suffix
+   local rank
+   local keyed
+
+   .foreachline line in ${categorized_headers}
+   .do
+      category="${line%%;*}"
+      header="${line##*;}"
+
+      case "${header}" in
+         */*)
+            directory="${header%/*}/"
+            file="${header##*/}"
+         ;;
+
+         *)
+            directory=""
+            file="${header}"
+         ;;
+      esac
+
+      case "${file}" in
+         *.*)
+            stem="${file%.*}"
+         ;;
+
+         *)
+            stem="${file}"
+         ;;
+      esac
+
+      plus_prefix="${stem%%+*}"
+      minus_prefix="${stem%%-*}"
+
+      if [ "${#plus_prefix}" -le "${#minus_prefix}" ]
+      then
+         prefix="${plus_prefix}"
+      else
+         prefix="${minus_prefix}"
+      fi
+
+      if [ "${prefix}" = "${stem}" ]
+      then
+         rank='0'
+         suffix=""
+      else
+         rank='1'
+         suffix="${stem#"${prefix}"}"
+      fi
+
+      r_add_line "${keyed}" "${category};${directory}${prefix};${rank};${suffix};${header}"
+      keyed="${RVAL}"
+   .done
+
+   RVAL="`LC_ALL=C rexekutor sort -d -t';' -k 1,1 -k 2,2 -k 3,3 -k 4,4 -k 5,5 <<< "${keyed}"`"
+}
+
+
 create_objc_files_deps_file()
 {
    log_entry "create_objc_files_deps_file" "$@"
@@ -931,7 +1017,8 @@ main()
       return 1
    fi
 
-   categorized_headers="`LC_ALL=C rexekutor sort -d -t';' -k 1,2 <<< "${categorized_headers}" `"
+   r_sorted_categorized_headers "${categorized_headers}"
+   categorized_headers="${RVAL}"
 
    log_setting "categorized_headers=${categorized_headers}"
 

@@ -1,0 +1,105 @@
+#! /bin/sh
+
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+
+
+TEST_DIR="`dirname "$0"`"
+PROJECT_DIR="$( cd "${TEST_DIR}/../.." ; pwd -P)"
+
+#
+# Prevent mulle-match-to-c from running its own main when sourced
+#
+call_with_flags()
+{
+   :
+}
+
+. "${PROJECT_DIR}/mulle-match-to-c" || exit 1
+
+
+expect_import_order()
+{
+   local expected="$1"
+   local input="$2"
+   local result
+
+   r_sorted_categorized_headers "${input}"
+   r_statements_for_matching_headers "${RVAL}" "PUBLIC_HEADERS" "objc" "Test"
+   result="${RVAL}"
+
+   if [ "${result}" != "${expected}" ]
+   then
+      fail "Expected:
+${expected}
+Got:
+${result}"
+   fi
+}
+
+
+main()
+{
+   MULLE_MATCH_TO_C_OBJC_HEADERS=""
+   MULLE_MATCH_TO_C_C_HEADERS=""
+   MULLE_MATCH_TO_C_PROJECT_HEADERS=""
+   MULLE_MATCH_TO_C_IGNORE_HEADERS=""
+
+   _options_mini_main "$@" && set -x
+
+   local input
+   local expected
+
+   #
+   # A category header must be emitted after its base header, even though
+   # '+' sorts before '.' in a plain sort.
+   #
+   input="PUBLIC_HEADERS;NSData+NSURL.h
+PUBLIC_HEADERS;NSHost+OS.h
+PUBLIC_HEADERS;NSHost.h
+PUBLIC_HEADERS;NSURL+Filesystem.h
+PUBLIC_HEADERS;NSURL.h"
+
+   expected='#import "NSData+NSURL.h"
+#import "NSHost.h"
+#import "NSHost+OS.h"
+#import "NSURL.h"
+#import "NSURL+Filesystem.h"'
+
+   expect_import_order "${expected}" "${input}"
+   log_verbose "----- #1 PASSED -----"
+
+   #
+   # ... and the same holds for a '-' suffix
+   #
+   input="PUBLIC_HEADERS;src/Apple-Y.h
+PUBLIC_HEADERS;src/Apple.h"
+
+   expected='#import "Apple.h"
+#import "Apple-Y.h"'
+
+   expect_import_order "${expected}" "${input}"
+   log_verbose "----- #2 PASSED -----"
+
+   #
+   # Headers of other categories are not emitted
+   #
+   input="OTHER_CATEGORY;NSHost+OS.h
+PUBLIC_HEADERS;NSHost.h"
+
+   expected='#import "NSHost.h"'
+
+   expect_import_order "${expected}" "${input}"
+   log_verbose "----- #3 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+}
+
+
+main "$@"
