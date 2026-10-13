@@ -8,6 +8,6 @@
       reponame="mulle-match";
       homepage="https://github.com/mulle-sde/mulle-match";
       license="BSD-3-Clause";
-      version="3.0.1"
+      version="3.0.2"
    };
 }
